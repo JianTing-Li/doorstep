@@ -8,7 +8,41 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Micro-animations */
+        .card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .btn-pop {
+            transition: transform 0.1s ease;
+        }
+        .btn-pop:active { transform: scale(0.96); }
+
+        /* Slide-up for Chatbot Modal */
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .slide-up {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         /* Fade transition animation */
         .fade-in {
             animation: fadeIn 0.3s ease-in;
@@ -36,11 +70,11 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
+<body class="bg-gray-50 text-gray-800 antialiased h-screen flex flex-col overflow-hidden">
     
     <!-- Top Nav -->
-    <header class="bg-white shadow-sm px-4 py-4 flex items-center justify-between z-10">
-        <div class="text-xl font-bold text-blue-600 flex items-center cursor-pointer" onclick="navigate('dashboard')">
+    <header class="glass shadow-sm px-4 py-4 flex items-center justify-between z-10 sticky top-0">
+        <div class="text-xl font-bold text-blue-600 flex items-center cursor-pointer btn-pop" onclick="navigate('dashboard')">
             <i class="fa-solid fa-door-open mr-2"></i> Doorstep
         </div>
         <div class="flex items-center space-x-4">
@@ -65,10 +99,10 @@
 
     <!-- Chatbot Modal -->
     <div id="chatbot-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center sm:items-center">
-        <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl h-[80vh] sm:h-[600px] flex flex-col shadow-2xl transition-transform transform translate-y-0">
-            <div class="bg-blue-600 text-white p-4 rounded-t-2xl sm:rounded-t-2xl flex justify-between items-center">
+        <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl h-[80vh] sm:h-[600px] flex flex-col shadow-2xl slide-up">
+            <div class="glass border-b border-gray-200 text-blue-600 p-4 rounded-t-2xl sm:rounded-t-2xl flex justify-between items-center z-10">
                 <div class="font-bold flex items-center"><i class="fa-solid fa-robot mr-2"></i> Doorstep Gemini Assistant</div>
-                <button onclick="toggleChatbot()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="toggleChatbot()" class="text-gray-500 hover:text-gray-800 btn-pop"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             
             <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col space-y-4 bg-gray-50">

@@ -36,15 +36,15 @@ function getDashboardHTML() {
 
             <h2 class="font-semibold mb-4">Categories</h2>
             <div class="grid grid-cols-2 gap-4">
-                <div onclick="navigate('feed', {category: 'Cleaning'})" class="bg-blue-50 p-4 rounded-2xl cursor-pointer hover:bg-blue-100 transition border border-blue-100">
+                <div onclick="navigate('feed', {category: 'Cleaning'})" class="bg-blue-50 p-4 rounded-2xl cursor-pointer card-hover border border-blue-100 btn-pop">
                     <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center mb-3 shadow-md"><i class="fa-solid fa-broom"></i></div>
                     <div class="font-bold text-gray-800">Cleaning</div>
                 </div>
-                <div onclick="navigate('feed', {category: 'Handyman'})" class="bg-orange-50 p-4 rounded-2xl cursor-pointer hover:bg-orange-100 transition border border-orange-100">
+                <div onclick="navigate('feed', {category: 'Handyman'})" class="bg-orange-50 p-4 rounded-2xl cursor-pointer card-hover border border-orange-100 btn-pop">
                     <div class="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center mb-3 shadow-md"><i class="fa-solid fa-hammer"></i></div>
                     <div class="font-bold text-gray-800">Handyman</div>
                 </div>
-                <div onclick="navigate('feed', {category: 'Moving'})" class="bg-green-50 p-4 rounded-2xl cursor-pointer hover:bg-green-100 transition border border-green-100">
+                <div onclick="navigate('feed', {category: 'Moving'})" class="bg-green-50 p-4 rounded-2xl cursor-pointer card-hover border border-green-100 btn-pop">
                     <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mb-3 shadow-md"><i class="fa-solid fa-box"></i></div>
                     <div class="font-bold text-gray-800">Moving</div>
                 </div>
@@ -66,7 +66,7 @@ function getFeedHTML(category) {
     const pros = category === 'All' ? DB_LISTINGS : DB_LISTINGS.filter(p => p.service_type === category);
     
     let cardsHTML = pros.map(p => `
-        <div onclick="navigate('profile', {id: '${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
+        <div onclick="navigate('profile', {id: '${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer card-hover btn-pop">
             <div class="flex justify-between items-start mb-2">
                 <div>
                     <h3 class="font-bold text-lg">${p.provider_name}</h3>
@@ -84,10 +84,10 @@ function getFeedHTML(category) {
     `).join('');
 
     return `
-        <div class="bg-white px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 shadow-sm">
-            <button onclick="navigate('dashboard')" class="text-gray-500 hover:text-black"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="glass px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 shadow-sm">
+            <button onclick="navigate('dashboard')" class="text-gray-500 hover:text-black btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="font-bold text-lg">${category} Providers</h2>
-            <button class="text-blue-600 text-sm font-semibold"><i class="fa-solid fa-sliders"></i> Filter</button>
+            <button class="text-blue-600 text-sm font-semibold btn-pop"><i class="fa-solid fa-sliders"></i> Filter</button>
         </div>
         <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
             ${cardsHTML}
@@ -101,7 +101,7 @@ function getProfileHTML(listingId) {
     state.activeProvider = p;
 
     let availHTML = p.calendar_availability.map(date => `
-        <div onclick="selectTime('${date}')" class="border rounded-lg p-2 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition time-slot" data-date="${date}">
+        <div onclick="selectTime('${date}')" class="border rounded-lg p-2 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition time-slot btn-pop" data-date="${date}">
             <div class="text-xs text-gray-500 font-semibold">${new Date(date).toLocaleDateString('en-US', {weekday:'short'})}</div>
             <div class="font-bold text-sm">${new Date(date).getDate()}</div>
         </div>
@@ -110,7 +110,7 @@ function getProfileHTML(listingId) {
     return `
         <div class="relative h-48 bg-gray-200">
             <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80" class="w-full h-full object-cover opacity-80">
-            <button onclick="navigate('feed', {category: '${p.service_type}'})" class="absolute top-4 left-4 bg-white/80 w-8 h-8 rounded-full flex items-center justify-center shadow"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="navigate('feed', {category: '${p.service_type}'})" class="absolute top-4 left-4 glass w-8 h-8 rounded-full flex items-center justify-center shadow btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
         </div>
         <div class="p-6 bg-white -mt-6 rounded-t-3xl relative z-10 flex-1 flex flex-col">
             <div class="flex justify-between items-start mb-1">
@@ -134,7 +134,7 @@ function getProfileHTML(listingId) {
             </div>
 
             <div class="mt-auto pt-4">
-                <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition">Book Now</button>
+                <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition btn-pop">Book Now</button>
             </div>
         </div>
     `;
@@ -162,8 +162,8 @@ function getCheckoutHTML() {
     state.booking.total = p.price + 15; // + commission
     
     return `
-        <div class="bg-white px-4 py-3 border-b flex items-center sticky top-0 z-10 shadow-sm">
-            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-gray-500 hover:text-black mr-4"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="glass px-4 py-3 border-b flex items-center sticky top-0 z-10 shadow-sm">
+            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-gray-500 hover:text-black mr-4 btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="font-bold text-lg">Secure Checkout</h2>
         </div>
         <div class="p-6 bg-gray-50 flex-1 overflow-y-auto">
@@ -206,7 +206,7 @@ function getCheckoutHTML() {
                 <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
             </div>
 
-            <button onclick="processPayment()" class="w-full bg-black text-white font-bold py-4 rounded-xl shadow-lg transition hover:bg-gray-800 flex items-center justify-center">
+            <button onclick="processPayment()" class="w-full bg-black text-white font-bold py-4 rounded-xl shadow-lg transition hover:bg-gray-800 flex items-center justify-center btn-pop">
                 <i class="fa-solid fa-lock mr-2"></i> Authorize Payment
             </button>
             <p class="text-center text-xs text-gray-500 mt-4"><i class="fa-solid fa-shield-halved text-green-500"></i> Funds held in secure Escrow until job completion.</p>
@@ -243,7 +243,7 @@ function getConfirmationHTML() {
                 <div class="font-bold text-gray-800">${new Date(state.booking.timeSlot).toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'})}</div>
             </div>
 
-            <button onclick="navigate('dashboard')" class="w-full border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 rounded-xl shadow-sm transition">Back to Home</button>
+            <button onclick="navigate('dashboard')" class="w-full border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 rounded-xl shadow-sm transition btn-pop">Back to Home</button>
         </div>
     `;
 }
