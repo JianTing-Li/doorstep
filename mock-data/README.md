@@ -1,8 +1,8 @@
 # Doorstep mock data
 
-Four standalone products — Provider App, Customer App, Matching Chatbot, Trust & Safety Dashboard — share this folder as their only data source. Nobody queries a live database; every product imports these JSON files read-only. Records across files link by ID (a booking, its listing, and its provider are three separate records tied together by `*_id` fields), so treat the set as one connected dataset rather than nine independent files.
+Four standalone products — Provider App, Customer App, Matching Chatbot, Trust & Safety Dashboard — share this folder as their only data source. Nobody queries a live database; every product imports these JSON files read-only. The folder contains nine linked marketplace entity arrays, plus `_meta.json` and the chatbot fixtures in `example-queries.json`. Records link by ID (a booking, its listing, and its provider are separate records tied together by `*_id` fields), so treat the set as one connected dataset.
 
-Run `python3 mock-data/validate.py` after touching anything here — it checks all 95 invariants referenced below and exits non-zero on a break. Don't add a new service type or rename a field without telling the other three people first; a change here silently breaks somebody else's build.
+Run `python3 mock-data/validate.py` after touching anything here — it checks the structural and business-rule invariants referenced below and exits non-zero on a break. It cannot judge prose by itself, so also read any review, report, or query fixture you edit beside the listing it references. Don't add a service type or rename a field without telling the other three people first; a change here silently breaks somebody else's build.
 
 ---
 
@@ -28,12 +28,22 @@ const labelByCode = Object.fromEntries(serviceTypes.map(s => [s.code, s.label]))
 // service_type is always an array, even with one value, so filter with .includes()
 const plumbingListings = activeListings.filter(l => l.service_type.includes("plumbing"));
 
-// anchor "today" to reference_date, not the system clock
-const today = new Date(meta.reference_date);
+// Keep "today" as a calendar date. new Date("YYYY-MM-DD") parses as UTC and
+// appears as the previous local day in Portland.
+const today = meta.reference_date;
 
 // writing a booking goes into your own state, never back into bookings.json
 const myBookings = [...existingBookings, newBooking];
 ```
+
+### Shared rules that affect every product
+
+- **Calendar dates stay as `YYYY-MM-DD` strings.** Compare the date portion of a datetime to `_meta.reference_date`; do not pass the date-only value to JavaScript's `Date` constructor and then format it in local time.
+- **Status wins over availability.** Only `active` listings are customer-bookable. Draft, paused, suspended, and archived listings can retain provider-planned slots, but those slots are not open inventory until the listing becomes active.
+- **A price needs its unit.** `price: 65` with `price_unit: "hourly"` is a rate; `price: 65` with `price_unit: "flat"` is the job total. Never combine the two in an unlabeled price sort or filter.
+- **Minimum quantity defaults to 1.** If `minimum_quantity` is present, an hourly booking must meet it. A minimum-budget filter uses `price × minimum_quantity`; `duration_estimate_minutes` is only an estimate of likely duration.
+- **No extra customer fees are modeled.** The fixture's booking amount is exactly `listing.price × quantity`. Travel, disposal, platform, and other surcharges are not valid additions. Complaints that mention an attempted undisclosed fee are intentional Trust & Safety evidence, not another amount to add at checkout.
+- **Status values are snapshot state.** There are no transition timestamps for completion, cancellation, pausing, or enforcement. Use the audit entries and scheduled dates that exist; do not invent exact transition times.
 
 ---
 
@@ -65,7 +75,7 @@ Each product only touches a subset of the files, in a pattern shaped by its own 
 ### D — Trust & Safety Dashboard
 
 - Queue: `reports.json`, joined to any existing `moderation-actions.json` entries via `report_id` so prior history shows
-- Prioritize by `risk_level` on the linked moderation action, or by report count per `listing_id`
+- Prioritize unresolved reports by `reports.risk_level`, then by report count per `listing_id`; moderation-action risk is the historical staff assessment after a decision
 - Needs `listings.json` at **every** status, since the point is often deciding whether to change one
 - Recording a decision (dismiss/warn/suspend/resolve) is what produces a new `moderation-actions` entry
 
@@ -122,7 +132,30 @@ reports.json    (rpt_*)
 
 Fields that duplicate a value from elsewhere are guaranteed consistent — you can join or read the copy directly, whichever is easier: `bookings.provider_id` always matches its listing's provider; `reviews.listing_id` and `reviews.customer_id` always match the reviewed booking's; `moderation-actions.listing_id` always matches its report's; `listings.provider_location` always matches the owning provider's `location`.
 
-Three record types look similar but mean different things. A **review** is a public star rating a customer leaves on a completed booking. A **report** is a private complaint with a `reason` code, filed against a listing, that may or may not be tied to a specific booking. A **moderation action** is the audit-log entry recording what staff decided about a report — dismiss, warn, suspend, or resolve.
+Three record types look similar but mean different things. A **review** is a public star rating a customer leaves on a completed booking. A **report** is a private complaint with a `reason` code and an intake `risk_level`, filed against a listing, that may or may not be tied to a specific booking. A **moderation action** is an audit-log entry recording what staff decided about a report — dismiss, warn, suspend, or resolve. One report can produce more than one action, such as suspending a listing and warning its provider account.
+
+### Status meanings
+
+| Record | Status | Meaning in this snapshot |
+| --- | --- | --- |
+| Provider | `active` | Account can offer work through active listings |
+| Provider | `warned` | Account remains usable but has a formal `warn` moderation action on an owned listing |
+| Provider | `suspended` | Account is under enforcement; its listings are not bookable |
+| Listing | `draft` | Never published; provider-only |
+| Listing | `active` | Customer-bookable, subject to an open availability slot |
+| Listing | `paused` | Temporarily hidden by the provider |
+| Listing | `suspended` | Hidden by Trust & Safety enforcement |
+| Listing | `archived` | Retired and not expected to return to browse |
+| Booking | `pending` | Customer request awaits provider acceptance |
+| Booking | `confirmed` | Provider accepted; slot is reserved |
+| Booking | `completed` | Service is recorded as performed |
+| Booking | `cancelled` | Booking closed without completion; this also represents a provider no-show after support closes the booking |
+| Report | `open` | Awaiting staff review |
+| Report | `under_review` | Staff investigation is in progress |
+| Report | `resolved` | Staff substantiated/handled the issue and closed the case |
+| Report | `dismissed` | Staff closed the case without enforcement |
+
+Actions are audit events rather than state: `warn` records a formal warning, `suspend` removes bookability, `resolve` closes a later issue under existing enforcement, and `dismiss` records that no enforcement was applied.
 
 ---
 
@@ -205,13 +238,14 @@ What's for sale — one row per service a provider offers, at one price, with it
 | `service_type` | array of string | One or more codes — always an array, even with one value |
 | `price` | number | Whole dollars |
 | `price_unit` | enum | `flat` \| `hourly` |
+| `minimum_quantity` | number, optional | Minimum billable hours for an hourly listing; absent means `1`. Flat listings omit it and always use quantity `1` |
 | `duration_estimate_minutes` | integer | An estimate — bookings record the quantity actually billed |
 | `provider_location` | string | FK → `neighborhoods.json`; matches the owning provider's `location` |
 | `latitude` / `longitude` | number | Use with `service_radius_miles` for distance filtering |
 | `service_radius_miles` | number | How far the provider travels |
 | `rating` | number or null | Mean of this listing's reviews; null if unreviewed — render an empty state, don't coerce to 0 |
 | `review_count` | integer | Reviews on this listing |
-| `availability` | array of string | ISO 8601 datetimes, **open slots only** — a slot held by a `pending`/`confirmed` booking has already been removed; a `cancelled` booking releases its slot back |
+| `availability` | array of string | ISO 8601 provider-planned slots. They are bookable only when the listing is `active`; a slot held by a `pending`/`confirmed` booking has already been removed, and a future `cancelled` booking releases its slot back |
 | `listing_status` | enum | `draft` \| `active` \| `paused` \| `suspended` \| `archived` |
 
 ### `bookings.json`
@@ -220,16 +254,16 @@ A specific job scheduled between a customer and a listing. This is the transacti
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `booking_id` | string | Primary key, ordered by `created_at` |
+| `booking_id` | string | Stable primary key. IDs are not a chronology; sort by `created_at` or `scheduled_slot` when order matters |
 | `listing_id` | string | FK → `listings.json` |
 | `customer_id` | string | FK → `customers.json` |
 | `provider_id` | string | Matches the listing's provider |
 | `scheduled_slot` | string (datetime) | When the job happens |
 | `created_at` | string (datetime) | Before `scheduled_slot`, after the customer's `signup_date` |
-| `quantity` | number | Hours for hourly listings, always `1` for flat |
+| `quantity` | number | Hours recorded for hourly listings, always `1` for flat; must meet the listing's `minimum_quantity` when present |
 | `quantity_unit` | enum | `hours` \| `job` — agrees with the listing's `price_unit` |
-| `price_paid` | number | Exactly `listing.price × quantity` |
-| `commission_amount` | number | `price_paid` × `commission_rate`, rounded to 2 decimals |
+| `price_paid` | number | Fixture amount for the booking, exactly `listing.price × quantity`; it is not proof that payment settled or survived a later refund |
+| `commission_amount` | number | Derived commission basis: `price_paid` × `commission_rate`, rounded to 2 decimals; payout/collection is not modeled |
 | `status` | enum | `pending` \| `confirmed` \| `completed` \| `cancelled` |
 | `job_address` | string | Fictional Portland address |
 | `source` | enum | `customer_app` \| `chatbot` |
@@ -250,18 +284,19 @@ The public star rating and comment a customer leaves after a completed booking. 
 
 ### `reports.json`
 
-The customer-facing complaint queue — one row per issue a customer flags against a listing, before any staff decision has been made.
+The customer-facing complaint queue — one persistent row per issue a customer flags against a listing. The row begins at intake and remains after staff act on it; moderation decisions live in the separate audit log.
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | `report_id` | string | Primary key |
 | `listing_id` | string | FK → `listings.json` |
-| `booking_id` | string or null | When set, a booking on that listing by the reporter |
+| `booking_id` | string or null | When set, a booking on that listing by the reporter. Pricing or misleading-listing reports may be filed after booking creation but before service |
 | `reporter_id` | string | FK → `customers.json` |
 | `reason` | enum | `no_show` \| `quality` \| `pricing` \| `safety` \| `misleading_listing` \| `conduct` |
 | `description` | string | 2–3 sentences from the customer |
 | `evidence_url` | string or null | Attachment the customer supplied, or null if none |
-| `created_at` | string (datetime) | After the cited booking, if any |
+| `created_at` | string (datetime) | After the cited booking's `created_at`; also after `scheduled_slot` for post-service reasons such as no-show, quality, safety, and conduct |
+| `risk_level` | enum | Intake priority: `low` \| `medium` \| `high` \| `critical`; available before any moderation action exists |
 | `status` | enum | `open` \| `under_review` \| `resolved` \| `dismissed` |
 
 ### `moderation-actions.json`
@@ -270,12 +305,12 @@ The staff-facing audit log — one row per decision Trust & Safety made about a 
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `action_id` | string | Primary key |
+| `action_id` | string | Primary key; a report can have multiple action records |
 | `report_id` | string | FK → `reports.json` |
 | `listing_id` | string | Matches the report's `listing_id` |
 | `admin_name` | string | Fictional staff member |
 | `action` | enum | `dismiss` \| `warn` \| `suspend` \| `resolve` |
-| `risk_level` | enum | `low` \| `medium` \| `high` \| `critical` — sort the queue by this |
+| `risk_level` | enum | Staff assessment at decision time: `low` \| `medium` \| `high` \| `critical`; use report risk for unresolved queue sorting |
 | `reason` | string | 1–2 sentences justifying the decision |
 | `created_at` | string (datetime) | After the report's `created_at` |
 
@@ -303,7 +338,7 @@ Deliberate omissions, called out so four people building in parallel don't each 
 - **One city only.** No region, state, or multi-city fields — every provider and customer is in the same place (`_meta.city`). Don't add location scoping without a team conversation.
 - **No authentication.** No passwords, sessions, tokens, or login state. `provider_id` / `customer_id` are stable identifiers for joining data, not credentials — don't treat them as one.
 - **No photos or media.** Listings and providers have no image URLs. If your product needs to show a picture, that's a placeholder or local asset, not a data field.
-- **No payment details.** `bookings.price_paid` and `commission_amount` are the settled amounts; there's no card, payment method, or transaction ID. Checkout flows are out of scope for this dataset.
+- **No payment processing.** `bookings.price_paid` is the fixture's price calculation and `commission_amount` is its derived commission basis. There is no card, authorization, capture, payout, refund, payment method, or transaction ID. A cancelled or disputed booking can therefore still carry these calculated values; do not present them as proof that money settled.
 - **No messaging.** Nothing here models a chat or message thread between a customer and a provider — the Matching Chatbot's conversation is its own session state (see [Using this data, by product](#using-this-data-by-product)), not a stored thread.
 
 If your product genuinely needs one of these, it's local state you own in your own app — see [Read-only](#read-only). Don't add a field to these files to cover it without telling the other three people first.
@@ -319,11 +354,11 @@ Facts about this version of the data, not schema rules — these numbers will dr
 | Listing status | 32 active, 3 paused, 3 suspended, 1 draft, 1 archived (of 40) |
 | Multi-code listings | 11 of 40 carry two `service_type` codes |
 | Price unit | 25 flat, 15 hourly; price range $40–$400 |
-| Booking status | 60 completed, 12 confirmed, 10 pending, 8 cancelled (of 90) |
-| Booking source | 54 customer_app, 36 chatbot |
-| Review ratings | 29 five-star, 12 four-star, 1 three-star, 6 two-star, 4 one-star (of 52) |
+| Booking status | 59 completed, 13 confirmed, 10 pending, 10 cancelled (of 92) |
+| Booking source | 56 customer_app, 36 chatbot |
+| Review ratings | 27 five-star, 12 four-star, 3 three-star, 6 two-star, 4 one-star (of 52) |
 | Report status | 6 resolved, 2 open, 2 under_review, 2 dismissed (of 12) |
-| Moderation actions | 3 suspend, 2 resolve, 2 dismiss, 1 warn (of 8) |
+| Moderation actions | 3 suspend, 2 resolve, 2 dismiss, 2 warn (of 9) |
 
 Planted Trust & Safety cases:
 

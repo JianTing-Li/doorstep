@@ -175,6 +175,7 @@
     ],
     "price": 55,
     "price_unit": "hourly",
+    "minimum_quantity": 4,
     "duration_estimate_minutes": 240,
     "provider_location": "Woodstock",
     "latitude": 45.47778,
@@ -200,6 +201,7 @@
     ],
     "price": 40,
     "price_unit": "hourly",
+    "minimum_quantity": 2,
     "duration_estimate_minutes": 120,
     "provider_location": "Buckman",
     "latitude": 45.51675,
@@ -235,7 +237,7 @@
     "latitude": 45.51571,
     "longitude": -122.65337,
     "service_radius_miles": 6,
-    "rating": 4.0,
+    "rating": 3.0,
     "review_count": 1,
     "availability": [
       "2026-09-21T14:00:00-07:00",
@@ -276,8 +278,8 @@
   {
     "listing_id": "lst_011",
     "provider_id": "prv_002",
-    "title": "Furniture Assembly, Flat-Pack Specialist",
-    "listing_description": "I assemble flat-pack furniture, whether it came from IKEA, Wayfair, Article, or somewhere else. Wardrobes, bed frames, dressers, desks, and shelving units, including anti-tip anchoring into the studs. I break down and stack the cardboard for your recycling before I leave.",
+    "title": "Furniture Assembly & TV Mounting",
+    "listing_description": "I assemble flat-pack furniture, whether it came from IKEA, Wayfair, Article, or somewhere else. Wardrobes, bed frames, dressers, desks, and shelving units include anti-tip anchoring into the studs. I can mount a TV up to 75 inches in the same visit, using the right anchors for plaster or drywall, then break down and stack the furniture cardboard before I leave.",
     "service_type": [
       "handyman_general"
     ],
@@ -418,7 +420,7 @@
     "listing_id": "lst_016",
     "provider_id": "prv_012",
     "title": "Light Fixture Install, Up to Three",
-    "listing_description": "Install up to three light fixtures in one visit, whether that is pendants, flush mounts, a vanity bar, or a dining room chandelier under forty pounds. I take down the old fixture, check the box and the wiring behind it, mount the new one, and haul the old one away.",
+    "listing_description": "Install up to three light fixtures in one visit, whether that is pendants, flush mounts, a vanity bar, or a dining room chandelier under forty pounds. I take down the old fixture, check the box and wiring, mount the new one, and haul the old one away. A loose or worn switch controlling those fixtures can be tightened or replaced during the same appointment.",
     "service_type": [
       "electrical"
     ],
@@ -528,7 +530,7 @@
     "listing_id": "lst_020",
     "provider_id": "prv_005",
     "title": "Drain Clearing, Sink or Tub",
-    "listing_description": "Slow or stopped drains in a kitchen sink, bathroom sink, or tub. I pull and clean the P-trap, snake the line out to the branch, and clear hair and grease clogs. If the camera shows a root intrusion or a broken line further out I will tell you straight and not charge for the visit.",
+    "listing_description": "Slow or stopped drains in a kitchen sink, bathroom sink, or tub, including a P-trap or tailpiece that is leaking at the same time. I pull and clean the trap, replace a failed washer or short trap section when needed, snake the line out to the branch, and clear hair and grease clogs. If the camera shows a root intrusion or a broken line further out I will tell you straight and not charge for the visit.",
     "service_type": [
       "plumbing"
     ],
@@ -593,11 +595,10 @@
     "latitude": 45.53313,
     "longitude": -122.70137,
     "service_radius_miles": 8,
-    "rating": 4.5,
+    "rating": 4.0,
     "review_count": 2,
     "availability": [
       "2026-08-24T08:00:00-07:00",
-      "2026-09-03T10:00:00-07:00",
       "2026-09-30T15:00:00-07:00",
       "2026-10-16T13:00:00-07:00"
     ],
@@ -717,19 +718,20 @@
     "listing_id": "lst_027",
     "provider_id": "prv_011",
     "title": "Garage Clear-Out Plus Moving Boxes",
-    "listing_description": "I clear out the garage and move whatever you are keeping. We sort into keep, donate, and dump piles, I haul the dump and donation loads away, and the keep pile gets boxed and moved wherever it belongs, whether that is a storage unit, the basement, or a new place. Two hour minimum and dump fees are separate.",
+    "listing_description": "I clear out the garage and move whatever you are keeping. We sort into keep, donate, and dump piles, I haul the dump and donation loads away, and the keep pile gets boxed and moved wherever it belongs, whether that is a storage unit, the basement, or a new place. The two-hour minimum includes ordinary donation and dump charges, so there is no separate disposal fee.",
     "service_type": [
       "junk_removal",
       "moving_help"
     ],
     "price": 100,
     "price_unit": "hourly",
+    "minimum_quantity": 2,
     "duration_estimate_minutes": 240,
     "provider_location": "Hawthorne",
     "latitude": 45.51091,
     "longitude": -122.62722,
     "service_radius_miles": 14,
-    "rating": 5.0,
+    "rating": 4.0,
     "review_count": 2,
     "availability": [
       "2026-09-01T08:00:00-07:00",
@@ -1081,6 +1083,7 @@
     ],
     "price": 105,
     "price_unit": "hourly",
+    "minimum_quantity": 2,
     "duration_estimate_minutes": 180,
     "provider_location": "Hawthorne",
     "latitude": 45.51294,

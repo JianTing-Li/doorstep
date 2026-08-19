@@ -37,18 +37,18 @@ for k in ("reference_date", "city", "timezone", "currency",
     chk(k in meta, "_meta has %s" % k)
 chk(meta["commission_rate"] == 0.15, "commission_rate is 0.15")
 for name, arr, n in [("service-types", st, 8), ("neighborhoods", nb, 15), ("providers", pr, 15),
-                     ("customers", cu, 20), ("listings", li, 40), ("bookings", bk, 90),
-                     ("reviews", rv, 52), ("reports", rp, 12), ("moderation-actions", mo, 8),
-                     ("example-queries", eq, 22)]:
+                     ("customers", cu, 20), ("listings", li, 40), ("bookings", bk, 92),
+                     ("reviews", rv, 52), ("reports", rp, 12), ("moderation-actions", mo, 9),
+                     ("example-queries", eq, 25)]:
     chk(isinstance(arr, list) and len(arr) == n, "%s count == %d (got %d)" % (name, n, len(arr)))
 
 def ids(arr, key, prefix, n):
     chk(sorted(x[key] for x in arr) == ["%s_%03d" % (prefix, i) for i in range(1, n + 1)],
         "%s ids are contiguous %s_001..%03d" % (key, prefix, n))
 ids(pr, "provider_id", "prv", 15); ids(cu, "customer_id", "cst", 20)
-ids(li, "listing_id", "lst", 40); ids(bk, "booking_id", "bkg", 90)
+ids(li, "listing_id", "lst", 40); ids(bk, "booking_id", "bkg", 92)
 ids(rv, "review_id", "rev", 52); ids(rp, "report_id", "rpt", 12)
-ids(mo, "action_id", "mod", 8);  ids(eq, "query_id", "qry", 22)
+ids(mo, "action_id", "mod", 9);  ids(eq, "query_id", "qry", 25)
 
 # ---- foreign keys ---------------------------------------------------------
 chk(all(l["provider_id"] in PID for l in li), "listing.provider_id resolves")
@@ -82,6 +82,10 @@ chk(not bad, "moderation FKs resolve and listing matches its report %s" % bad[:5
 chk(not sorted({s for l in li for s in l["service_type"]} - CODES), "all service_type values are known codes")
 chk(all(isinstance(l["service_type"], list) and l["service_type"] for l in li),
     "service_type is always a non-empty array")
+bad = [l["listing_id"] for l in li
+       if "minimum_quantity" in l
+       and (l["price_unit"] != "hourly" or l["minimum_quantity"] < 1)]
+chk(not bad, "minimum_quantity is positive and only used for hourly listings %s" % bad[:5])
 cnt = collections.Counter(s for l in li for s in l["service_type"])
 acnt = collections.Counter(s for l in li if l["listing_status"] == "active" for s in l["service_type"])
 chk(all(cnt[s] >= 4 for s in CODES), "every code has >=4 listings %s" % dict(cnt))
@@ -170,6 +174,9 @@ chk(not bad, "price_paid == listing price * quantity %s" % bad[:5])
 bad = [b["booking_id"] for b in bk
        if (lby[b["listing_id"]]["price_unit"] == "flat") != (b["quantity_unit"] == "job")]
 chk(not bad, "quantity_unit agrees with the listing's price_unit %s" % bad[:5])
+bad = [b["booking_id"] for b in bk
+       if b["quantity"] < lby[b["listing_id"]].get("minimum_quantity", 1)]
+chk(not bad, "booking quantity meets the listing minimum %s" % bad[:5])
 sig = {c["customer_id"]: c["signup_date"] for c in cu}
 bad = [b["booking_id"] for b in bk if b["created_at"][:10] < sig[b["customer_id"]]]
 chk(not bad, "no booking predates its customer's signup_date %s" % bad[:5])
@@ -179,6 +186,12 @@ chk(not bad, "no booking predates its provider's member_since %s" % bad[:5])
 sc = collections.Counter(b["status"] for b in bk)
 chk(set(sc) == {"pending", "confirmed", "completed", "cancelled"}
     and sc["completed"] == max(sc.values()), "all 4 booking statuses, completed heaviest %s" % dict(sc))
+bad = [b["booking_id"] for b in bk
+       if b["status"] == "completed" and b["scheduled_slot"][:10] >= REF]
+chk(not bad, "completed bookings are before reference_date %s" % bad[:5])
+bad = [b["booking_id"] for b in bk
+       if b["status"] in ("pending", "confirmed") and b["scheduled_slot"][:10] <= REF]
+chk(not bad, "pending/confirmed bookings are after reference_date %s" % bad[:5])
 chat = sum(1 for b in bk if b["source"] == "chatbot")
 chk(chat >= 8, "chatbot-sourced bookings >=8 (%d)" % chat)
 
@@ -218,14 +231,31 @@ chk(not bad, "moderation created_at is after its report's created_at %s" % bad[:
 bad = [r["report_id"] for r in rp if not ("2026-07-05" <= r["created_at"][:10] <= REF)]
 chk(not bad, "reports fall within 45 days before reference_date %s" % bad[:5])
 bad = [r["report_id"] for r in rp
-       if r["booking_id"] and bby[r["booking_id"]]["scheduled_slot"] >= r["created_at"]]
-chk(not bad, "a cited booking happened before the report %s" % bad[:5])
+       if r["booking_id"] and bby[r["booking_id"]]["created_at"] >= r["created_at"]]
+chk(not bad, "a cited booking was created before the report %s" % bad[:5])
+bad = [r["report_id"] for r in rp
+       if r["booking_id"] and r["reason"] in {"no_show", "quality", "safety", "conduct"}
+       and bby[r["booking_id"]]["scheduled_slot"] >= r["created_at"]]
+chk(not bad, "post-service reports are after the scheduled slot %s" % bad[:5])
 bad = [r["report_id"] for r in rp
        if r["booking_id"] and bby[r["booking_id"]]["customer_id"] != r["reporter_id"]]
 chk(not bad, "reporter is the customer on the cited booking %s" % bad[:5])
 chk(all(m["risk_level"] in {"low", "medium", "high", "critical"} for m in mo), "risk_level enum")
+chk(all(r["risk_level"] in {"low", "medium", "high", "critical"} for r in rp),
+    "every report has an intake risk_level")
 chk(all(r["evidence_url"] is None or r["evidence_url"].startswith("https://") for r in rp),
     "evidence_url is null or https")
+bad = [r["report_id"] for r in rp
+       if r["reason"] == "no_show"
+       and (not r["booking_id"] or bby[r["booking_id"]]["status"] != "cancelled")]
+chk(not bad, "no-show reports link to cancelled bookings %s" % bad[:5])
+acted_reports = {m["report_id"] for m in mo}
+bad = [r["report_id"] for r in rp
+       if (r["status"] in ("resolved", "dismissed")) != (r["report_id"] in acted_reports)]
+chk(not bad, "closed reports have actions and unresolved reports do not %s" % bad[:5])
+warned = {p["provider_id"] for p in pr if p["provider_status"] == "warned"}
+warn_acted = {lby[m["listing_id"]]["provider_id"] for m in mo if m["action"] == "warn"}
+chk(warned <= warn_acted, "every warned provider has a warning action %s" % sorted(warned - warn_acted))
 
 # ---- example queries ------------------------------------------------------
 bad = [q["query_id"] for q in eq if any(i not in LID for i in q["expected_listing_ids"])]

@@ -23,7 +23,7 @@
     "listing_id": "lst_021",
     "customer_id": "cst_013",
     "rating": 5,
-    "text": "Cleared a tub drain that had beaten two bottles of chemicals. Pulled the trap, snaked it, and showed me what came out, which I could have done without.",
+    "text": "The leak had swollen the cabinet floor before I noticed it. They replaced the failed trap, fitted a sealed base, and left the cupboard dry and usable again.",
     "created_at": "2026-02-17T18:09:00-08:00"
   },
   {
@@ -32,7 +32,7 @@
     "listing_id": "lst_015",
     "customer_id": "cst_014",
     "rating": 5,
-    "text": "He traced a dead circuit in our 1920s house that two other electricians had shrugged at. Labelled the whole panel while he was in there.",
+    "text": "Six old outlets and switches replaced in one visit, including a GFCI by the kitchen sink. Everything was tested and the odd wiring behind one box was clearly explained.",
     "created_at": "2026-03-01T20:09:00-08:00"
   },
   {
@@ -50,7 +50,7 @@
     "listing_id": "lst_019",
     "customer_id": "cst_015",
     "rating": 4,
-    "text": "Toilet has stopped rocking and the leak at the base is gone. Quick and clean, though she arrived about an hour outside the window she gave me.",
+    "text": "The new kitchen faucet works perfectly and the seized shutoff underneath was replaced too. Quick and clean, though the arrival was about an hour outside the window I was given.",
     "created_at": "2026-03-11T13:41:00-07:00"
   },
   {
@@ -77,7 +77,7 @@
     "listing_id": "lst_032",
     "customer_id": "cst_010",
     "rating": 4,
-    "text": "Lawn looks sharp and the edging along the sidewalk is clean. He left the clippings in my yard debris bin as asked.",
+    "text": "The gutters are flowing again and the leaves are off both the lawn and the beds. Everything was bagged into my yard debris bin as asked.",
     "created_at": "2026-03-21T08:09:00-07:00"
   },
   {
@@ -95,7 +95,7 @@
     "listing_id": "lst_028",
     "customer_id": "cst_015",
     "rating": 5,
-    "text": "Old couch and a mattress set gone in twenty minutes flat. Left the curb cleaner than it was when they arrived.",
+    "text": "They cleared years of boxes and a broken dresser out of the basement, then swept the concrete floor. The recycling and donation receipts arrived that evening.",
     "created_at": "2026-03-24T18:09:00-07:00"
   },
   {
@@ -122,7 +122,7 @@
     "listing_id": "lst_013",
     "customer_id": "cst_017",
     "rating": 5,
-    "text": "Mounted a 65 inch TV on a plaster wall that two other people had told me would not hold it. Found the studs, levelled it, tucked the cables into the channel.",
+    "text": "The new ceiling fan is solid, quiet, and finally balanced. He found that the old box was not fan-rated, fitted the proper brace, and explained the extra work before doing it.",
     "created_at": "2026-05-06T08:26:00-07:00"
   },
   {
@@ -131,7 +131,7 @@
     "listing_id": "lst_033",
     "customer_id": "cst_011",
     "rating": 5,
-    "text": "Patio came up two shades lighter and he rinsed the siding down afterward so there is no dirt line. Careful with the pressure on the older deck boards.",
+    "text": "The lawn had got embarrassingly high, but he mowed, trimmed, and edged it cleanly in one visit. He bagged the heavy clippings and took them away.",
     "created_at": "2026-05-12T20:09:00-07:00"
   },
   {
@@ -158,7 +158,7 @@
     "listing_id": "lst_003",
     "customer_id": "cst_016",
     "rating": 5,
-    "text": "We had drywall dust in the light fixtures after a kitchen remodel. They HEPA vacuumed the walls and ceilings and it was actually gone, not just moved around.",
+    "text": "The apartment passed the move-out inspection with no cleaning deduction. The oven, fridge drawers, cabinet interiors, and baseboards were all properly done.",
     "created_at": "2026-05-18T13:09:00-07:00"
   },
   {
@@ -212,7 +212,7 @@
     "listing_id": "lst_040",
     "customer_id": "cst_004",
     "rating": 5,
-    "text": "Picked up a dresser across town and delivered it the same afternoon. Blanket-wrapped and strapped properly rather than just thrown in the back of the van.",
+    "text": "The storage unit was emptied in one afternoon, with the donation load separated from the things coming home. Everything we kept arrived intact and clearly grouped.",
     "created_at": "2026-06-03T08:09:00-07:00"
   },
   {
@@ -221,7 +221,7 @@
     "listing_id": "lst_027",
     "customer_id": "cst_011",
     "rating": 5,
-    "text": "They came back the following week for the crawlspace at no extra charge because they had underestimated the first load. Did not have to argue about it.",
+    "text": "The garage was sorted without rushing me, the donation and dump loads disappeared, and the boxes I kept made it safely to storage. The four-hour estimate was accurate.",
     "created_at": "2026-06-05T08:26:00-07:00"
   },
   {
@@ -230,7 +230,7 @@
     "listing_id": "lst_033",
     "customer_id": "cst_007",
     "rating": 5,
-    "text": "Gutters were completely blocked and he hand-scooped the lot rather than just blasting it through the downspouts. Flushed them afterward to prove they ran.",
+    "text": "The grass was badly overgrown, but he mowed it evenly and edged the sidewalk and drive. He took the extra clippings rather than overfilling my bin.",
     "created_at": "2026-06-06T08:26:00-07:00"
   },
   {
@@ -311,7 +311,7 @@
     "listing_id": "lst_028",
     "customer_id": "cst_019",
     "rating": 4,
-    "text": "Everything went and the driveway was swept afterward. The dump fee on top of the hourly rate was more than I had budgeted for, though it was disclosed up front.",
+    "text": "The attic was cleared and swept exactly as promised. The flat price was honored, although the crew arrived later than the original window.",
     "created_at": "2026-07-18T20:09:00-07:00"
   },
   {
@@ -319,8 +319,8 @@
     "booking_id": "bkg_048",
     "listing_id": "lst_009",
     "customer_id": "cst_018",
-    "rating": 4,
-    "text": "Solid regular clean. The only thing I would flag is that the inside of the microwave got missed the first time, though she sorted it the following week.",
+    "rating": 3,
+    "text": "The cleaning itself was solid, but the small repairs in the listing were refused unless I accepted a separate quote. Three stars because only half of the combined service was actually honored.",
     "created_at": "2026-07-20T18:41:00-07:00"
   },
   {
@@ -347,7 +347,7 @@
     "listing_id": "lst_024",
     "customer_id": "cst_006",
     "rating": 5,
-    "text": "Moved us two floors up in the same building. They booked the elevator with our manager ahead of time and padded the hallway walls, which I would not have thought of.",
+    "text": "They loaded our rented truck carefully, wrapped every finished surface, and stacked it so nothing shifted. Both movers worked steadily for the full booking.",
     "created_at": "2026-07-22T13:26:00-07:00"
   },
   {
@@ -364,8 +364,8 @@
     "booking_id": "bkg_047",
     "listing_id": "lst_027",
     "customer_id": "cst_008",
-    "rating": 5,
-    "text": "The basement had thirty years of boxes and a dead freezer in it. The crew carried everything out, swept up, and sent me the e-waste receipt the same day.",
+    "rating": 3,
+    "text": "The garage clear-out was efficient and most of the sorting went well. I was still upset that one keep box went with the donation load, even though the photos later showed how the mix-up happened.",
     "created_at": "2026-07-22T20:41:00-07:00"
   },
   {
@@ -374,7 +374,7 @@
     "listing_id": "lst_010",
     "customer_id": "cst_001",
     "rating": 1,
-    "text": "Booked the same-day slot the listing advertises and they turned up at seven in the evening, then wanted to reschedule. Avoid.",
+    "text": "They arrived hours late, then tried to add separate charges for the oven and windows before starting. The surface clean was rushed and nowhere close to what the flat-price listing promised.",
     "created_at": "2026-07-25T13:41:00-07:00"
   },
   {
@@ -401,7 +401,7 @@
     "listing_id": "lst_023",
     "customer_id": "cst_020",
     "rating": 2,
-    "text": "Billed three hours for a visit that ran a bit over one, at a higher rate than the listing shows. I paid at the time because the water was off and I needed it done.",
+    "text": "Billed three hours for a visit that ran a bit over one. I paid at the time because the water was off and I needed it done.",
     "created_at": "2026-07-31T08:09:00-07:00"
   },
   {
@@ -418,8 +418,8 @@
     "booking_id": "bkg_052",
     "listing_id": "lst_022",
     "customer_id": "cst_014",
-    "rating": 5,
-    "text": "The under-sink leak had already wrecked the cabinet floor. They fixed the trap and rebuilt the base so it is properly sealed now. Priced exactly as quoted.",
+    "rating": 4,
+    "text": "The toilet no longer rocks or leaks at the base, and the replacement itself was priced exactly as quoted. The old unit was collected the next afternoon rather than the same day.",
     "created_at": "2026-08-05T08:26:00-07:00"
   },
   {
@@ -437,7 +437,7 @@
     "listing_id": "lst_008",
     "customer_id": "cst_010",
     "rating": 2,
-    "text": "The quote I got in chat came to well over the advertised hourly rate once a travel fee was added that appears nowhere on the listing. The clean itself was rushed.",
+    "text": "The provider tried to add a travel fee in chat that appears nowhere on the listing. Support removed it before I was charged, but the clean itself was still rushed.",
     "created_at": "2026-08-08T08:26:00-07:00"
   },
   {
@@ -455,7 +455,7 @@
     "listing_id": "lst_012",
     "customer_id": "cst_002",
     "rating": 4,
-    "text": "Fan is up and does not wobble at all. He had to fit a fan-rated brace which added time and cost, but he explained why before he started rather than after.",
+    "text": "The TV is level and secure on a plaster wall, and the cable channel looks tidy. He explained the anchor choice before drilling and cleaned up every bit of dust.",
     "created_at": "2026-08-10T20:26:00-07:00"
   },
   {

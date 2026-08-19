@@ -8,28 +8,31 @@
     "description": "I booked the two hour minimum and she left after about seventy minutes with the floors not mopped at all. When I asked about it I was told the minimum is the minimum. I was charged the full amount for work that was not finished.",
     "evidence_url": "https://evidence.doorstep.example/rpt_001/invoice.pdf",
     "created_at": "2026-07-14T15:44:00-07:00",
+    "risk_level": "medium",
     "status": "resolved"
   },
   {
     "report_id": "rpt_002",
     "listing_id": "lst_008",
-    "booking_id": null,
+    "booking_id": "bkg_091",
     "reporter_id": "cst_020",
     "reason": "no_show",
-    "description": "She confirmed a Saturday morning slot and then never arrived or messaged. I waited two hours and had to cancel my own plans for the day. This is the second slot from this listing that has gone nowhere for me.",
+    "description": "She confirmed a Saturday morning slot and then never arrived or messaged. I waited two hours and had to cancel my own plans for the day. The booking was eventually marked cancelled, but only after I contacted support.",
     "evidence_url": null,
     "created_at": "2026-08-12T19:26:00-07:00",
+    "risk_level": "high",
     "status": "open"
   },
   {
     "report_id": "rpt_003",
     "listing_id": "lst_008",
-    "booking_id": null,
+    "booking_id": "bkg_056",
     "reporter_id": "cst_010",
     "reason": "pricing",
-    "description": "The listing says forty dollars an hour with a two hour minimum. The quote I was sent in chat came to a hundred and forty for the same two hours because of a travel fee that is not mentioned anywhere on the listing. I did not book in the end.",
+    "description": "The listing says forty dollars an hour with a two hour minimum. Before my upcoming booking, the quote sent in chat came to a hundred and forty for the same two hours because of a travel fee that is not mentioned anywhere on the listing. I kept the booking while support reviewed the fee because I still needed the cleaning.",
     "evidence_url": "https://evidence.doorstep.example/rpt_003/chat-transcript.png",
     "created_at": "2026-07-23T11:02:00-07:00",
+    "risk_level": "medium",
     "status": "under_review"
   },
   {
@@ -41,6 +44,7 @@
     "description": "The listing advertises oven, fridge, baseboards, windows and garage at one flat price for any size home. The crew did none of those and said each one was an add-on. Ninety nine dollars for ninety minutes of surface wiping is not what was described.",
     "evidence_url": "https://evidence.doorstep.example/rpt_004/listing-screenshot.png",
     "created_at": "2026-07-10T11:44:00-07:00",
+    "risk_level": "high",
     "status": "resolved"
   },
   {
@@ -52,6 +56,7 @@
     "description": "Same flat price advertised, but I was quoted three separate add-on fees on the doorstep before they would start. It felt like the price on the listing exists only to get them through the door.",
     "evidence_url": "https://evidence.doorstep.example/rpt_005/addon-quote.pdf",
     "created_at": "2026-07-23T09:26:00-07:00",
+    "risk_level": "high",
     "status": "resolved"
   },
   {
@@ -63,6 +68,7 @@
     "description": "The worker spent most of the visit on personal calls and got short with me when I pointed out the shelf was not level. He left three extra holes in the wall and did not patch them. I did not feel comfortable asking him to redo it.",
     "evidence_url": "https://evidence.doorstep.example/rpt_006/wall-damage.jpg",
     "created_at": "2026-07-15T19:26:00-07:00",
+    "risk_level": "high",
     "status": "resolved"
   },
   {
@@ -74,6 +80,7 @@
     "description": "Booked two hours of general handyman work and almost nothing on my list got finished. The blind is hanging crooked and the door still does not close. I have asked twice for someone to come back and had no reply.",
     "evidence_url": null,
     "created_at": "2026-07-25T19:44:00-07:00",
+    "risk_level": "medium",
     "status": "resolved"
   },
   {
@@ -82,9 +89,10 @@
     "booking_id": "bkg_046",
     "reporter_id": "cst_020",
     "reason": "pricing",
-    "description": "This was billed as an hourly emergency callout. She was at my house from about four to a little after five, and the invoice charged three hours at a higher rate than the listing shows. I paid at the time because the water was off and I needed it done.",
+    "description": "This was billed as an hourly emergency callout. She was at my house from about four to a little after five, and the invoice charged three hours at the published hourly rate. I paid at the time because the water was off and I needed it done.",
     "evidence_url": "https://evidence.doorstep.example/rpt_008/invoice.pdf",
     "created_at": "2026-07-31T09:02:00-07:00",
+    "risk_level": "critical",
     "status": "resolved"
   },
   {
@@ -96,6 +104,7 @@
     "description": "The garage clear-out took nearly twice the estimate, which I could live with, but a box I had clearly labelled as keep went out with the donation load. It had my grandfather's tools in it and there is no getting them back.",
     "evidence_url": "https://evidence.doorstep.example/rpt_009/labelled-box.jpg",
     "created_at": "2026-07-20T15:44:00-07:00",
+    "risk_level": "low",
     "status": "dismissed"
   },
   {
@@ -107,6 +116,7 @@
     "description": "The old toilet was left on my front walkway overnight with the bolts still sticking out of the base, and my kids use that path to get to the street. It was collected the next afternoon but it should not have been left there at all.",
     "evidence_url": "https://evidence.doorstep.example/rpt_010/walkway.jpg",
     "created_at": "2026-08-11T15:26:00-07:00",
+    "risk_level": "low",
     "status": "dismissed"
   },
   {
@@ -118,6 +128,7 @@
     "description": "I put the couch and two boxes at the curb for the agreed morning window and nothing was collected. The couch sat out in the rain all day and my building manager has now billed me for it.",
     "evidence_url": null,
     "created_at": "2026-07-30T09:26:00-07:00",
+    "risk_level": "high",
     "status": "open"
   },
   {
@@ -129,6 +140,7 @@
     "description": "The listing says cleaning and small repairs in one visit at one hourly rate. On the day I was told repairs are quoted separately and only the cleaning was covered by the rate I booked. That is not how the description reads.",
     "evidence_url": "https://evidence.doorstep.example/rpt_012/listing-screenshot.png",
     "created_at": "2026-07-22T19:26:00-07:00",
+    "risk_level": "medium",
     "status": "under_review"
   }
 ]

@@ -19,11 +19,10 @@
       "cleaning_standard"
     ],
     "expected_listing_ids": [
-      "lst_001",
-      "lst_008"
+      "lst_001"
     ],
     "match_type": "single_code",
-    "notes": "Recurring language plus a small unit. Both listings advertise a regular schedule."
+    "notes": "Recurring language is decisive: lst_001 explicitly advertises weekly or biweekly service. Small-unit language alone is not enough to make lst_008 a recurring-cleaning match."
   },
   {
     "query_id": "qry_003",
@@ -265,5 +264,41 @@
     "expected_listing_ids": [],
     "match_type": "no_match",
     "notes": "Painting is not in the service vocabulary. Say so plainly instead of pushing the handyman listings."
+  },
+  {
+    "query_id": "qry_023",
+    "query": "My kitchen sink is leaking and the drain is slow.",
+    "expected_codes": [
+      "plumbing"
+    ],
+    "expected_listing_ids": [
+      "lst_020"
+    ],
+    "match_type": "single_code",
+    "notes": "Both symptoms matter. lst_020 explicitly covers a slow sink drain and a leaking trap or tailpiece in the same visit."
+  },
+  {
+    "query_id": "qry_024",
+    "query": "Two light fixtures need replacing and a switch is loose.",
+    "expected_codes": [
+      "electrical"
+    ],
+    "expected_listing_ids": [
+      "lst_016"
+    ],
+    "match_type": "single_code",
+    "notes": "lst_016 installs up to three fixtures and explicitly covers a loose or worn controlling switch in the same appointment."
+  },
+  {
+    "query_id": "qry_025",
+    "query": "Hang a TV and put together an IKEA dresser.",
+    "expected_codes": [
+      "handyman_general"
+    ],
+    "expected_listing_ids": [
+      "lst_011"
+    ],
+    "match_type": "single_code",
+    "notes": "lst_011 explicitly covers flat-pack dressers and TV wall mounting in one visit."
   }
 ]

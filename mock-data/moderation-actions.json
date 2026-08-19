@@ -46,7 +46,7 @@
     "admin_name": "Desmond Achebe",
     "action": "suspend",
     "risk_level": "critical",
-    "reason": "Invoice supplied by the customer shows three billed hours against a documented one hour visit and a rate above the published one. Listing suspended and the provider has been instructed to refund the difference.",
+    "reason": "Invoice supplied by the customer shows three billed hours against a documented one hour visit. Listing suspended and the provider has been instructed to refund the two excess hours.",
     "created_at": "2026-08-04T16:08:00-07:00"
   },
   {
@@ -78,5 +78,15 @@
     "risk_level": "low",
     "reason": "Provider confirmed the haul-away was scheduled for the following day and the customer was notified at booking. Poor placement rather than a safety breach; provider reminded to keep walkways clear.",
     "created_at": "2026-08-13T16:22:00-07:00"
+  },
+  {
+    "action_id": "mod_009",
+    "report_id": "rpt_008",
+    "listing_id": "lst_023",
+    "admin_name": "Desmond Achebe",
+    "action": "warn",
+    "risk_level": "critical",
+    "reason": "Formal provider-account warning issued after the verified emergency-callout overbilling. Any repeat pricing complaint will trigger account-level suspension.",
+    "created_at": "2026-08-05T10:22:00-07:00"
   }
 ]
