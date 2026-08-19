@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doorstep App Prototype</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Fade transition animation */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Floating action button pulse */
+        .fab-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* Map background simulation */
+        .map-bg {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e4/A_Street_Map_of_Manhattan.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
+    
+    <!-- Top Nav -->
+    <header class="bg-white shadow-sm px-4 py-4 flex items-center justify-between z-10">
+        <div class="text-xl font-bold text-blue-600 flex items-center cursor-pointer" onclick="navigate('dashboard')">
+            <i class="fa-solid fa-door-open mr-2"></i> Doorstep
+        </div>
+        <div class="flex items-center space-x-4">
+            <i class="fa-solid fa-bell text-gray-500 text-lg"></i>
+            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fa-solid fa-user text-gray-500"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <main id="app-container" class="flex-1 overflow-y-auto relative w-full max-w-md mx-auto bg-white shadow-xl">
+        <!-- JS injects views here -->
+    </main>
+
+    <!-- Global Chatbot FAB -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <button onclick="toggleChatbot()" class="fab-pulse bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform transform hover:scale-110">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <!-- Chatbot Modal -->
+    <div id="chatbot-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center sm:items-center">
+        <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl h-[80vh] sm:h-[600px] flex flex-col shadow-2xl transition-transform transform translate-y-0">
+            <div class="bg-blue-600 text-white p-4 rounded-t-2xl sm:rounded-t-2xl flex justify-between items-center">
+                <div class="font-bold flex items-center"><i class="fa-solid fa-robot mr-2"></i> Doorstep Gemini Assistant</div>
+                <button onclick="toggleChatbot()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col space-y-4 bg-gray-50">
+                <div class="bg-white border p-3 rounded-lg rounded-tl-none self-start max-w-[80%] shadow-sm">
+                    <p class="text-sm">Hi! I'm your intelligent matching assistant. What kind of home service do you need today?</p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-white border-t flex items-center">
+                <input type="text" id="chat-input" placeholder="e.g. Need a cheap cleaner for Saturday..." class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:border-blue-500 text-sm">
+                <button onclick="sendChatMessage()" class="ml-2 bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data & App Logic -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
