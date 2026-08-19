@@ -1,7 +1,8 @@
 // Simulated Database for Doorstep App Prototype
-// Strictly adheres to the finalized Data Schema
+// Strictly adheres to JT's Final Data Schema
 
 const DB_LISTINGS = [
+    // --- CLEANING SERVICES ---
     {
         listing_id: "L-101",
         provider_id: "P-001",
@@ -9,7 +10,7 @@ const DB_LISTINGS = [
         service_type: "Cleaning",
         service_title: "Deep Apartment Cleaning",
         price: 120,
-        calendar_availability: ["2026-08-19", "2026-08-20", "2026-08-21"],
+        calendar_availability: ["2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25"],
         rating: 4.8,
         reviews: 42,
         provider_location: { lat: 40.7128, lng: -74.0060, distance: "1.2 miles" },
@@ -19,11 +20,69 @@ const DB_LISTINGS = [
     {
         listing_id: "L-102",
         provider_id: "P-002",
+        provider_name: "Elena's Maid Service",
+        service_type: "Cleaning",
+        service_title: "Standard Weekly Clean",
+        price: 75,
+        calendar_availability: ["2026-08-19", "2026-08-20", "2026-08-22", "2026-08-26"],
+        rating: 4.5,
+        reviews: 131,
+        provider_location: { lat: 40.7200, lng: -74.0010, distance: "3.0 miles" },
+        listing_status: "active",
+        description: "Reliable standard cleaning. Vacuuming, mopping, dusting, and bathroom sanitation. Pet friendly!"
+    },
+    {
+        listing_id: "L-103",
+        provider_id: "P-003",
+        provider_name: "Spotless Co.",
+        service_type: "Cleaning",
+        service_title: "Move-Out/Move-In Cleaning",
+        price: 200,
+        calendar_availability: ["2026-08-21", "2026-08-28"],
+        rating: 4.9,
+        reviews: 87,
+        provider_location: { lat: 40.7300, lng: -73.9900, distance: "4.5 miles" },
+        listing_status: "active",
+        description: "Comprehensive empty home cleaning designed to guarantee your security deposit back."
+    },
+    {
+        listing_id: "L-104",
+        provider_id: "P-004",
+        provider_name: "EcoClean Organics",
+        service_type: "Cleaning",
+        service_title: "Chemical-Free Home Clean",
+        price: 95,
+        calendar_availability: ["2026-08-20", "2026-08-23", "2026-08-24"],
+        rating: 4.7,
+        reviews: 56,
+        provider_location: { lat: 40.7155, lng: -74.0088, distance: "1.8 miles" },
+        listing_status: "active",
+        description: "100% organic and eco-friendly cleaning solutions safe for babies and sensitive pets."
+    },
+    {
+        listing_id: "L-105",
+        provider_id: "P-005",
+        provider_name: "Dirty Deeds Done Dirt Cheap",
+        service_type: "Cleaning",
+        service_title: "Budget Quick Clean",
+        price: 40,
+        calendar_availability: ["2026-08-19", "2026-08-20"],
+        rating: 3.2,
+        reviews: 12,
+        provider_location: { lat: 40.7050, lng: -74.0100, distance: "2.1 miles" },
+        listing_status: "flagged", // Flagged for customer complaints
+        description: "Fast surface cleaning. You get what you pay for."
+    },
+
+    // --- HANDYMAN SERVICES ---
+    {
+        listing_id: "L-201",
+        provider_id: "P-006",
         provider_name: "Mike's Handyman Co.",
         service_type: "Handyman",
         service_title: "Plumbing & Sink Repair",
         price: 85,
-        calendar_availability: ["2026-08-19", "2026-08-22"],
+        calendar_availability: ["2026-08-19", "2026-08-22", "2026-08-25"],
         rating: 4.9,
         reviews: 115,
         provider_location: { lat: 40.7130, lng: -74.0050, distance: "0.8 miles" },
@@ -31,13 +90,71 @@ const DB_LISTINGS = [
         description: "Licensed plumber and general handyman. Specializing in leaky sinks, pipe fitting, and general home repairs."
     },
     {
-        listing_id: "L-103",
-        provider_id: "P-003",
+        listing_id: "L-202",
+        provider_id: "P-007",
+        provider_name: "Fix-It Frank",
+        service_type: "Handyman",
+        service_title: "TV Mounting & Electrical",
+        price: 60,
+        calendar_availability: ["2026-08-21", "2026-08-23", "2026-08-28"],
+        rating: 4.7,
+        reviews: 56,
+        provider_location: { lat: 40.7100, lng: -74.0150, distance: "1.8 miles" },
+        listing_status: "active",
+        description: "Expert TV mounting, light fixture installation, and general electrical handyman work."
+    },
+    {
+        listing_id: "L-203",
+        provider_id: "P-008",
+        provider_name: "Furniture Assembly Pros",
+        service_type: "Handyman",
+        service_title: "IKEA & Furniture Assembly",
+        price: 55,
+        calendar_availability: ["2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22"],
+        rating: 4.6,
+        reviews: 210,
+        provider_location: { lat: 40.7400, lng: -73.9800, distance: "3.2 miles" },
+        listing_status: "active",
+        description: "Don't struggle with the manuals! We assemble beds, dressers, tables, and outdoor furniture fast."
+    },
+    {
+        listing_id: "L-204",
+        provider_id: "P-009",
+        provider_name: "Dave The Builder",
+        service_type: "Handyman",
+        service_title: "Drywall Repair & Painting",
+        price: 95,
+        calendar_availability: ["2026-08-24", "2026-08-26"],
+        rating: 4.8,
+        reviews: 74,
+        provider_location: { lat: 40.7000, lng: -74.0200, distance: "4.1 miles" },
+        listing_status: "paused", // On vacation
+        description: "Patching holes, fixing water damage, and interior painting services."
+    },
+    {
+        listing_id: "L-205",
+        provider_id: "P-010",
+        provider_name: "Home Smart Tech",
+        service_type: "Handyman",
+        service_title: "Smart Home Installation",
+        price: 110,
+        calendar_availability: ["2026-08-20", "2026-08-22", "2026-08-25"],
+        rating: 5.0,
+        reviews: 38,
+        provider_location: { lat: 40.7250, lng: -73.9950, distance: "2.8 miles" },
+        listing_status: "active",
+        description: "Installation and setup of smart thermostats, video doorbells, smart locks, and security cameras."
+    },
+
+    // --- MOVING SERVICES ---
+    {
+        listing_id: "L-301",
+        provider_id: "P-011",
         provider_name: "QuickMove Team",
         service_type: "Moving",
         service_title: "Local Box & Furniture Moving",
         price: 150,
-        calendar_availability: ["2026-08-20", "2026-08-21"],
+        calendar_availability: ["2026-08-20", "2026-08-21", "2026-08-30"],
         rating: 4.6,
         reviews: 89,
         provider_location: { lat: 40.7150, lng: -74.0100, distance: "2.5 miles" },
@@ -45,31 +162,59 @@ const DB_LISTINGS = [
         description: "Two-person team with a truck ready to help you move boxes and heavy furniture locally."
     },
     {
-        listing_id: "L-104",
-        provider_id: "P-004",
-        provider_name: "Elena's Maid Service",
-        service_type: "Cleaning",
-        service_title: "Standard Weekly Clean",
-        price: 75,
-        calendar_availability: ["2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22"],
-        rating: 4.5,
-        reviews: 31,
-        provider_location: { lat: 40.7200, lng: -74.0010, distance: "3.0 miles" },
+        listing_id: "L-302",
+        provider_id: "P-012",
+        provider_name: "Heavy Lifters LLC",
+        service_type: "Moving",
+        service_title: "Large Appliance & Piano Moving",
+        price: 250,
+        calendar_availability: ["2026-08-22", "2026-08-23"],
+        rating: 4.9,
+        reviews: 45,
+        provider_location: { lat: 40.7500, lng: -73.9700, distance: "5.0 miles" },
         listing_status: "active",
-        description: "Reliable standard cleaning. Vacuuming, mopping, dusting, and bathroom sanitation."
+        description: "Specialists in moving pianos, large refrigerators, and oversized items safely up and down stairs."
     },
     {
-        listing_id: "L-105",
-        provider_id: "P-005",
-        provider_name: "Fix-It Frank",
-        service_type: "Handyman",
-        service_title: "TV Mounting & Electrical",
-        price: 60,
-        calendar_availability: ["2026-08-21", "2026-08-23"],
+        listing_id: "L-303",
+        provider_id: "P-013",
+        provider_name: "Solo Van Guy",
+        service_type: "Moving",
+        service_title: "Man with a Van",
+        price: 65,
+        calendar_availability: ["2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24"],
+        rating: 4.4,
+        reviews: 178,
+        provider_location: { lat: 40.7080, lng: -74.0020, distance: "0.5 miles" },
+        listing_status: "active",
+        description: "Just me and my cargo van. Perfect for moving a few pieces of furniture or a studio apartment."
+    },
+    {
+        listing_id: "L-304",
+        provider_id: "P-014",
+        provider_name: "Pack & Ship Solutions",
+        service_type: "Moving",
+        service_title: "Packing Services Only",
+        price: 50,
+        calendar_availability: ["2026-08-25", "2026-08-26", "2026-08-27"],
+        rating: 4.8,
+        reviews: 92,
+        provider_location: { lat: 40.7180, lng: -73.9980, distance: "1.5 miles" },
+        listing_status: "active",
+        description: "We provide all the boxes, bubble wrap, and tape, and will pack your entire home safely for your movers."
+    },
+    {
+        listing_id: "L-305",
+        provider_id: "P-015",
+        provider_name: "Junk Haulers",
+        service_type: "Moving",
+        service_title: "Furniture Removal & Junk Hauling",
+        price: 120,
+        calendar_availability: ["2026-08-20", "2026-08-21"],
         rating: 4.7,
-        reviews: 56,
-        provider_location: { lat: 40.7100, lng: -74.0150, distance: "1.8 miles" },
-        listing_status: "flagged", // Setting one to flagged for testing
-        description: "Expert TV mounting, light fixture installation, and general electrical handyman work."
+        reviews: 63,
+        provider_location: { lat: 40.7350, lng: -73.9850, distance: "3.8 miles" },
+        listing_status: "active",
+        description: "Getting rid of an old couch or clearing out a garage? We haul away your junk and dispose of it properly."
     }
 ];
