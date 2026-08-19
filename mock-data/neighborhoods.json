@@ -1,0 +1,77 @@
+[
+  {
+    "name": "Alberta Arts",
+    "latitude": 45.559,
+    "longitude": -122.647
+  },
+  {
+    "name": "Montavilla",
+    "latitude": 45.518,
+    "longitude": -122.583
+  },
+  {
+    "name": "Kenton",
+    "latitude": 45.586,
+    "longitude": -122.69
+  },
+  {
+    "name": "Woodstock",
+    "latitude": 45.479,
+    "longitude": -122.61
+  },
+  {
+    "name": "Sellwood",
+    "latitude": 45.464,
+    "longitude": -122.657
+  },
+  {
+    "name": "Laurelhurst",
+    "latitude": 45.529,
+    "longitude": -122.625
+  },
+  {
+    "name": "St. Johns",
+    "latitude": 45.59,
+    "longitude": -122.755
+  },
+  {
+    "name": "Lents",
+    "latitude": 45.487,
+    "longitude": -122.568
+  },
+  {
+    "name": "Multnomah Village",
+    "latitude": 45.468,
+    "longitude": -122.715
+  },
+  {
+    "name": "Buckman",
+    "latitude": 45.518,
+    "longitude": -122.652
+  },
+  {
+    "name": "Hawthorne",
+    "latitude": 45.512,
+    "longitude": -122.625
+  },
+  {
+    "name": "Irvington",
+    "latitude": 45.545,
+    "longitude": -122.648
+  },
+  {
+    "name": "Pearl District",
+    "latitude": 45.528,
+    "longitude": -122.682
+  },
+  {
+    "name": "Northwest District",
+    "latitude": 45.533,
+    "longitude": -122.698
+  },
+  {
+    "name": "Division-Clinton",
+    "latitude": 45.505,
+    "longitude": -122.632
+  }
+]

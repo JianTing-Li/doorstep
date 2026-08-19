@@ -1,0 +1,82 @@
+[
+  {
+    "action_id": "mod_001",
+    "report_id": "rpt_004",
+    "listing_id": "lst_010",
+    "admin_name": "Renata Voss",
+    "action": "suspend",
+    "risk_level": "high",
+    "reason": "Listing copy promises oven, fridge, window and garage cleaning at a flat rate the provider does not honour, and this is not the first complaint of that shape. Listing suspended pending a rewrite and a refund to the customer.",
+    "created_at": "2026-07-12T16:51:00-07:00"
+  },
+  {
+    "action_id": "mod_002",
+    "report_id": "rpt_005",
+    "listing_id": "lst_010",
+    "admin_name": "Renata Voss",
+    "action": "resolve",
+    "risk_level": "high",
+    "reason": "Second pricing complaint against a listing already suspended under rpt_004. No further action needed on the listing itself; refund confirmed and the case is closed against the existing suspension.",
+    "created_at": "2026-07-26T14:22:00-07:00"
+  },
+  {
+    "action_id": "mod_003",
+    "report_id": "rpt_006",
+    "listing_id": "lst_036",
+    "admin_name": "Renata Voss",
+    "action": "suspend",
+    "risk_level": "high",
+    "reason": "Conduct complaint is credible and the provider account already has one suspended listing for misrepresentation. Suspending this listing as well and escalating the provider account for review.",
+    "created_at": "2026-07-18T16:08:00-07:00"
+  },
+  {
+    "action_id": "mod_004",
+    "report_id": "rpt_007",
+    "listing_id": "lst_036",
+    "admin_name": "Desmond Achebe",
+    "action": "resolve",
+    "risk_level": "medium",
+    "reason": "Quality complaint on an already suspended listing. Recorded against the provider file and closed; the suspension from mod_003 remains the operative action.",
+    "created_at": "2026-07-29T16:22:00-07:00"
+  },
+  {
+    "action_id": "mod_005",
+    "report_id": "rpt_008",
+    "listing_id": "lst_023",
+    "admin_name": "Desmond Achebe",
+    "action": "suspend",
+    "risk_level": "critical",
+    "reason": "Invoice supplied by the customer shows three billed hours against a documented one hour visit and a rate above the published one. Listing suspended and the provider has been instructed to refund the difference.",
+    "created_at": "2026-08-04T16:08:00-07:00"
+  },
+  {
+    "action_id": "mod_006",
+    "report_id": "rpt_009",
+    "listing_id": "lst_027",
+    "admin_name": "Desmond Achebe",
+    "action": "dismiss",
+    "risk_level": "low",
+    "reason": "The provider produced photos of the sorted piles and the customer's own message approving the donation load. This reads as a genuine mistake rather than a policy breach, so no action against the listing.",
+    "created_at": "2026-07-23T10:22:00-07:00"
+  },
+  {
+    "action_id": "mod_007",
+    "report_id": "rpt_001",
+    "listing_id": "lst_008",
+    "admin_name": "Priyanka Shah",
+    "action": "warn",
+    "risk_level": "medium",
+    "reason": "First substantiated complaint on this listing. Provider warned about charging the full minimum for an unfinished visit and told that a repeat will suspend the listing.",
+    "created_at": "2026-07-17T16:08:00-07:00"
+  },
+  {
+    "action_id": "mod_008",
+    "report_id": "rpt_010",
+    "listing_id": "lst_022",
+    "admin_name": "Priyanka Shah",
+    "action": "dismiss",
+    "risk_level": "low",
+    "reason": "Provider confirmed the haul-away was scheduled for the following day and the customer was notified at booking. Poor placement rather than a safety breach; provider reminded to keep walkways clear.",
+    "created_at": "2026-08-13T16:22:00-07:00"
+  }
+]

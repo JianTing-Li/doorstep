@@ -1,0 +1,470 @@
+[
+  {
+    "review_id": "rev_001",
+    "booking_id": "bkg_002",
+    "listing_id": "lst_038",
+    "customer_id": "cst_011",
+    "rating": 5,
+    "text": "I have a cat who sheds constantly and the vacuuming was genuinely thorough, including under the couch. Booking fortnightly from now on.",
+    "created_at": "2026-02-09T18:41:00-08:00"
+  },
+  {
+    "review_id": "rev_002",
+    "booking_id": "bkg_001",
+    "listing_id": "lst_035",
+    "customer_id": "cst_006",
+    "rating": 5,
+    "text": "Full fall cleanup and everything they pulled left in the truck with them, including a broken planter I pointed at halfway through.",
+    "created_at": "2026-02-11T13:09:00-08:00"
+  },
+  {
+    "review_id": "rev_003",
+    "booking_id": "bkg_003",
+    "listing_id": "lst_021",
+    "customer_id": "cst_013",
+    "rating": 5,
+    "text": "Cleared a tub drain that had beaten two bottles of chemicals. Pulled the trap, snaked it, and showed me what came out, which I could have done without.",
+    "created_at": "2026-02-17T18:09:00-08:00"
+  },
+  {
+    "review_id": "rev_004",
+    "booking_id": "bkg_004",
+    "listing_id": "lst_015",
+    "customer_id": "cst_014",
+    "rating": 5,
+    "text": "He traced a dead circuit in our 1920s house that two other electricians had shrugged at. Labelled the whole panel while he was in there.",
+    "created_at": "2026-03-01T20:09:00-08:00"
+  },
+  {
+    "review_id": "rev_005",
+    "booking_id": "bkg_007",
+    "listing_id": "lst_011",
+    "customer_id": "cst_008",
+    "rating": 5,
+    "text": "He came back to finish the desk from the same job at no extra charge. Exactly the same care the second time around.",
+    "created_at": "2026-03-08T13:26:00-07:00"
+  },
+  {
+    "review_id": "rev_006",
+    "booking_id": "bkg_009",
+    "listing_id": "lst_019",
+    "customer_id": "cst_015",
+    "rating": 4,
+    "text": "Toilet has stopped rocking and the leak at the base is gone. Quick and clean, though she arrived about an hour outside the window she gave me.",
+    "created_at": "2026-03-11T13:41:00-07:00"
+  },
+  {
+    "review_id": "rev_007",
+    "booking_id": "bkg_006",
+    "listing_id": "lst_004",
+    "customer_id": "cst_010",
+    "rating": 5,
+    "text": "Everything I asked for got done and the floors were dry by the time I got home. The mirrors were streak-free, which nobody else has managed.",
+    "created_at": "2026-03-12T20:26:00-07:00"
+  },
+  {
+    "review_id": "rev_008",
+    "booking_id": "bkg_005",
+    "listing_id": "lst_014",
+    "customer_id": "cst_010",
+    "rating": 5,
+    "text": "Our front door had not latched properly in two years. Planed, rehung, new strike plate, done inside ninety minutes.",
+    "created_at": "2026-03-18T08:41:00-07:00"
+  },
+  {
+    "review_id": "rev_009",
+    "booking_id": "bkg_010",
+    "listing_id": "lst_032",
+    "customer_id": "cst_010",
+    "rating": 4,
+    "text": "Lawn looks sharp and the edging along the sidewalk is clean. He left the clippings in my yard debris bin as asked.",
+    "created_at": "2026-03-21T08:09:00-07:00"
+  },
+  {
+    "review_id": "rev_010",
+    "booking_id": "bkg_008",
+    "listing_id": "lst_030",
+    "customer_id": "cst_010",
+    "rating": 4,
+    "text": "Good work on the blinds and the towel rails. The patch on the hallway wall sits very slightly proud of the surface, though you would have to look for it.",
+    "created_at": "2026-03-22T08:26:00-07:00"
+  },
+  {
+    "review_id": "rev_011",
+    "booking_id": "bkg_011",
+    "listing_id": "lst_028",
+    "customer_id": "cst_015",
+    "rating": 5,
+    "text": "Old couch and a mattress set gone in twenty minutes flat. Left the curb cleaner than it was when they arrived.",
+    "created_at": "2026-03-24T18:09:00-07:00"
+  },
+  {
+    "review_id": "rev_012",
+    "booking_id": "bkg_013",
+    "listing_id": "lst_007",
+    "customer_id": "cst_010",
+    "rating": 5,
+    "text": "Booked the four hour first visit and every minute of it got used. The shower grout is white again and the inside of the cabinets got wiped out.",
+    "created_at": "2026-04-05T18:09:00-07:00"
+  },
+  {
+    "review_id": "rev_013",
+    "booking_id": "bkg_015",
+    "listing_id": "lst_001",
+    "customer_id": "cst_004",
+    "rating": 5,
+    "text": "Marisol was on time and the kitchen came out better than when I moved in. She got the burnt ring off the stovetop that I had given up on months ago.",
+    "created_at": "2026-04-11T18:09:00-07:00"
+  },
+  {
+    "review_id": "rev_014",
+    "booking_id": "bkg_016",
+    "listing_id": "lst_013",
+    "customer_id": "cst_017",
+    "rating": 5,
+    "text": "Mounted a 65 inch TV on a plaster wall that two other people had told me would not hold it. Found the studs, levelled it, tucked the cables into the channel.",
+    "created_at": "2026-05-06T08:26:00-07:00"
+  },
+  {
+    "review_id": "rev_015",
+    "booking_id": "bkg_018",
+    "listing_id": "lst_033",
+    "customer_id": "cst_011",
+    "rating": 5,
+    "text": "Patio came up two shades lighter and he rinsed the siding down afterward so there is no dirt line. Careful with the pressure on the older deck boards.",
+    "created_at": "2026-05-12T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_016",
+    "booking_id": "bkg_020",
+    "listing_id": "lst_019",
+    "customer_id": "cst_003",
+    "rating": 5,
+    "text": "Kitchen faucet swapped and the seized shutoff valve replaced without any drama. He ran the water for a good ten minutes and checked underneath twice.",
+    "created_at": "2026-05-14T18:26:00-07:00"
+  },
+  {
+    "review_id": "rev_017",
+    "booking_id": "bkg_017",
+    "listing_id": "lst_022",
+    "customer_id": "cst_019",
+    "rating": 4,
+    "text": "Solid work on the toilet replacement and they took the old one away as promised. Would have liked more warning that the water would be off for two hours.",
+    "created_at": "2026-05-17T08:41:00-07:00"
+  },
+  {
+    "review_id": "rev_018",
+    "booking_id": "bkg_023",
+    "listing_id": "lst_003",
+    "customer_id": "cst_016",
+    "rating": 5,
+    "text": "We had drywall dust in the light fixtures after a kitchen remodel. They HEPA vacuumed the walls and ceilings and it was actually gone, not just moved around.",
+    "created_at": "2026-05-18T13:09:00-07:00"
+  },
+  {
+    "review_id": "rev_019",
+    "booking_id": "bkg_022",
+    "listing_id": "lst_016",
+    "customer_id": "cst_009",
+    "rating": 5,
+    "text": "Three fixtures including a heavy dining room chandelier. She checked the box was rated for the weight before touching anything and took the old ones away.",
+    "created_at": "2026-05-23T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_020",
+    "booking_id": "bkg_024",
+    "listing_id": "lst_011",
+    "customer_id": "cst_005",
+    "rating": 5,
+    "text": "Two wardrobes and a bed frame in under three hours, and he anchored both wardrobes into the studs without me having to ask. Cardboard flattened and stacked by the door.",
+    "created_at": "2026-05-24T08:09:00-07:00"
+  },
+  {
+    "review_id": "rev_021",
+    "booking_id": "bkg_021",
+    "listing_id": "lst_002",
+    "customer_id": "cst_020",
+    "rating": 4,
+    "text": "Good clean overall and the bathroom was spotless. She ran about twenty minutes over, which is on me for underestimating the state of the kitchen.",
+    "created_at": "2026-05-27T13:26:00-07:00"
+  },
+  {
+    "review_id": "rev_022",
+    "booking_id": "bkg_030",
+    "listing_id": "lst_015",
+    "customer_id": "cst_015",
+    "rating": 4,
+    "text": "Replaced five outlets and a dimmer in a bit over an hour. One of the new outlets was loose in the box and she came back the following week to sort it.",
+    "created_at": "2026-05-31T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_023",
+    "booking_id": "bkg_027",
+    "listing_id": "lst_004",
+    "customer_id": "cst_001",
+    "rating": 5,
+    "text": "Both of them worked through our three bedroom in a bit under three hours and did not skip a single baseboard. Beds were made with the sheets I left out.",
+    "created_at": "2026-06-02T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_024",
+    "booking_id": "bkg_032",
+    "listing_id": "lst_040",
+    "customer_id": "cst_004",
+    "rating": 5,
+    "text": "Picked up a dresser across town and delivered it the same afternoon. Blanket-wrapped and strapped properly rather than just thrown in the back of the van.",
+    "created_at": "2026-06-03T08:09:00-07:00"
+  },
+  {
+    "review_id": "rev_025",
+    "booking_id": "bkg_025",
+    "listing_id": "lst_027",
+    "customer_id": "cst_011",
+    "rating": 5,
+    "text": "They came back the following week for the crawlspace at no extra charge because they had underestimated the first load. Did not have to argue about it.",
+    "created_at": "2026-06-05T08:26:00-07:00"
+  },
+  {
+    "review_id": "rev_026",
+    "booking_id": "bkg_029",
+    "listing_id": "lst_033",
+    "customer_id": "cst_007",
+    "rating": 5,
+    "text": "Gutters were completely blocked and he hand-scooped the lot rather than just blasting it through the downspouts. Flushed them afterward to prove they ran.",
+    "created_at": "2026-06-06T08:26:00-07:00"
+  },
+  {
+    "review_id": "rev_027",
+    "booking_id": "bkg_026",
+    "listing_id": "lst_031",
+    "customer_id": "cst_017",
+    "rating": 5,
+    "text": "Two years of branches and an old grill gone in one trip. He split the load so I was not charged landfill rates on the yard debris, and swept the pad after.",
+    "created_at": "2026-06-08T08:09:00-07:00"
+  },
+  {
+    "review_id": "rev_028",
+    "booking_id": "bkg_033",
+    "listing_id": "lst_003",
+    "customer_id": "cst_008",
+    "rating": 5,
+    "text": "Used this for a move-out and the property manager signed off with no deductions at all. The inside of the oven and the fridge drawers were spotless.",
+    "created_at": "2026-06-09T08:09:00-07:00"
+  },
+  {
+    "review_id": "rev_029",
+    "booking_id": "bkg_028",
+    "listing_id": "lst_017",
+    "customer_id": "cst_019",
+    "rating": 5,
+    "text": "Added a GFCI in the bathroom and sorted a breaker that had been tripping for months. Pulled the permit himself without me having to chase it.",
+    "created_at": "2026-06-15T13:41:00-07:00"
+  },
+  {
+    "review_id": "rev_030",
+    "booking_id": "bkg_034",
+    "listing_id": "lst_039",
+    "customer_id": "cst_010",
+    "rating": 5,
+    "text": "Ten years of grease on top of the cupboards, gone. I did not think that was recoverable and I am still faintly amazed.",
+    "created_at": "2026-06-27T13:09:00-07:00"
+  },
+  {
+    "review_id": "rev_031",
+    "booking_id": "bkg_036",
+    "listing_id": "lst_024",
+    "customer_id": "cst_012",
+    "rating": 5,
+    "text": "Four hours of loading with two of them and a rented truck. Nothing got scratched, they wrapped the dresser and the table tops, and nothing shifted on the drive.",
+    "created_at": "2026-06-29T13:26:00-07:00"
+  },
+  {
+    "review_id": "rev_032",
+    "booking_id": "bkg_035",
+    "listing_id": "lst_010",
+    "customer_id": "cst_008",
+    "rating": 1,
+    "text": "Nothing in this listing was true. Two people came for ninety minutes, did not touch the oven, the windows, or the garage, and told me those all cost extra despite the flat price.",
+    "created_at": "2026-07-09T13:09:00-07:00"
+  },
+  {
+    "review_id": "rev_033",
+    "booking_id": "bkg_041",
+    "listing_id": "lst_008",
+    "customer_id": "cst_019",
+    "rating": 2,
+    "text": "Booked the two hour minimum and she left after seventy minutes with the floors unmopped. The bathroom was done properly, so it was not all bad, but I was charged the full minimum.",
+    "created_at": "2026-07-12T20:26:00-07:00"
+  },
+  {
+    "review_id": "rev_034",
+    "booking_id": "bkg_040",
+    "listing_id": "lst_036",
+    "customer_id": "cst_013",
+    "rating": 2,
+    "text": "Two hours booked, one person who spent most of it on the phone. The shelf is up but it is not level and there are three spare holes in the wall beside it.",
+    "created_at": "2026-07-17T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_035",
+    "booking_id": "bkg_038",
+    "listing_id": "lst_028",
+    "customer_id": "cst_019",
+    "rating": 4,
+    "text": "Everything went and the driveway was swept afterward. The dump fee on top of the hourly rate was more than I had budgeted for, though it was disclosed up front.",
+    "created_at": "2026-07-18T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_036",
+    "booking_id": "bkg_048",
+    "listing_id": "lst_009",
+    "customer_id": "cst_018",
+    "rating": 4,
+    "text": "Solid regular clean. The only thing I would flag is that the inside of the microwave got missed the first time, though she sorted it the following week.",
+    "created_at": "2026-07-20T18:41:00-07:00"
+  },
+  {
+    "review_id": "rev_037",
+    "booking_id": "bkg_042",
+    "listing_id": "lst_010",
+    "customer_id": "cst_006",
+    "rating": 2,
+    "text": "Their support offered a partial credit toward another booking rather than a refund, which is not much use to me. The clean itself was surface level at best.",
+    "created_at": "2026-07-21T13:09:00-07:00"
+  },
+  {
+    "review_id": "rev_038",
+    "booking_id": "bkg_043",
+    "listing_id": "lst_018",
+    "customer_id": "cst_013",
+    "rating": 4,
+    "text": "Fixtures look great. Scheduling took two attempts because an earlier job overran, but she messaged ahead both times rather than leaving me waiting.",
+    "created_at": "2026-07-21T20:41:00-07:00"
+  },
+  {
+    "review_id": "rev_039",
+    "booking_id": "bkg_050",
+    "listing_id": "lst_024",
+    "customer_id": "cst_006",
+    "rating": 5,
+    "text": "Moved us two floors up in the same building. They booked the elevator with our manager ahead of time and padded the hallway walls, which I would not have thought of.",
+    "created_at": "2026-07-22T13:26:00-07:00"
+  },
+  {
+    "review_id": "rev_040",
+    "booking_id": "bkg_045",
+    "listing_id": "lst_006",
+    "customer_id": "cst_010",
+    "rating": 4,
+    "text": "Oven and fridge came out excellent and the racks had clearly been soaked properly. The dishwasher filter got skipped until I asked about it.",
+    "created_at": "2026-07-22T18:09:00-07:00"
+  },
+  {
+    "review_id": "rev_041",
+    "booking_id": "bkg_047",
+    "listing_id": "lst_027",
+    "customer_id": "cst_008",
+    "rating": 5,
+    "text": "The basement had thirty years of boxes and a dead freezer in it. The crew carried everything out, swept up, and sent me the e-waste receipt the same day.",
+    "created_at": "2026-07-22T20:41:00-07:00"
+  },
+  {
+    "review_id": "rev_042",
+    "booking_id": "bkg_044",
+    "listing_id": "lst_010",
+    "customer_id": "cst_001",
+    "rating": 1,
+    "text": "Booked the same-day slot the listing advertises and they turned up at seven in the evening, then wanted to reschedule. Avoid.",
+    "created_at": "2026-07-25T13:41:00-07:00"
+  },
+  {
+    "review_id": "rev_043",
+    "booking_id": "bkg_049",
+    "listing_id": "lst_036",
+    "customer_id": "cst_006",
+    "rating": 1,
+    "text": "Billed me for a third hour that nobody was here for, then did not respond to two messages asking about it.",
+    "created_at": "2026-07-26T13:41:00-07:00"
+  },
+  {
+    "review_id": "rev_044",
+    "booking_id": "bkg_051",
+    "listing_id": "lst_008",
+    "customer_id": "cst_015",
+    "rating": 1,
+    "text": "She confirmed a Saturday slot, never arrived, and did not answer messages until the Monday. I had cleared the whole morning for it.",
+    "created_at": "2026-07-28T18:26:00-07:00"
+  },
+  {
+    "review_id": "rev_045",
+    "booking_id": "bkg_046",
+    "listing_id": "lst_023",
+    "customer_id": "cst_020",
+    "rating": 2,
+    "text": "Billed three hours for a visit that ran a bit over one, at a higher rate than the listing shows. I paid at the time because the water was off and I needed it done.",
+    "created_at": "2026-07-31T08:09:00-07:00"
+  },
+  {
+    "review_id": "rev_046",
+    "booking_id": "bkg_054",
+    "listing_id": "lst_036",
+    "customer_id": "cst_008",
+    "rating": 2,
+    "text": "The work was passable but the person who came was short with me when I asked him to redo the patching. I would not have him back in the house.",
+    "created_at": "2026-08-03T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_047",
+    "booking_id": "bkg_052",
+    "listing_id": "lst_022",
+    "customer_id": "cst_014",
+    "rating": 5,
+    "text": "The under-sink leak had already wrecked the cabinet floor. They fixed the trap and rebuilt the base so it is properly sealed now. Priced exactly as quoted.",
+    "created_at": "2026-08-05T08:26:00-07:00"
+  },
+  {
+    "review_id": "rev_048",
+    "booking_id": "bkg_057",
+    "listing_id": "lst_025",
+    "customer_id": "cst_011",
+    "rating": 4,
+    "text": "Got the couch up two flights without a word of complaint. They were about forty minutes late but messaged to say so.",
+    "created_at": "2026-08-05T20:26:00-07:00"
+  },
+  {
+    "review_id": "rev_049",
+    "booking_id": "bkg_056",
+    "listing_id": "lst_008",
+    "customer_id": "cst_010",
+    "rating": 2,
+    "text": "The quote I got in chat came to well over the advertised hourly rate once a travel fee was added that appears nowhere on the listing. The clean itself was rushed.",
+    "created_at": "2026-08-08T08:26:00-07:00"
+  },
+  {
+    "review_id": "rev_050",
+    "booking_id": "bkg_058",
+    "listing_id": "lst_001",
+    "customer_id": "cst_015",
+    "rating": 5,
+    "text": "Third visit on the same schedule now and it is the same standard every time. She takes the recycling down on her way out without being asked.",
+    "created_at": "2026-08-08T20:09:00-07:00"
+  },
+  {
+    "review_id": "rev_051",
+    "booking_id": "bkg_053",
+    "listing_id": "lst_012",
+    "customer_id": "cst_002",
+    "rating": 4,
+    "text": "Fan is up and does not wobble at all. He had to fit a fan-rated brace which added time and cost, but he explained why before he started rather than after.",
+    "created_at": "2026-08-10T20:26:00-07:00"
+  },
+  {
+    "review_id": "rev_052",
+    "booking_id": "bkg_060",
+    "listing_id": "lst_023",
+    "customer_id": "cst_008",
+    "rating": 3,
+    "text": "She did stop the leak quickly and clearly knew what she was doing. The invoice was the problem, not the plumbing.",
+    "created_at": "2026-08-11T18:41:00-07:00"
+  }
+]
