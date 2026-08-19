@@ -86,35 +86,35 @@ function getFeedHTML(category) {
         const rating = p.rating ? p.rating.toFixed(1) : 'New';
         const priceUnit = p.price_unit === 'hourly' ? '/hr' : ' flat';
         
-        return \`
-        <div onclick="navigate('profile', {id: '\${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer card-hover btn-pop">
+        return `
+        <div onclick="navigate('profile', {id: '${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer card-hover btn-pop">
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <h3 class="font-bold text-lg">\${provider.name}</h3>
-                    <p class="text-sm text-gray-500">\${p.title}</p>
+                    <h3 class="font-bold text-lg">${provider.name}</h3>
+                    <p class="text-sm text-gray-500">${p.title}</p>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold text-green-600">$\${p.price}<span class="text-xs text-gray-400 font-normal">\${priceUnit}</span></div>
+                    <div class="font-bold text-green-600">$${p.price}<span class="text-xs text-gray-400 font-normal">${priceUnit}</span></div>
                 </div>
             </div>
             <div class="flex items-center text-sm text-gray-600 space-x-4">
-                <div><i class="fa-solid fa-star text-yellow-400"></i> \${rating} (\${p.review_count})</div>
-                <div><i class="fa-solid fa-location-dot text-red-400"></i> \${p.provider_location}</div>
+                <div><i class="fa-solid fa-star text-yellow-400"></i> ${rating} (${p.review_count})</div>
+                <div><i class="fa-solid fa-location-dot text-red-400"></i> ${p.provider_location}</div>
             </div>
         </div>
-        \`;
+        `;
     }).join('');
 
-    return \`
+    return `
         <div class="glass px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 shadow-sm">
             <button onclick="navigate('dashboard')" class="text-gray-500 hover:text-black btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2 class="font-bold text-lg">\${category} Providers</h2>
+            <h2 class="font-bold text-lg">${category} Providers</h2>
             <button class="text-blue-600 text-sm font-semibold btn-pop"><i class="fa-solid fa-sliders"></i> Filter</button>
         </div>
         <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
-            \${cardsHTML}
+            ${cardsHTML}
         </div>
-    \`;
+    `;
 }
 
 // --- 3. PROFILE VIEW ---
@@ -123,13 +123,13 @@ function getProfileHTML(listingId) {
     const provider = DB_PROVIDERS.find(prv => prv.provider_id === p.provider_id);
     state.activeProvider = { listing: p, provider: provider };
 
-    let availHTML = p.availability.map(date => \`
-        <div onclick="selectTime('\${date}')" class="border rounded-lg p-2 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition time-slot btn-pop" data-date="\${date}">
-            <div class="text-xs text-gray-500 font-semibold">\${new Date(date).toLocaleDateString('en-US', {weekday:'short'})}</div>
-            <div class="font-bold text-sm">\${new Date(date).getDate()}</div>
-            <div class="text-xs text-blue-600 mt-1">\${new Date(date).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'})}</div>
+    let availHTML = p.availability.map(date => `
+        <div onclick="selectTime('${date}')" class="border rounded-lg p-2 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition time-slot btn-pop" data-date="${date}">
+            <div class="text-xs text-gray-500 font-semibold">${new Date(date).toLocaleDateString('en-US', {weekday:'short'})}</div>
+            <div class="font-bold text-sm">${new Date(date).getDate()}</div>
+            <div class="text-xs text-blue-600 mt-1">${new Date(date).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'})}</div>
         </div>
-    \`).join('');
+    `).join('');
 
     const rating = p.rating ? p.rating.toFixed(1) : 'New';
     const priceUnit = p.price_unit === 'hourly' ? '/hr' : ' flat';
@@ -143,40 +143,40 @@ function getProfileHTML(listingId) {
         }
     }
 
-    return \`
+    return `
         <div class="relative h-48 bg-gray-200">
             <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80" class="w-full h-full object-cover opacity-80">
-            <button onclick="navigate('feed', {category: '\${backCategory}'})" class="absolute top-4 left-4 glass w-8 h-8 rounded-full flex items-center justify-center shadow btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="navigate('feed', {category: '${backCategory}'})" class="absolute top-4 left-4 glass w-8 h-8 rounded-full flex items-center justify-center shadow btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
         </div>
         <div class="p-6 bg-white -mt-6 rounded-t-3xl relative z-10 flex-1 flex flex-col">
             <div class="flex justify-between items-start mb-1">
-                <h1 class="text-2xl font-bold">\${provider.name}</h1>
-                <div class="font-bold text-xl text-green-600">$\${p.price}<span class="text-sm font-normal text-gray-500">\${priceUnit}</span></div>
+                <h1 class="text-2xl font-bold">${provider.name}</h1>
+                <div class="font-bold text-xl text-green-600">$${p.price}<span class="text-sm font-normal text-gray-500">${priceUnit}</span></div>
             </div>
-            <p class="text-blue-600 font-medium text-sm mb-4">\${p.title}</p>
+            <p class="text-blue-600 font-medium text-sm mb-4">${p.title}</p>
             
             <div class="flex space-x-6 text-sm text-gray-600 mb-6 border-b pb-6">
-                <div><i class="fa-solid fa-star text-yellow-400 text-lg mb-1 block"></i> <span class="font-bold">\${rating}</span> (\${p.review_count})</div>
-                <div><i class="fa-solid fa-location-dot text-red-400 text-lg mb-1 block"></i> \${p.provider_location}</div>
+                <div><i class="fa-solid fa-star text-yellow-400 text-lg mb-1 block"></i> <span class="font-bold">${rating}</span> (${p.review_count})</div>
+                <div><i class="fa-solid fa-location-dot text-red-400 text-lg mb-1 block"></i> ${p.provider_location}</div>
                 <div><i class="fa-solid fa-shield-check text-green-500 text-lg mb-1 block"></i> Verified</div>
             </div>
 
             <h3 class="font-bold mb-2">About the Service</h3>
-            <p class="text-gray-600 text-sm mb-6 leading-relaxed">\${p.listing_description}</p>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">${p.listing_description}</p>
             
             <h3 class="font-bold mb-2">Provider Bio</h3>
-            <p class="text-gray-600 text-sm mb-6 leading-relaxed">\${provider.bio}</p>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">${provider.bio}</p>
 
             <h3 class="font-bold mb-3">Select Availability</h3>
             <div class="grid grid-cols-3 gap-2 mb-8" id="availability-grid">
-                \${availHTML}
+                ${availHTML}
             </div>
 
             <div class="mt-auto pt-4">
                 <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition btn-pop">Book Now</button>
             </div>
         </div>
-    \`;
+    `;
 }
 
 function selectTime(date) {
@@ -204,9 +204,9 @@ function getCheckoutHTML() {
     const commission = parseFloat((p.price * 0.15).toFixed(2));
     state.booking.total = p.price + commission; 
     
-    return \`
+    return `
         <div class="glass px-4 py-3 border-b flex items-center sticky top-0 z-10 shadow-sm">
-            <button onclick="navigate('profile', {id: '\${p.listing_id}'})" class="text-gray-500 hover:text-black mr-4 btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-gray-500 hover:text-black mr-4 btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="font-bold text-lg">Secure Checkout</h2>
         </div>
         <div class="p-6 bg-gray-50 flex-1 overflow-y-auto">
@@ -215,21 +215,21 @@ function getCheckoutHTML() {
                 <div class="flex items-center space-x-4 mb-4 pb-4 border-b">
                     <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-calendar-check"></i></div>
                     <div>
-                        <h3 class="font-bold">\${p.title}</h3>
-                        <p class="text-sm text-gray-500">\${new Date(state.booking.timeSlot).toLocaleString('en-US', {weekday:'long', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
+                        <h3 class="font-bold">${p.title}</h3>
+                        <p class="text-sm text-gray-500">${new Date(state.booking.timeSlot).toLocaleString('en-US', {weekday:'long', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
                     </div>
                 </div>
                 <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">Provider Rate (\${p.price_unit})</span>
-                    <span class="font-medium">$\${p.price.toFixed(2)}</span>
+                    <span class="text-gray-600">Provider Rate (${p.price_unit})</span>
+                    <span class="font-medium">$${p.price.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between text-sm mb-4">
                     <span class="text-gray-600">Platform Commission (15%)</span>
-                    <span class="font-medium">$\${commission.toFixed(2)}</span>
+                    <span class="font-medium">$${commission.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between font-bold text-lg border-t pt-4">
                     <span>Total</span>
-                    <span>$\${state.booking.total.toFixed(2)}</span>
+                    <span>$${state.booking.total.toFixed(2)}</span>
                 </div>
             </div>
 
@@ -254,7 +254,7 @@ function getCheckoutHTML() {
             </button>
             <p class="text-center text-xs text-gray-500 mt-4"><i class="fa-solid fa-shield-halved text-green-500"></i> Funds held in secure Escrow until job completion.</p>
         </div>
-    \`;
+    `;
 }
 
 function processPayment() {
@@ -271,25 +271,25 @@ function processPayment() {
 // --- 6. CONFIRMATION VIEW ---
 function getConfirmationHTML() {
     const providerName = state.activeProvider?.provider?.name || 'Your Provider';
-    return \`
+    return `
         <div class="flex-1 bg-green-50 flex flex-col items-center justify-center p-6 text-center">
             <div class="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center text-4xl mb-6 shadow-lg animate-bounce">
                 <i class="fa-solid fa-check"></i>
             </div>
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Booking Confirmed!</h1>
-            <p class="text-gray-600 mb-8 max-w-xs">Your payment has been securely authorized. \${providerName} has been notified.</p>
+            <p class="text-gray-600 mb-8 max-w-xs">Your payment has been securely authorized. ${providerName} has been notified.</p>
             
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-green-100 w-full mb-8 text-left">
                 <div class="text-sm text-gray-500 mb-1">Booking ID</div>
-                <div class="font-mono font-bold text-gray-800 mb-4">BK-\${Math.floor(Math.random()*100000)}</div>
+                <div class="font-mono font-bold text-gray-800 mb-4">BK-${Math.floor(Math.random()*100000)}</div>
                 
                 <div class="text-sm text-gray-500 mb-1">When</div>
-                <div class="font-bold text-gray-800">\${new Date(state.booking.timeSlot).toLocaleString('en-US', {weekday:'long', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</div>
+                <div class="font-bold text-gray-800">${new Date(state.booking.timeSlot).toLocaleString('en-US', {weekday:'long', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</div>
             </div>
 
             <button onclick="navigate('dashboard')" class="w-full border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 rounded-xl shadow-sm transition btn-pop">Back to Home</button>
         </div>
-    \`;
+    `;
 }
 
 // --- CHATBOT LOGIC (GEMINI SIMULATION) ---
@@ -334,23 +334,23 @@ function sendChatMessage() {
 
         if (match) {
             const provider = DB_PROVIDERS.find(prv => prv.provider_id === match.provider_id);
-            history.innerHTML += \`
+            history.innerHTML += `
                 <div class="bg-white border p-3 rounded-lg rounded-tl-none self-start max-w-[90%] shadow-sm">
                     <p class="text-sm mb-2">Based on our database, here is the best match for your request:</p>
                     <div class="border rounded-md p-2 bg-gray-50">
-                        <div class="font-bold text-sm">\${provider.name}</div>
-                        <div class="text-xs text-gray-500 mb-2">\${match.title} • $\${match.price}/\${match.price_unit === 'hourly' ? 'hr' : 'flat'}</div>
-                        <button onclick="toggleChatbot(); navigate('profile', {id: '\${match.listing_id}'})" class="text-xs bg-blue-100 text-blue-700 font-bold py-1 px-3 rounded w-full hover:bg-blue-200">View Profile</button>
+                        <div class="font-bold text-sm">${provider.name}</div>
+                        <div class="text-xs text-gray-500 mb-2">${match.title} • $${match.price}/${match.price_unit === 'hourly' ? 'hr' : 'flat'}</div>
+                        <button onclick="toggleChatbot(); navigate('profile', {id: '${match.listing_id}'})" class="text-xs bg-blue-100 text-blue-700 font-bold py-1 px-3 rounded w-full hover:bg-blue-200">View Profile</button>
                     </div>
                 </div>
-            \`;
+            `;
         } else {
             // Data Grounding failure state
-            history.innerHTML += \`
+            history.innerHTML += `
                 <div class="bg-white border p-3 rounded-lg rounded-tl-none self-start max-w-[80%] shadow-sm">
                     <p class="text-sm">I'm sorry, I cannot fulfill that request. We currently do not have any providers in our database offering that specific service.</p>
                 </div>
-            \`;
+            `;
         }
         history.scrollTop = history.scrollHeight;
     }, 1000);
