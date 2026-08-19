@@ -63,7 +63,7 @@ function getDashboardHTML() {
 
 // --- 2. FEED VIEW ---
 function getFeedHTML(category) {
-    const pros = category === 'All' ? DB_LISTINGS : DB_LISTINGS.filter(p => p.service_category === category);
+    const pros = category === 'All' ? DB_LISTINGS : DB_LISTINGS.filter(p => p.service_type === category);
     
     let cardsHTML = pros.map(p => `
         <div onclick="navigate('profile', {id: '${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
@@ -78,7 +78,7 @@ function getFeedHTML(category) {
             </div>
             <div class="flex items-center text-sm text-gray-600 space-x-4">
                 <div><i class="fa-solid fa-star text-yellow-400"></i> ${p.rating} (${p.reviews})</div>
-                <div><i class="fa-solid fa-location-dot text-red-400"></i> ${p.location.distance}</div>
+                <div><i class="fa-solid fa-location-dot text-red-400"></i> ${p.provider_location.distance}</div>
             </div>
         </div>
     `).join('');
@@ -110,7 +110,7 @@ function getProfileHTML(listingId) {
     return `
         <div class="relative h-48 bg-gray-200">
             <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80" class="w-full h-full object-cover opacity-80">
-            <button onclick="navigate('feed', {category: '${p.service_category}'})" class="absolute top-4 left-4 bg-white/80 w-8 h-8 rounded-full flex items-center justify-center shadow"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="navigate('feed', {category: '${p.service_type}'})" class="absolute top-4 left-4 bg-white/80 w-8 h-8 rounded-full flex items-center justify-center shadow"><i class="fa-solid fa-arrow-left"></i></button>
         </div>
         <div class="p-6 bg-white -mt-6 rounded-t-3xl relative z-10 flex-1 flex flex-col">
             <div class="flex justify-between items-start mb-1">
@@ -121,7 +121,7 @@ function getProfileHTML(listingId) {
             
             <div class="flex space-x-6 text-sm text-gray-600 mb-6 border-b pb-6">
                 <div><i class="fa-solid fa-star text-yellow-400 text-lg mb-1 block"></i> <span class="font-bold">${p.rating}</span> (${p.reviews})</div>
-                <div><i class="fa-solid fa-location-dot text-red-400 text-lg mb-1 block"></i> ${p.location.distance}</div>
+                <div><i class="fa-solid fa-location-dot text-red-400 text-lg mb-1 block"></i> ${p.provider_location.distance}</div>
                 <div><i class="fa-solid fa-shield-check text-green-500 text-lg mb-1 block"></i> Verified</div>
             </div>
 
@@ -277,13 +277,13 @@ function sendChatMessage() {
         const lowerMsg = msg.toLowerCase();
         let match = null;
 
-        // Grounding Rule: Only match actual JSON dummy data
+        // Grounding Rule: Only match actual JSON dummy data and ensure they are active
         if (lowerMsg.includes('clean') || lowerMsg.includes('maid')) {
-            match = DB_LISTINGS.find(l => l.service_category === 'Cleaning');
+            match = DB_LISTINGS.find(l => l.service_type === 'Cleaning' && l.listing_status === 'active');
         } else if (lowerMsg.includes('plumb') || lowerMsg.includes('sink') || lowerMsg.includes('fix')) {
-            match = DB_LISTINGS.find(l => l.service_category === 'Handyman');
+            match = DB_LISTINGS.find(l => l.service_type === 'Handyman' && l.listing_status === 'active');
         } else if (lowerMsg.includes('move') || lowerMsg.includes('box')) {
-            match = DB_LISTINGS.find(l => l.service_category === 'Moving');
+            match = DB_LISTINGS.find(l => l.service_type === 'Moving' && l.listing_status === 'active');
         }
 
         if (match) {
