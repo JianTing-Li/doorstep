@@ -22,7 +22,7 @@ def chk(cond, msg):
     (notes if cond else fails).append(("PASS  " if cond else "FAIL  ") + msg)
 
 REF = meta["reference_date"]
-SL = {s["slug"] for s in st}
+CODES = {s["code"] for s in st}
 NB = {n["name"] for n in nb}
 PID = {p["provider_id"] for p in pr}; CID = {c["customer_id"] for c in cu}
 LID = {l["listing_id"] for l in li}; BID = {b["booking_id"] for b in bk}
@@ -79,15 +79,15 @@ bad = [m["action_id"] for m in mo
 chk(not bad, "moderation FKs resolve and listing matches its report %s" % bad[:5])
 
 # ---- vocabulary -----------------------------------------------------------
-chk(not sorted({s for l in li for s in l["service_type"]} - SL), "all service_type values are known slugs")
+chk(not sorted({s for l in li for s in l["service_type"]} - CODES), "all service_type values are known codes")
 chk(all(isinstance(l["service_type"], list) and l["service_type"] for l in li),
     "service_type is always a non-empty array")
 cnt = collections.Counter(s for l in li for s in l["service_type"])
 acnt = collections.Counter(s for l in li if l["listing_status"] == "active" for s in l["service_type"])
-chk(all(cnt[s] >= 4 for s in SL), "every slug has >=4 listings %s" % dict(cnt))
-chk(all(acnt[s] >= 4 for s in SL), "every slug has >=4 ACTIVE listings %s" % dict(acnt))
+chk(all(cnt[s] >= 4 for s in CODES), "every code has >=4 listings %s" % dict(cnt))
+chk(all(acnt[s] >= 4 for s in CODES), "every code has >=4 ACTIVE listings %s" % dict(acnt))
 multi = sum(1 for l in li if len(l["service_type"]) >= 2)
-chk(multi >= 5, "multi-slug listings >=5 (%d)" % multi)
+chk(multi >= 5, "multi-code listings >=5 (%d)" % multi)
 bad = sorted({p["location"] for p in pr} - NB) + sorted({c["neighborhood"] for c in cu} - NB) \
     + sorted({l["provider_location"] for l in li} - NB)
 chk(not bad, "every neighborhood string resolves to neighborhoods.json %s" % bad)
@@ -233,11 +233,11 @@ chk(not bad, "expected_listing_ids resolve %s" % bad[:5])
 bad = [q["query_id"] for q in eq
        if any(lby[i]["listing_status"] != "active" for i in q["expected_listing_ids"])]
 chk(not bad, "every expected listing is active %s" % bad[:5])
-bad = [q["query_id"] for q in eq if any(s not in SL for s in q["expected_slugs"])]
-chk(not bad, "expected_slugs are known slugs %s" % bad[:5])
+bad = [q["query_id"] for q in eq if any(s not in CODES for s in q["expected_codes"])]
+chk(not bad, "expected_codes are known codes %s" % bad[:5])
 mt = collections.Counter(q["match_type"] for q in eq)
-chk(mt["ambiguous"] >= 2 and mt["no_match"] >= 1 and mt["multi_slug"] >= 2,
-    "fixtures cover ambiguous/no_match/multi_slug %s" % dict(mt))
+chk(mt["ambiguous"] >= 2 and mt["no_match"] >= 1 and mt["multi_code"] >= 2,
+    "fixtures cover ambiguous/no_match/multi_code %s" % dict(mt))
 bad = [q["query_id"] for q in eq if q["match_type"] in ("ambiguous", "no_match") and q["expected_listing_ids"]]
 chk(not bad, "ambiguous and no_match fixtures expect no listings %s" % bad[:5])
 
