@@ -1,0 +1,304 @@
+[
+  {
+    "query_id": "qry_001",
+    "query": "The inside of my oven is disgusting and I have a landlord inspection on Friday.",
+    "expected_codes": [
+      "cleaning_deep"
+    ],
+    "expected_listing_ids": [
+      "lst_006",
+      "lst_003"
+    ],
+    "match_type": "single_code",
+    "notes": "Appliance interiors are the strongest signal here. lst_006 is the exact fit; lst_003 is an acceptable broader match."
+  },
+  {
+    "query_id": "qry_002",
+    "query": "Looking for someone to come every other week and clean my one bedroom.",
+    "expected_codes": [
+      "cleaning_standard"
+    ],
+    "expected_listing_ids": [
+      "lst_001"
+    ],
+    "match_type": "single_code",
+    "notes": "Recurring language is decisive: lst_001 explicitly advertises weekly or biweekly service. Small-unit language alone is not enough to make lst_008 a recurring-cleaning match."
+  },
+  {
+    "query_id": "qry_003",
+    "query": "Moving out of my apartment on Saturday and I need it cleaned well enough to get my deposit back.",
+    "expected_codes": [
+      "cleaning_deep"
+    ],
+    "expected_listing_ids": [
+      "lst_003",
+      "lst_039"
+    ],
+    "match_type": "single_code",
+    "notes": "Deposit and move-out wording should beat generic cleaning. lst_039 also covers the load-out."
+  },
+  {
+    "query_id": "qry_004",
+    "query": "I have three IKEA wardrobes sitting in boxes that I am never going to build myself.",
+    "expected_codes": [
+      "handyman_general"
+    ],
+    "expected_listing_ids": [
+      "lst_011"
+    ],
+    "match_type": "single_code",
+    "notes": "Flat-pack assembly is named directly in the listing description."
+  },
+  {
+    "query_id": "qry_005",
+    "query": "Want a TV mounted above the fireplace, the wall is plaster.",
+    "expected_codes": [
+      "handyman_general"
+    ],
+    "expected_listing_ids": [
+      "lst_012"
+    ],
+    "match_type": "single_code",
+    "notes": "Mounting plus a wall-type detail the description explicitly addresses."
+  },
+  {
+    "query_id": "qry_006",
+    "query": "Kitchen tap drips constantly and the shutoff valve underneath is seized.",
+    "expected_codes": [
+      "plumbing"
+    ],
+    "expected_listing_ids": [
+      "lst_019"
+    ],
+    "match_type": "single_code",
+    "notes": "Seized shutoff is called out verbatim in the listing description."
+  },
+  {
+    "query_id": "qry_007",
+    "query": "Bathroom sink is draining really slowly and the plunger is not helping.",
+    "expected_codes": [
+      "plumbing"
+    ],
+    "expected_listing_ids": [
+      "lst_020"
+    ],
+    "match_type": "single_code",
+    "notes": "Drain-specific. Should not match the faucet listing."
+  },
+  {
+    "query_id": "qry_008",
+    "query": "Toilet runs all night and rocks when you sit on it.",
+    "expected_codes": [
+      "plumbing"
+    ],
+    "expected_listing_ids": [
+      "lst_022"
+    ],
+    "match_type": "single_code",
+    "notes": "Both symptoms appear in the listing description."
+  },
+  {
+    "query_id": "qry_009",
+    "query": "Half the outlets in my living room stopped working at once.",
+    "expected_codes": [
+      "electrical"
+    ],
+    "expected_listing_ids": [
+      "lst_017"
+    ],
+    "match_type": "single_code",
+    "notes": "Dead circuit tracing rather than outlet replacement. lst_015 is a weaker match and should rank below."
+  },
+  {
+    "query_id": "qry_010",
+    "query": "I want a ceiling fan put in where the old light fixture is.",
+    "expected_codes": [
+      "handyman_general",
+      "electrical"
+    ],
+    "expected_listing_ids": [
+      "lst_013"
+    ],
+    "match_type": "multi_code",
+    "notes": "Genuinely spans both codes. The listing carries both and should win over pure-electrical listings."
+  },
+  {
+    "query_id": "qry_011",
+    "query": "Need two guys to help load a U-Haul on Sunday, I have the truck already.",
+    "expected_codes": [
+      "moving_help"
+    ],
+    "expected_listing_ids": [
+      "lst_024"
+    ],
+    "match_type": "single_code",
+    "notes": "Customer supplying the vehicle is the distinguishing detail."
+  },
+  {
+    "query_id": "qry_012",
+    "query": "Moving from apartment 2B to 5A in the same building, no truck needed.",
+    "expected_codes": [
+      "moving_help"
+    ],
+    "expected_listing_ids": [
+      "lst_025"
+    ],
+    "match_type": "single_code",
+    "notes": "In-building move. Should not match the two-mover truck listing."
+  },
+  {
+    "query_id": "qry_013",
+    "query": "The garage is full of junk and whatever is worth keeping needs to go to a storage unit.",
+    "expected_codes": [
+      "junk_removal",
+      "moving_help"
+    ],
+    "expected_listing_ids": [
+      "lst_027"
+    ],
+    "match_type": "multi_code",
+    "notes": "Classic mixed job. lst_040 covers this too but is paused, so it must not be returned."
+  },
+  {
+    "query_id": "qry_014",
+    "query": "An old couch and a mattress need to disappear, I can put them at the curb.",
+    "expected_codes": [
+      "junk_removal"
+    ],
+    "expected_listing_ids": [
+      "lst_029"
+    ],
+    "match_type": "single_code",
+    "notes": "Curbside is the key qualifier and keeps the price down."
+  },
+  {
+    "query_id": "qry_015",
+    "query": "Basement is full of boxes from when my dad passed away and I cannot face it.",
+    "expected_codes": [
+      "junk_removal"
+    ],
+    "expected_listing_ids": [
+      "lst_028"
+    ],
+    "match_type": "single_code",
+    "notes": "Emotionally loaded phrasing with a clear service need. Tone of the reply matters here."
+  },
+  {
+    "query_id": "qry_016",
+    "query": "Gutters are overflowing and there are leaves all over the lawn.",
+    "expected_codes": [
+      "yard_outdoor"
+    ],
+    "expected_listing_ids": [
+      "lst_032"
+    ],
+    "match_type": "single_code",
+    "notes": "Both tasks are in a single listing."
+  },
+  {
+    "query_id": "qry_017",
+    "query": "Grass is knee high and the strip by the sidewalk looks feral.",
+    "expected_codes": [
+      "yard_outdoor"
+    ],
+    "expected_listing_ids": [
+      "lst_033"
+    ],
+    "match_type": "single_code",
+    "notes": "Mow plus edge. Colloquial phrasing with no service words in it."
+  },
+  {
+    "query_id": "qry_018",
+    "query": "My deck has gone green with moss over the winter.",
+    "expected_codes": [
+      "yard_outdoor"
+    ],
+    "expected_listing_ids": [
+      "lst_034"
+    ],
+    "match_type": "single_code",
+    "notes": "Pressure washing. The description names moss pre-treatment specifically."
+  },
+  {
+    "query_id": "qry_019",
+    "query": "Need a few things fixed around the flat and then the old furniture taken away.",
+    "expected_codes": [
+      "handyman_general",
+      "junk_removal"
+    ],
+    "expected_listing_ids": [
+      "lst_030"
+    ],
+    "match_type": "multi_code",
+    "notes": "Repairs plus haul-away in one visit. Should beat two separate single-code listings."
+  },
+  {
+    "query_id": "qry_020",
+    "query": "My sink is a mess.",
+    "expected_codes": [
+      "cleaning_standard",
+      "plumbing"
+    ],
+    "expected_listing_ids": [],
+    "match_type": "ambiguous",
+    "notes": "Do not match. 'Mess' could be dirty or blocked. Ask whether the sink is draining before recommending anything."
+  },
+  {
+    "query_id": "qry_021",
+    "query": "I need help with my kitchen.",
+    "expected_codes": [
+      "cleaning_standard",
+      "cleaning_deep",
+      "handyman_general",
+      "plumbing",
+      "electrical"
+    ],
+    "expected_listing_ids": [],
+    "match_type": "ambiguous",
+    "notes": "Five plausible codes. Ask what is actually wrong rather than guessing at the most expensive one."
+  },
+  {
+    "query_id": "qry_022",
+    "query": "Can someone paint the exterior of my house?",
+    "expected_codes": [],
+    "expected_listing_ids": [],
+    "match_type": "no_match",
+    "notes": "Painting is not in the service vocabulary. Say so plainly instead of pushing the handyman listings."
+  },
+  {
+    "query_id": "qry_023",
+    "query": "My kitchen sink is leaking and the drain is slow.",
+    "expected_codes": [
+      "plumbing"
+    ],
+    "expected_listing_ids": [
+      "lst_020"
+    ],
+    "match_type": "single_code",
+    "notes": "Both symptoms matter. lst_020 explicitly covers a slow sink drain and a leaking trap or tailpiece in the same visit."
+  },
+  {
+    "query_id": "qry_024",
+    "query": "Two light fixtures need replacing and a switch is loose.",
+    "expected_codes": [
+      "electrical"
+    ],
+    "expected_listing_ids": [
+      "lst_016"
+    ],
+    "match_type": "single_code",
+    "notes": "lst_016 installs up to three fixtures and explicitly covers a loose or worn controlling switch in the same appointment."
+  },
+  {
+    "query_id": "qry_025",
+    "query": "Hang a TV and put together an IKEA dresser.",
+    "expected_codes": [
+      "handyman_general"
+    ],
+    "expected_listing_ids": [
+      "lst_011"
+    ],
+    "match_type": "single_code",
+    "notes": "lst_011 explicitly covers flat-pack dressers and TV wall mounting in one visit."
+  }
+]

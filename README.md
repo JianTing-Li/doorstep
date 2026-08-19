@@ -24,17 +24,31 @@ The internal team reviews listings and bookings with reports or low reviews, pri
 
 ## Shared Data Architecture
 
-All four products use one connected synthetic dataset and the same schema contract. Stable IDs connect customers, providers, listings, bookings, reviews, reports, moderation cases, and audit entries.
+All four products read one shared synthetic dataset and the same schema contract. Nobody queries a live
+database. Stable IDs connect neighborhoods, providers, customers, listings, bookings, reviews, reports,
+and moderation actions, so a booking in the Provider App is the same record the Trust & Safety Dashboard
+reviews.
+
+**Source of truth: [`mock-data/`](mock-data/) — start with its [README](mock-data/README.md).**
+It documents every field, the relationship map, and the rules all four products follow.
 
 - Product A writes provider and listing data.
 - Product B reads active listings and writes bookings, reviews, and reports.
-- Product C reads active listings for recommendations.
-- Product D reads safety signals and writes moderation status and audit entries.
-- Only listings with `status = active` are customer-visible.
+- Product C reads active listings for recommendations, and has its own test fixtures in
+  `mock-data/example-queries.json`.
+- Product D reads safety signals and writes moderation actions.
+- Only listings with `listing_status = "active"` are customer-visible to Products B and C.
 
-Project data: [`data/tasklocal-connected-dataset.json`](data/tasklocal-connected-dataset.json)
+Treat `_meta.reference_date` (`2026-08-19`) as "today" rather than the system clock, or every availability
+slot will look like it is in the past.
 
-Reviewable source of truth: [TaskLocal / Doorstep Connected Synthetic Dataset](https://docs.google.com/spreadsheets/d/1CRYa-m6E0FnbR1py-Wu9XeLZ5H1WX0zQgkwOswCXHRY/edit)
+Run `python3 mock-data/validate.py` before committing any change to the dataset. It checks foreign keys,
+enums, derived counts, and date ordering, and exits non-zero on a break.
+
+Historical reference: the earlier spreadsheet draft,
+[TaskLocal / Doorstep Connected Synthetic Dataset](https://docs.google.com/spreadsheets/d/1CRYa-m6E0FnbR1py-Wu9XeLZ5H1WX0zQgkwOswCXHRY/edit).
+It used a different schema (single-value `service_category`, prices in cents, a separate audit log) and has
+been superseded by `mock-data/`.
 
 ## Developers
 
