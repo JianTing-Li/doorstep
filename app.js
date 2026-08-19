@@ -8,6 +8,12 @@ let state = {
     }
 };
 
+const categoryMap = {
+    'Cleaning': ['cleaning_standard', 'cleaning_deep'],
+    'Handyman': ['handyman_general', 'plumbing', 'electrical'],
+    'Moving': ['moving_help', 'junk_removal']
+};
+
 // --- VIEW NAVIGATION ---
 function navigate(view, params = {}) {
     const container = document.getElementById('app-container');
@@ -36,15 +42,15 @@ function getDashboardHTML() {
 
             <h2 class="font-semibold mb-4">Categories</h2>
             <div class="grid grid-cols-2 gap-4">
-                <div onclick="navigate('feed', {category: 'Cleaning'})" class="bg-blue-50 p-4 rounded-2xl cursor-pointer hover:bg-blue-100 transition border border-blue-100">
+                <div onclick="navigate('feed', {category: 'Cleaning'})" class="bg-blue-50 p-4 rounded-2xl cursor-pointer card-hover border border-blue-100 btn-pop">
                     <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center mb-3 shadow-md"><i class="fa-solid fa-broom"></i></div>
                     <div class="font-bold text-gray-800">Cleaning</div>
                 </div>
-                <div onclick="navigate('feed', {category: 'Handyman'})" class="bg-orange-50 p-4 rounded-2xl cursor-pointer hover:bg-orange-100 transition border border-orange-100">
+                <div onclick="navigate('feed', {category: 'Handyman'})" class="bg-orange-50 p-4 rounded-2xl cursor-pointer card-hover border border-orange-100 btn-pop">
                     <div class="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center mb-3 shadow-md"><i class="fa-solid fa-hammer"></i></div>
                     <div class="font-bold text-gray-800">Handyman</div>
                 </div>
-                <div onclick="navigate('feed', {category: 'Moving'})" class="bg-green-50 p-4 rounded-2xl cursor-pointer hover:bg-green-100 transition border border-green-100">
+                <div onclick="navigate('feed', {category: 'Moving'})" class="bg-green-50 p-4 rounded-2xl cursor-pointer card-hover border border-green-100 btn-pop">
                     <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mb-3 shadow-md"><i class="fa-solid fa-box"></i></div>
                     <div class="font-bold text-gray-800">Moving</div>
                 </div>
@@ -63,31 +69,47 @@ function getDashboardHTML() {
 
 // --- 2. FEED VIEW ---
 function getFeedHTML(category) {
-    const pros = category === 'All' ? DB_LISTINGS : DB_LISTINGS.filter(p => p.service_type === category);
+    const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
     
-    let cardsHTML = pros.map(p => `
-        <div onclick="navigate('profile', {id: '${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
+    let pros;
+    if (category === 'All') {
+        pros = activeListings;
+    } else {
+        const codes = categoryMap[category] || [];
+        pros = activeListings.filter(l => l.service_type.some(c => codes.includes(c)));
+    }
+    
+    let cardsHTML = pros.map(p => {
+        const provider = DB_PROVIDERS.find(prv => prv.provider_id === p.provider_id);
+        const serviceLabel = DB_SERVICE_TYPES.find(st => st.code === p.service_type[0])?.label || "Service";
+        const distance = p.service_radius_miles + " mi limit";
+        const rating = p.rating ? p.rating.toFixed(1) : 'New';
+        const priceUnit = p.price_unit === 'hourly' ? '/hr' : ' flat';
+        
+        return `
+        <div onclick="navigate('profile', {id: '${p.listing_id}'})" class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer card-hover btn-pop">
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <h3 class="font-bold text-lg">${p.provider_name}</h3>
-                    <p class="text-sm text-gray-500">${p.service_title}</p>
+                    <h3 class="font-bold text-lg">${provider.name}</h3>
+                    <p class="text-sm text-gray-500">${p.title}</p>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold text-green-600">$${p.price}<span class="text-xs text-gray-400 font-normal">/hr</span></div>
+                    <div class="font-bold text-green-600">$${p.price}<span class="text-xs text-gray-400 font-normal">${priceUnit}</span></div>
                 </div>
             </div>
             <div class="flex items-center text-sm text-gray-600 space-x-4">
-                <div><i class="fa-solid fa-star text-yellow-400"></i> ${p.rating} (${p.reviews})</div>
-                <div><i class="fa-solid fa-location-dot text-red-400"></i> ${p.provider_location.distance}</div>
+                <div><i class="fa-solid fa-star text-yellow-400"></i> ${rating} (${p.review_count})</div>
+                <div><i class="fa-solid fa-location-dot text-red-400"></i> ${p.provider_location}</div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     return `
-        <div class="bg-white px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 shadow-sm">
-            <button onclick="navigate('dashboard')" class="text-gray-500 hover:text-black"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="glass px-4 py-3 border-b flex items-center justify-between sticky top-0 z-10 shadow-sm">
+            <button onclick="navigate('dashboard')" class="text-gray-500 hover:text-black btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="font-bold text-lg">${category} Providers</h2>
-            <button class="text-blue-600 text-sm font-semibold"><i class="fa-solid fa-sliders"></i> Filter</button>
+            <button class="text-blue-600 text-sm font-semibold btn-pop"><i class="fa-solid fa-sliders"></i> Filter</button>
         </div>
         <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
             ${cardsHTML}
@@ -98,43 +120,60 @@ function getFeedHTML(category) {
 // --- 3. PROFILE VIEW ---
 function getProfileHTML(listingId) {
     const p = DB_LISTINGS.find(l => l.listing_id === listingId);
-    state.activeProvider = p;
+    const provider = DB_PROVIDERS.find(prv => prv.provider_id === p.provider_id);
+    state.activeProvider = { listing: p, provider: provider };
 
-    let availHTML = p.calendar_availability.map(date => `
-        <div onclick="selectTime('${date}')" class="border rounded-lg p-2 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition time-slot" data-date="${date}">
+    let availHTML = p.availability.map(date => `
+        <div onclick="selectTime('${date}')" class="border rounded-lg p-2 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition time-slot btn-pop" data-date="${date}">
             <div class="text-xs text-gray-500 font-semibold">${new Date(date).toLocaleDateString('en-US', {weekday:'short'})}</div>
             <div class="font-bold text-sm">${new Date(date).getDate()}</div>
+            <div class="text-xs text-blue-600 mt-1">${new Date(date).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'})}</div>
         </div>
     `).join('');
+
+    const rating = p.rating ? p.rating.toFixed(1) : 'New';
+    const priceUnit = p.price_unit === 'hourly' ? '/hr' : ' flat';
+
+    // Figure out generic category to go back to
+    let backCategory = 'All';
+    for (const [cat, codes] of Object.entries(categoryMap)) {
+        if (p.service_type.some(c => codes.includes(c))) {
+            backCategory = cat;
+            break;
+        }
+    }
 
     return `
         <div class="relative h-48 bg-gray-200">
             <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80" class="w-full h-full object-cover opacity-80">
-            <button onclick="navigate('feed', {category: '${p.service_type}'})" class="absolute top-4 left-4 bg-white/80 w-8 h-8 rounded-full flex items-center justify-center shadow"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="navigate('feed', {category: '${backCategory}'})" class="absolute top-4 left-4 glass w-8 h-8 rounded-full flex items-center justify-center shadow btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
         </div>
         <div class="p-6 bg-white -mt-6 rounded-t-3xl relative z-10 flex-1 flex flex-col">
             <div class="flex justify-between items-start mb-1">
-                <h1 class="text-2xl font-bold">${p.provider_name}</h1>
-                <div class="font-bold text-xl text-green-600">$${p.price}</div>
+                <h1 class="text-2xl font-bold">${provider.name}</h1>
+                <div class="font-bold text-xl text-green-600">$${p.price}<span class="text-sm font-normal text-gray-500">${priceUnit}</span></div>
             </div>
-            <p class="text-blue-600 font-medium text-sm mb-4">${p.service_title}</p>
+            <p class="text-blue-600 font-medium text-sm mb-4">${p.title}</p>
             
             <div class="flex space-x-6 text-sm text-gray-600 mb-6 border-b pb-6">
-                <div><i class="fa-solid fa-star text-yellow-400 text-lg mb-1 block"></i> <span class="font-bold">${p.rating}</span> (${p.reviews})</div>
-                <div><i class="fa-solid fa-location-dot text-red-400 text-lg mb-1 block"></i> ${p.provider_location.distance}</div>
+                <div><i class="fa-solid fa-star text-yellow-400 text-lg mb-1 block"></i> <span class="font-bold">${rating}</span> (${p.review_count})</div>
+                <div><i class="fa-solid fa-location-dot text-red-400 text-lg mb-1 block"></i> ${p.provider_location}</div>
                 <div><i class="fa-solid fa-shield-check text-green-500 text-lg mb-1 block"></i> Verified</div>
             </div>
 
             <h3 class="font-bold mb-2">About the Service</h3>
-            <p class="text-gray-600 text-sm mb-6 leading-relaxed">${p.description}</p>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">${p.listing_description}</p>
+            
+            <h3 class="font-bold mb-2">Provider Bio</h3>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">${provider.bio}</p>
 
             <h3 class="font-bold mb-3">Select Availability</h3>
-            <div class="grid grid-cols-4 gap-2 mb-8" id="availability-grid">
+            <div class="grid grid-cols-3 gap-2 mb-8" id="availability-grid">
                 ${availHTML}
             </div>
 
             <div class="mt-auto pt-4">
-                <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition">Book Now</button>
+                <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition btn-pop">Book Now</button>
             </div>
         </div>
     `;
@@ -158,12 +197,16 @@ function goToCheckout() {
 
 // --- 4 & 5. CHECKOUT VIEW ---
 function getCheckoutHTML() {
-    const p = state.activeProvider;
-    state.booking.total = p.price + 15; // + commission
+    const p = state.activeProvider.listing;
+    const provider = state.activeProvider.provider;
+    
+    // Assume minimum 1 unit (1 job or 1 hour). A real app would let them choose hours.
+    const commission = parseFloat((p.price * 0.15).toFixed(2));
+    state.booking.total = p.price + commission; 
     
     return `
-        <div class="bg-white px-4 py-3 border-b flex items-center sticky top-0 z-10 shadow-sm">
-            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-gray-500 hover:text-black mr-4"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="glass px-4 py-3 border-b flex items-center sticky top-0 z-10 shadow-sm">
+            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-gray-500 hover:text-black mr-4 btn-pop"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="font-bold text-lg">Secure Checkout</h2>
         </div>
         <div class="p-6 bg-gray-50 flex-1 overflow-y-auto">
@@ -172,28 +215,28 @@ function getCheckoutHTML() {
                 <div class="flex items-center space-x-4 mb-4 pb-4 border-b">
                     <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-calendar-check"></i></div>
                     <div>
-                        <h3 class="font-bold">${p.service_title}</h3>
-                        <p class="text-sm text-gray-500">${new Date(state.booking.timeSlot).toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'})}</p>
+                        <h3 class="font-bold">${p.title}</h3>
+                        <p class="text-sm text-gray-500">${new Date(state.booking.timeSlot).toLocaleString('en-US', {weekday:'long', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
                     </div>
                 </div>
                 <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">Provider Rate</span>
-                    <span class="font-medium">$${p.price}.00</span>
+                    <span class="text-gray-600">Provider Rate (${p.price_unit})</span>
+                    <span class="font-medium">$${p.price.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between text-sm mb-4">
-                    <span class="text-gray-600">Platform Commission</span>
-                    <span class="font-medium">$15.00</span>
+                    <span class="text-gray-600">Platform Commission (15%)</span>
+                    <span class="font-medium">$${commission.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between font-bold text-lg border-t pt-4">
                     <span>Total</span>
-                    <span>$${state.booking.total}.00</span>
+                    <span>$${state.booking.total.toFixed(2)}</span>
                 </div>
             </div>
 
             <!-- Address Input -->
             <h3 class="font-bold mb-3 text-sm uppercase text-gray-500 tracking-wider">Job Address</h3>
             <div class="bg-white rounded-xl shadow-sm border mb-6 p-1">
-                <input type="text" id="job-address" placeholder="123 Main St, Apt 4B" class="w-full px-4 py-3 outline-none rounded-lg" value="123 Main St, New York, NY">
+                <input type="text" id="job-address" placeholder="123 Main St, Apt 4B" class="w-full px-4 py-3 outline-none rounded-lg" value="123 Main St, Portland, OR">
             </div>
 
             <!-- Payment -->
@@ -206,7 +249,7 @@ function getCheckoutHTML() {
                 <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
             </div>
 
-            <button onclick="processPayment()" class="w-full bg-black text-white font-bold py-4 rounded-xl shadow-lg transition hover:bg-gray-800 flex items-center justify-center">
+            <button onclick="processPayment()" class="w-full bg-black text-white font-bold py-4 rounded-xl shadow-lg transition hover:bg-gray-800 flex items-center justify-center btn-pop">
                 <i class="fa-solid fa-lock mr-2"></i> Authorize Payment
             </button>
             <p class="text-center text-xs text-gray-500 mt-4"><i class="fa-solid fa-shield-halved text-green-500"></i> Funds held in secure Escrow until job completion.</p>
@@ -227,23 +270,24 @@ function processPayment() {
 
 // --- 6. CONFIRMATION VIEW ---
 function getConfirmationHTML() {
+    const providerName = state.activeProvider?.provider?.name || 'Your Provider';
     return `
         <div class="flex-1 bg-green-50 flex flex-col items-center justify-center p-6 text-center">
             <div class="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center text-4xl mb-6 shadow-lg animate-bounce">
                 <i class="fa-solid fa-check"></i>
             </div>
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Booking Confirmed!</h1>
-            <p class="text-gray-600 mb-8 max-w-xs">Your payment has been securely authorized. ${state.activeProvider.provider_name} has been notified.</p>
+            <p class="text-gray-600 mb-8 max-w-xs">Your payment has been securely authorized. ${providerName} has been notified.</p>
             
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-green-100 w-full mb-8 text-left">
                 <div class="text-sm text-gray-500 mb-1">Booking ID</div>
                 <div class="font-mono font-bold text-gray-800 mb-4">BK-${Math.floor(Math.random()*100000)}</div>
                 
                 <div class="text-sm text-gray-500 mb-1">When</div>
-                <div class="font-bold text-gray-800">${new Date(state.booking.timeSlot).toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'})}</div>
+                <div class="font-bold text-gray-800">${new Date(state.booking.timeSlot).toLocaleString('en-US', {weekday:'long', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</div>
             </div>
 
-            <button onclick="navigate('dashboard')" class="w-full border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 rounded-xl shadow-sm transition">Back to Home</button>
+            <button onclick="navigate('dashboard')" class="w-full border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 rounded-xl shadow-sm transition btn-pop">Back to Home</button>
         </div>
     `;
 }
@@ -276,23 +320,26 @@ function sendChatMessage() {
     setTimeout(() => {
         const lowerMsg = msg.toLowerCase();
         let match = null;
+        
+        const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
 
         // Grounding Rule: Only match actual JSON dummy data and ensure they are active
         if (lowerMsg.includes('clean') || lowerMsg.includes('maid')) {
-            match = DB_LISTINGS.find(l => l.service_type === 'Cleaning' && l.listing_status === 'active');
-        } else if (lowerMsg.includes('plumb') || lowerMsg.includes('sink') || lowerMsg.includes('fix')) {
-            match = DB_LISTINGS.find(l => l.service_type === 'Handyman' && l.listing_status === 'active');
+            match = activeListings.find(l => l.service_type.some(c => categoryMap['Cleaning'].includes(c)));
+        } else if (lowerMsg.includes('plumb') || lowerMsg.includes('sink') || lowerMsg.includes('fix') || lowerMsg.includes('handyman')) {
+            match = activeListings.find(l => l.service_type.some(c => categoryMap['Handyman'].includes(c)));
         } else if (lowerMsg.includes('move') || lowerMsg.includes('box')) {
-            match = DB_LISTINGS.find(l => l.service_type === 'Moving' && l.listing_status === 'active');
+            match = activeListings.find(l => l.service_type.some(c => categoryMap['Moving'].includes(c)));
         }
 
         if (match) {
+            const provider = DB_PROVIDERS.find(prv => prv.provider_id === match.provider_id);
             history.innerHTML += `
                 <div class="bg-white border p-3 rounded-lg rounded-tl-none self-start max-w-[90%] shadow-sm">
                     <p class="text-sm mb-2">Based on our database, here is the best match for your request:</p>
                     <div class="border rounded-md p-2 bg-gray-50">
-                        <div class="font-bold text-sm">${match.provider_name}</div>
-                        <div class="text-xs text-gray-500 mb-2">${match.service_title} • $${match.price}/hr</div>
+                        <div class="font-bold text-sm">${provider.name}</div>
+                        <div class="text-xs text-gray-500 mb-2">${match.title} • $${match.price}/${match.price_unit === 'hourly' ? 'hr' : 'flat'}</div>
                         <button onclick="toggleChatbot(); navigate('profile', {id: '${match.listing_id}'})" class="text-xs bg-blue-100 text-blue-700 font-bold py-1 px-3 rounded w-full hover:bg-blue-200">View Profile</button>
                     </div>
                 </div>
@@ -310,10 +357,15 @@ function sendChatMessage() {
 }
 
 // Allow Enter key in chat
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('chat-input').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') sendChatMessage();
     });
     // Init app
-    navigate('dashboard');
+    try {
+        await initData();
+        navigate('dashboard');
+    } catch (err) {
+        document.getElementById('app-container').innerHTML = `<div class="p-8 text-red-500 font-bold">Failed to load data from remote branch: ${err.message}</div>`;
+    }
 });
