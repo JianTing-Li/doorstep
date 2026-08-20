@@ -1,223 +1,99 @@
 import { getNeighborhoods, getServiceTypes } from "../data/loadData.js";
 
-const SOURCE_TEXT = Symbol.for("doorstep.parseJob.sourceText");
-
-const KEYWORDS_BY_CODE = {
-  cleaning_standard: [
-    "clean",
-    "cleaning",
-    "tidy",
-    "weekly",
-    "biweekly",
-    "every other week",
-    "vacuum",
-    "mop",
-    "dusting",
-  ],
-  cleaning_deep: [
-    "deep clean",
-    "move-out",
-    "move out",
-    "move-in clean",
-    "deposit back",
-    "landlord inspection",
-    "landlord checklist",
-    "post-renovation",
-    "oven",
-    "fridge",
-    "appliance interior",
-  ],
+// Colloquial phrasings that don't already appear in a service type's own
+// label or description text.
+const SYNONYMS_BY_CODE = {
+  cleaning_standard: ["clean", "tidy", "vacuum", "mop", "weekly", "biweekly", "recurring"],
+  cleaning_deep: ["deep clean", "moving out", "move out", "deposit", "landlord", "inspection", "oven", "fridge"],
   handyman_general: [
     "handyman",
     "ikea",
     "flat-pack",
     "flat pack",
     "assemble",
-    "assembly",
-    "mount a tv",
+    "mount",
     "mounted",
     "hang a tv",
-    "plaster",
-    "drywall",
-    "door",
-    "lock",
-    "hinge",
     "shelf",
-    "wardrobe",
-    "dresser",
+    "hinge",
+    "repair",
     "fix",
-    "fixed",
-    "repairs",
+    "install",
+    "put in",
   ],
-  plumbing: [
-    "plumbing",
-    "faucet",
-    "tap",
-    "drain",
-    "leak",
-    "leaking",
-    "sink",
-    "toilet",
-    "plunger",
-    "shutoff",
-    "p-trap",
-    "tailpiece",
-    "valve",
-  ],
-  electrical: [
-    "electrical",
-    "outlet",
-    "outlets",
-    "switch",
-    "light fixture",
-    "circuit",
-    "breaker",
-    "gfci",
-    "wiring",
-  ],
-  moving_help: [
-    "movers",
-    "moving help",
-    "u-haul",
-    "uhaul",
-    "load a",
-    "load the",
-    "unload",
-    "moving truck",
-    "same building",
-    "no truck",
-    "storage unit",
-    "from apartment",
-    "to apartment",
-  ],
-  junk_removal: [
-    "junk",
-    "haul-away",
-    "haul away",
-    "taken away",
-    "clearout",
-    "clear out",
-    "curb",
-    "mattress",
-    "old couch",
-    "old furniture",
-    "garage is full",
-    "basement is full",
-    "need to disappear",
-  ],
-  yard_outdoor: [
-    "yard",
-    "outdoor",
-    "gutter",
-    "leaves",
-    "lawn",
-    "grass",
-    "mow",
-    "edge",
-    "sidewalk",
-    "deck",
-    "patio",
-    "moss",
-    "algae",
-    "pressure wash",
-  ],
+  plumbing: ["faucet", "tap", "drip", "dripping", "leak", "leaking", "plunger", "valve", "pipe", "toilet"],
+  electrical: ["outlet", "switch", "wiring", "circuit", "breaker", "ceiling fan", "fixture"],
+  moving_help: ["movers", "mover", "u-haul", "uhaul", "load", "unload", "truck", "storage"],
+  junk_removal: ["junk", "haul away", "haul-away", "clear out", "curb", "curbside", "mattress", "couch"],
+  yard_outdoor: ["yard", "lawn", "mow", "mowing", "grass", "gutter", "leaves", "moss", "pressure wash", "edge", "sidewalk"],
 };
 
-const URGENCY_PATTERNS = [
-  ["today", /\btoday\b/],
-  ["tomorrow", /\btomorrow\b/],
-  ["this weekend", /\bthis weekend\b/],
-  ["as soon as possible", /\b(asap|urgent|right away|as soon as possible)\b/],
-  ["Monday", /\bmonday\b/],
-  ["Tuesday", /\btuesday\b/],
-  ["Wednesday", /\bwednesday\b/],
-  ["Thursday", /\bthursday\b/],
-  ["Friday", /\bfriday\b/],
-  ["Saturday", /\bsaturday\b/],
-  ["Sunday", /\bsunday\b/],
-];
+// Words pulled from service-type labels/descriptions that are too generic to
+// be useful signals on their own (they show up across many unrelated jobs).
+const STOP_WORDS = new Set(["and", "the", "or", "for", "with", "under", "apartment", "house", "help", "home", "regular"]);
 
-function normalize(text) {
-  return text.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, " ").trim();
+function wordsFrom(text) {
+  return text
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter((word) => word.length >= 4 && !STOP_WORDS.has(word));
 }
 
 function includesKeyword(text, keyword) {
   if (keyword.includes(" ") || keyword.includes("-")) return text.includes(keyword);
-  return new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text);
+  return new RegExp(`\\b${keyword}\\b`).test(text);
+}
+
+function keywordsByCode() {
+  const map = {};
+  for (const { code, label, description } of getServiceTypes()) {
+    const keywords = new Set(wordsFrom(`${label} ${description}`));
+    for (const synonym of SYNONYMS_BY_CODE[code] ?? []) keywords.add(synonym.toLowerCase());
+    map[code] = keywords;
+  }
+  return map;
+}
+
+function parseServiceTypes(text) {
+  const byCode = keywordsByCode();
+  return Object.entries(byCode)
+    .filter(([, keywords]) => [...keywords].some((keyword) => includesKeyword(text, keyword)))
+    .map(([code]) => code);
 }
 
 function parseMaxPrice(text) {
-  const explicitBudget = text.match(
-    /(?:under|below|less than|maximum|max|budget(?: is| of)?|up to|no more than|around)\s*\$?\s*(\d{1,4})/i,
+  const explicit = text.match(
+    /(?:under|below|less than|max(?:imum)?|budget(?: is| of)?|up to|no more than)\s*\$?\s*(\d{1,4})/,
   );
-  const dollarAmount = text.match(/\$(\d{1,4})\b/);
-  const match = explicitBudget ?? dollarAmount;
+  const dollar = text.match(/\$\s*(\d{1,4})/);
+  const match = explicit ?? dollar;
   return match ? Number(match[1]) : null;
 }
 
 function parseNeighborhood(text) {
-  return (
-    getNeighborhoods().find((neighborhood) =>
-      text.includes(neighborhood.name.toLowerCase()),
-    )?.name ?? null
-  );
+  const match = getNeighborhoods().find((neighborhood) => text.includes(neighborhood.name.toLowerCase()));
+  return match ? match.name : null;
 }
+
+const URGENCY_BUCKETS = [
+  ["urgent", /\b(asap|urgent|right away|emergency)\b/],
+  ["today", /\btoday\b/],
+  ["tomorrow", /\btomorrow\b/],
+  ["this_week", /\b(this week|this weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/],
+];
 
 function parseUrgency(text) {
-  return URGENCY_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0] ?? null;
+  const bucket = URGENCY_BUCKETS.find(([, pattern]) => pattern.test(text));
+  return bucket ? bucket[0] : null;
 }
 
-export function parseJob(input) {
-  const text = normalize(String(input ?? ""));
-  const validCodes = new Set(getServiceTypes().map(({ code }) => code));
-  const serviceTypes = [];
+export function parseJob(text) {
+  const normalized = String(text ?? "").toLowerCase().trim();
 
-  // The two intentionally vague fixtures map to their plausible categories;
-  // no active listing covers every category, so the conversation clarifies.
-  if (/\bsink (?:is|looks) (?:a )?mess\b/.test(text)) {
-    serviceTypes.push("cleaning_standard", "plumbing");
-  } else if (/\bhelp with (?:my |the )?kitchen\b/.test(text)) {
-    serviceTypes.push(
-      "cleaning_standard",
-      "cleaning_deep",
-      "handyman_general",
-      "plumbing",
-      "electrical",
-    );
-  } else {
-    for (const [code, keywords] of Object.entries(KEYWORDS_BY_CODE)) {
-      if (validCodes.has(code) && keywords.some((keyword) => includesKeyword(text, keyword))) {
-        serviceTypes.push(code);
-      }
-    }
-  }
-
-  // A ceiling-fan swap genuinely needs both of these fixture categories.
-  if (/\bceiling fan\b/.test(text)) {
-    for (const code of ["handyman_general", "electrical"]) {
-      if (!serviceTypes.includes(code)) serviceTypes.push(code);
-    }
-  }
-
-  const parsed = {
-    service_types: serviceTypes,
-    max_price: parseMaxPrice(text),
-    neighborhood: parseNeighborhood(text),
-    urgency: parseUrgency(text),
+  return {
+    service_types: parseServiceTypes(normalized),
+    max_price: parseMaxPrice(normalized),
+    neighborhood: parseNeighborhood(normalized),
+    urgency: parseUrgency(normalized),
   };
-
-  // Preserve the public four-field result while giving the matcher the source
-  // terms it needs to rank listing descriptions. The property is non-enumerable.
-  Object.defineProperty(parsed, SOURCE_TEXT, { value: text });
-  return parsed;
-}
-
-export function getParsedSourceText(parsed) {
-  return parsed?.[SOURCE_TEXT] ?? "";
-}
-
-export function isClearlyUnsupported(text) {
-  return /\b(paint|painting|roof|roofing|babysit|childcare|pet sit|dog walk|pest control)\b/i.test(
-    text,
-  );
 }

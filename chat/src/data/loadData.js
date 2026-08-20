@@ -5,17 +5,17 @@ import neighborhoods from "../../../mock-data/neighborhoods.json" with { type: "
 import providers from "../../../mock-data/providers.json" with { type: "json" };
 import serviceTypes from "../../../mock-data/service-types.json" with { type: "json" };
 
-// This module is the only mock-data access point. Replace these getters with
-// database-backed implementations later and the rest of the app stays intact.
-export function loadData() {
-  return { exampleQueries, listings, meta, neighborhoods, providers, serviceTypes };
-}
-
+// Single access point for all mock-data JSON. Nothing else in this app
+// imports from /mock-data directly.
 export function getExampleQueries() {
   return exampleQueries;
 }
 
-export function getMarketplaceMeta() {
+export function getListings() {
+  return listings;
+}
+
+export function getMeta() {
   return meta;
 }
 
@@ -25,10 +25,6 @@ export function getNeighborhoods() {
 
 export function getProviders() {
   return providers;
-}
-
-export function getRawListings() {
-  return listings;
 }
 
 export function getServiceTypes() {

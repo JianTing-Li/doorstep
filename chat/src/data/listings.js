@@ -1,20 +1,13 @@
-import { getProviders, getRawListings } from "./loadData.js";
+import { getListings, getMeta } from "./loadData.js";
 
-export function getActiveListings() {
-  const providersById = new Map(
-    getProviders().map((provider) => [provider.provider_id, provider]),
-  );
+// Selectors over the loaded mock data.
+export function activeListings() {
+  const referenceDate = getMeta().reference_date;
 
-  return getRawListings()
+  return getListings()
     .filter((listing) => listing.listing_status === "active")
     .map((listing) => ({
       ...listing,
-      provider: providersById.get(listing.provider_id) ?? null,
+      availability: listing.availability.filter((slot) => slot.slice(0, 10) >= referenceDate),
     }));
-}
-
-export function getActiveListingsByServiceType(serviceType) {
-  return getActiveListings().filter((listing) =>
-    listing.service_type.includes(serviceType),
-  );
 }
