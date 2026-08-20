@@ -123,6 +123,8 @@ export default function useProviderData() {
       title: formListing.listing_title.trim(),
       listing_description: formListing.listing_description.trim(),
       service_type: [formListing.service_type],
+      need_key: formListing.need_key,
+      included_tasks: [...formListing.included_tasks],
       price: Number(formListing.price_per_day),
       price_unit: "flat",
       duration_estimate_minutes: null,

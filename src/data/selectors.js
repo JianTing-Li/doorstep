@@ -1,7 +1,7 @@
 /**
  * Read-only helpers over the shared mock-data JSON files.
  *
- * These files are the canonical Doorstep source of truth (see mock-data/README.md).
+ * These files are the canonical TaskLocal source of truth (see mock-data/README.md).
  * Products B, C, and D read the same arrays, so Product A must NOT mutate them.
  *
  * Field names here follow the shared snake_case contract exactly.
@@ -26,6 +26,8 @@ export function toListingView(listing, provider, serviceTypeLabelByCode) {
     provider_id: listing.provider_id,
     listing_title: listing.title,
     listing_description: listing.listing_description,
+    included_tasks: listing.included_tasks ?? [],
+    need_key: listing.need_key ?? null,
     service_type: listing.service_type,
     service_type_labels: listing.service_type.map(
       (code) => serviceTypeLabelByCode[code] ?? code
@@ -50,7 +52,6 @@ export function toBookingView(booking, listing, customer) {
     start_date: booking.scheduled_slot.slice(0, 10), // YYYY-MM-DD (canonical format)
     end_date: booking.scheduled_slot.slice(0, 10), // snapshot has no separate end date
     owner_name: customer?.name ?? "Unknown customer",
-    pet_type: "",
     total_price: booking.price_paid,
     status: booking.status,
     listing_title: listing?.title ?? "Unknown listing",

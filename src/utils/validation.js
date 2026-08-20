@@ -6,26 +6,25 @@
  */
 
 /**
- * Validate a raw form payload using the canonical shared schema rules:
- *  - listing_title + listing_description are required text
- *  - service_type must be one of the 8 canonical codes
- *  - price must be an integer number >= 1 (whole dollars, shared contract)
- *  - price_unit must be "flat" | "hourly"
+ * Validate a guided service-builder payload:
+ *  - a customer need must resolve to one canonical service code
+ *  - at least one included task is required so customers know what they get
+ *  - price must be a whole-dollar amount >= 1
  */
 export function validateListingForm(form) {
   const errors = {};
 
-  if (!form.listing_title || form.listing_title.trim().length < 3) {
-    errors.listing_title = "Listing title must be at least 3 characters.";
+  if (!form.need_key || !form.service_type) {
+    errors.need_key = "Choose the customer need you can solve.";
   }
 
-  if (!form.service_type || form.service_type.length === 0) {
-    errors.service_type = "Choose at least one service type.";
+  if (!Array.isArray(form.included_tasks) || form.included_tasks.length === 0) {
+    errors.included_tasks = "Choose at least one task that is included.";
   }
 
   const price = Number(form.price_per_day);
-  if (!Number.isFinite(price) || price < 1) {
-    errors.price_per_day = "Price per day must be a whole dollar amount of 1 or more.";
+  if (!Number.isInteger(price) || price < 1) {
+    errors.price_per_day = "Enter a whole-dollar price of 1 or more.";
   }
 
   return errors;

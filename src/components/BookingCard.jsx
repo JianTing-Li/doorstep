@@ -3,8 +3,8 @@
  *
  * Props (exact contract consumed by Products B/C/D if they share this card):
  *   booking: {
- *     booking_id, owner_name, pet_type, start_date, end_date,
- *     total_price, status, listing_title, job_address, quantity, quantity_unit
+ *     booking_id, owner_name, start_date, end_date, total_price, status,
+ *     listing_title, job_address, quantity, quantity_unit
  *   }
  *   onUpdateStatus?(bookingId, nextStatus) — parent-owned state update.
  *     When omitted, no action buttons render (read-only view for other products).
@@ -26,7 +26,6 @@ export default function BookingCard({ booking, onUpdateStatus }) {
   const {
     booking_id,
     owner_name,
-    pet_type,
     start_date,
     end_date,
     total_price,
@@ -61,11 +60,6 @@ export default function BookingCard({ booking, onUpdateStatus }) {
           </span>
           <div>
             <h4>{owner_name}</h4>
-            {pet_type && (
-              <span className="booking-pet">
-                <span aria-hidden="true">🐾</span> {humanize(pet_type)}
-              </span>
-            )}
           </div>
         </div>
         <span className={`badge badge-${statusColor}`}>

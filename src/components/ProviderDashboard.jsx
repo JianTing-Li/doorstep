@@ -44,11 +44,11 @@ export default function ProviderDashboard() {
   return (
     <div className="dashboard">
       <nav className="topbar" aria-label="Provider workspace">
-        <a className="brand" href="/" aria-label="Doorstep provider dashboard">
-          <span className="brand-mark" aria-hidden="true">🐾</span>
+        <a className="brand" href="/" aria-label="TaskLocal provider dashboard">
+          <span className="brand-mark" aria-hidden="true">TL</span>
           <span>
-            <strong>Doorstep</strong>
-            <small>Provider care hub</small>
+            <strong>TaskLocal</strong>
+            <small>Provider workspace</small>
           </span>
         </a>
         <div className="provider-chip">
@@ -67,8 +67,8 @@ export default function ProviderDashboard() {
           <p className="eyebrow">Your provider workspace</p>
           <h1>Welcome back, {(provider?.name ?? "Provider").split(" ")[0]}!</h1>
           <p className="subtitle">
-            Everything you need to care for pets and grow your business—all in
-            one friendly place.
+            Create clear home-service listings, manage local requests, and grow
+            your independent business in one place.
           </p>
           <div className="trust-row">
             <span>✓ Verified profile</span>
@@ -78,9 +78,9 @@ export default function ProviderDashboard() {
             )}
           </div>
         </div>
-        <div className="hero-pet" aria-hidden="true">
-          <span>🐕</span>
-          <span className="hero-heart">♥</span>
+        <div className="hero-service" aria-hidden="true">
+          <span>🏠</span>
+          <span className="hero-tool">✓</span>
         </div>
         <p className="reference-date">
           <span aria-hidden="true">☀</span> {reference_date}
@@ -103,7 +103,7 @@ export default function ProviderDashboard() {
         <section className="panel listings-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">What pet parents can book</p>
+              <p className="eyebrow">What local customers can book</p>
               <h3>My Listings <span className="count-pill">{provider_listings.length}</span></h3>
             </div>
             <span className="section-illustration" aria-hidden="true">🏡</span>
@@ -125,7 +125,7 @@ export default function ProviderDashboard() {
           <ul className="listings-list">
             {provider_listings.map((listing) => (
               <li key={listing.listing_id} className="listing-item">
-                <div className="listing-icon" aria-hidden="true">🐾</div>
+                <div className="listing-icon" aria-hidden="true">🛠</div>
                 <div className="listing-content">
                   <div className="listing-item-main">
                     <strong>{listing.listing_title}</strong>
@@ -140,6 +140,11 @@ export default function ProviderDashboard() {
                       {LISTING_STATUS_LABELS[listing.listing_status]}
                     </span>
                   </div>
+                  {listing.included_tasks.length > 0 && (
+                    <p className="listing-includes">
+                      <strong>Includes:</strong> {listing.included_tasks.join(" • ")}
+                    </p>
+                  )}
                 </div>
               </li>
             ))}
@@ -176,7 +181,7 @@ export default function ProviderDashboard() {
       <section className="panel bookings-section past-section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Your care history</p>
+            <p className="eyebrow">Your service history</p>
             <h3>Past Bookings <span className="count-pill">{past_bookings.length}</span></h3>
           </div>
           <span className="section-illustration" aria-hidden="true">🌿</span>
