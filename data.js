@@ -1329,7 +1329,56 @@ let DB_SERVICE_TYPES = [
   }
 ];
 
+let DB_CUSTOMERS = [
+  {
+    "customer_id": "cust_00001",
+    "name": "Maya Lin",
+    "email": "maya.lin1@example.invalid",
+    "phone_number": "9175551000",
+    "address": "1420 NW Lovejoy St, Apt 3B, Portland, OR",
+    "avatar_color": "from-blue-500 to-indigo-600",
+    "member_since": "2026-01-02"
+  },
+  {
+    "customer_id": "cust_00002",
+    "name": "Luis Rivera",
+    "email": "luis.rivera2@example.invalid",
+    "phone_number": "9175551001",
+    "address": "825 SE Hawthorne Blvd, Portland, OR",
+    "avatar_color": "from-emerald-500 to-teal-600",
+    "member_since": "2026-02-03"
+  },
+  {
+    "customer_id": "cust_00003",
+    "name": "Priya Shah",
+    "email": "priya.shah3@example.invalid",
+    "phone_number": "9175551002",
+    "address": "2104 NE Alberta St, Portland, OR",
+    "avatar_color": "from-purple-500 to-pink-600",
+    "member_since": "2026-03-04"
+  },
+  {
+    "customer_id": "cust_00004",
+    "name": "Omar Haddad",
+    "email": "omar.haddad4@example.invalid",
+    "phone_number": "9175551003",
+    "address": "1830 NW 23rd Ave, Portland, OR",
+    "avatar_color": "from-amber-500 to-orange-600",
+    "member_since": "2026-04-05"
+  },
+  {
+    "customer_id": "cust_00005",
+    "name": "Mei Chen",
+    "email": "mei.chen5@example.invalid",
+    "phone_number": "9175551004",
+    "address": "3312 SE Division St, Portland, OR",
+    "avatar_color": "from-rose-500 to-red-600",
+    "member_since": "2026-05-06"
+  }
+];
+
 async function initData() {
     // Data is directly embedded in memory for zero-latency instant loading
     return true;
 }
+

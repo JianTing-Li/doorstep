@@ -1,6 +1,14 @@
-// Doorstep App State & Logic
+// Doorstep App State & Logic (Product B - Customer App)
+// Features: Multi-Persona Switching, Provider Direct Messaging, Trust & Safety Reporting, Escrow Checkout & Lifecycle
+
 let state = {
+    currentCustomerId: 'cust_00001',
     activeProvider: null, // { listing, provider }
+    activeChatProvider: null,
+    activeChatListing: null,
+    activeReportTarget: null, // { type, targetId, title, listing_id, provider_id, booking_id }
+    currentView: 'dashboard',
+    currentViewParams: {},
     booking: {
         listing: null,
         provider: null,
@@ -9,21 +17,9 @@ let state = {
         hours: 1,
         total: 0
     },
-    bookingsList: [
-        {
-            id: 'BK-49201',
-            listing_id: 'lst_001',
-            title: 'Weekly & Bi-Weekly Apartment Cleaning',
-            provider_name: 'Marisol Vega',
-            timeSlot: new Date(Date.now() + 86400000 * 2).toISOString(),
-            address: '1420 NW Lovejoy St, Apt 3B, Portland, OR',
-            total: 51.75,
-            status: 'upcoming',
-            escrowStatus: 'held',
-            rating: null,
-            review: null
-        }
-    ],
+    bookingsList: [],
+    messages: {}, // { [provider_id]: [ { id, sender: 'customer'|'provider', text, timestamp } ] }
+    reportsList: [], // [ { report_id, reporter_customer_id, listing_id, provider_id, booking_id, safety_flag_type, report_details, evidence_url, created_at, status } ]
     filters: {
         category: 'All',
         searchQuery: '',
@@ -58,10 +54,183 @@ const categoryIcons = {
 
 let mapInstance = null;
 
-// --- ROUTING / NAVIGATION ---
+// --- 1. LOCALSTORAGE & PERSONA MANAGEMENT ---
+function getCurrentCustomer() {
+    return (typeof DB_CUSTOMERS !== 'undefined' ? DB_CUSTOMERS : []).find(c => c.customer_id === state.currentCustomerId) || {
+        customer_id: 'cust_00001',
+        name: 'Maya Lin',
+        email: 'maya.lin1@example.invalid',
+        phone_number: '9175551000',
+        address: '1420 NW Lovejoy St, Apt 3B, Portland, OR',
+        avatar_color: 'from-blue-500 to-indigo-600'
+    };
+}
+
+function initCustomerState(customerId) {
+    const savedBookings = localStorage.getItem(`doorstep_bookings_${customerId}`);
+    const savedMessages = localStorage.getItem(`doorstep_messages_${customerId}`);
+    const savedReports = localStorage.getItem(`doorstep_reports_${customerId}`);
+
+    if (savedBookings) {
+        try { state.bookingsList = JSON.parse(savedBookings); } catch (e) { state.bookingsList = []; }
+    } else {
+        // Seed default bookings for demo persona
+        if (customerId === 'cust_00001') {
+            state.bookingsList = [
+                {
+                    id: 'BK-49201',
+                    listing_id: 'lst_001',
+                    provider_id: 'prv_001',
+                    title: 'Weekly & Bi-Weekly Apartment Cleaning',
+                    provider_name: 'Marisol Vega',
+                    timeSlot: new Date(Date.now() + 86400000 * 2).toISOString(),
+                    address: '1420 NW Lovejoy St, Apt 3B, Portland, OR',
+                    total: 51.75,
+                    status: 'upcoming',
+                    escrowStatus: 'held',
+                    rating: null,
+                    review: null
+                }
+            ];
+        } else if (customerId === 'cust_00002') {
+            state.bookingsList = [
+                {
+                    id: 'BK-31082',
+                    listing_id: 'lst_010',
+                    provider_id: 'prv_005',
+                    title: 'IKEA Furniture Assembly & Mounting',
+                    provider_name: 'Tomasz Bak',
+                    timeSlot: new Date(Date.now() - 86400000 * 3).toISOString(),
+                    address: '825 SE Hawthorne Blvd, Portland, OR',
+                    total: 86.25,
+                    status: 'completed',
+                    escrowStatus: 'released',
+                    rating: 5,
+                    review: 'Super quick with assembling the PAX wardrobe!'
+                }
+            ];
+        } else {
+            state.bookingsList = [];
+        }
+    }
+
+    if (savedMessages) {
+        try { state.messages = JSON.parse(savedMessages); } catch (e) { state.messages = {}; }
+    } else {
+        state.messages = {};
+        if (customerId === 'cust_00001') {
+            state.messages['prv_001'] = [
+                { id: 'm1', sender: 'provider', text: 'Hi Maya! I saw your booking for Friday. Do you have any specific pet instructions for my visit?', timestamp: new Date(Date.now() - 3600000 * 4).toISOString() },
+                { id: 'm2', sender: 'customer', text: 'Hi Marisol! Yes, our cat will be in the bedroom during cleaning. Thanks for asking!', timestamp: new Date(Date.now() - 3600000 * 3).toISOString() },
+                { id: 'm3', sender: 'provider', text: 'Sounds wonderful! Looking forward to Friday.', timestamp: new Date(Date.now() - 3600000 * 2).toISOString() }
+            ];
+        }
+    }
+
+    if (savedReports) {
+        try { state.reportsList = JSON.parse(savedReports); } catch (e) { state.reportsList = []; }
+    } else {
+        if (customerId === 'cust_00004') {
+            state.reportsList = [
+                {
+                    report_id: 'report_00001',
+                    reporter_customer_id: 'cust_00004',
+                    listing_id: 'lst_004',
+                    provider_id: 'prv_004',
+                    booking_id: 'BK-10492',
+                    safety_flag_type: 'payment_request_off_platform',
+                    report_details: 'Provider asked for cash payment outside Doorstep escrow after accepting.',
+                    evidence_url: '',
+                    created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+                    status: 'in_review'
+                }
+            ];
+        } else {
+            state.reportsList = [];
+        }
+    }
+
+    saveCurrentCustomerState();
+    updatePersonaHeader();
+}
+
+function saveCurrentCustomerState() {
+    const custId = state.currentCustomerId;
+    localStorage.setItem(`doorstep_bookings_${custId}`, JSON.stringify(state.bookingsList));
+    localStorage.setItem(`doorstep_messages_${custId}`, JSON.stringify(state.messages));
+    localStorage.setItem(`doorstep_reports_${custId}`, JSON.stringify(state.reportsList));
+    localStorage.setItem('doorstep_active_persona', custId);
+}
+
+function updatePersonaHeader() {
+    const customer = getCurrentCustomer();
+    const avatarEl = document.getElementById('nav-persona-avatar');
+    const nameEl = document.getElementById('nav-persona-name');
+    if (avatarEl) {
+        avatarEl.textContent = customer.name.charAt(0);
+        avatarEl.className = `w-5 h-5 rounded-full bg-gradient-to-tr ${customer.avatar_color || 'from-blue-500 to-indigo-600'} text-white flex items-center justify-center font-extrabold text-[10px]`;
+    }
+    if (nameEl) {
+        const firstName = customer.name.split(' ')[0];
+        nameEl.textContent = firstName;
+    }
+}
+
+function openPersonaModal() {
+    const modal = document.getElementById('persona-modal');
+    const container = document.getElementById('persona-list-container');
+    if (!modal || !container) return;
+
+    const customers = typeof DB_CUSTOMERS !== 'undefined' ? DB_CUSTOMERS : [];
+    container.innerHTML = customers.map(c => {
+        const isSelected = c.customer_id === state.currentCustomerId;
+        const initial = c.name.charAt(0);
+        return `
+            <div onclick="switchCustomerPersona('${c.customer_id}')" class="p-3 rounded-2xl border ${isSelected ? 'border-blue-500 bg-blue-50/70 ring-2 ring-blue-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'} cursor-pointer transition flex items-center justify-between btn-pop">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${c.avatar_color || 'from-blue-500 to-indigo-600'} text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                        ${initial}
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-slate-900 text-xs flex items-center space-x-1.5">
+                            <span>${c.name}</span>
+                            ${isSelected ? '<span class="text-[10px] font-bold text-blue-600 bg-blue-100/80 px-1.5 py-0.2 rounded-md">Active</span>' : ''}
+                        </div>
+                        <div class="text-[11px] text-slate-500 truncate max-w-[170px]">${c.address}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.customer_id}</div>
+                    </div>
+                </div>
+                <div>
+                    ${isSelected ? '<i class="fa-solid fa-circle-check text-blue-600 text-base"></i>' : '<i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>'}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    modal.classList.remove('hidden');
+}
+
+function closePersonaModal() {
+    const modal = document.getElementById('persona-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function switchCustomerPersona(customerId) {
+    state.currentCustomerId = customerId;
+    initCustomerState(customerId);
+    closePersonaModal();
+    const customer = getCurrentCustomer();
+    showToast(`Switched to Persona: ${customer.name}`, 'fa-user-check');
+    navigate(state.currentView, state.currentViewParams);
+}
+
+// --- 2. ROUTING & NAVIGATION ---
 function navigate(view, params = {}) {
     const container = document.getElementById('app-container');
     if (!container) return;
+
+    state.currentView = view;
+    state.currentViewParams = params;
 
     if (params.category !== undefined) {
         state.filters.category = params.category;
@@ -100,18 +269,22 @@ function updateNavBadge() {
     }
 }
 
-// --- 1. DASHBOARD VIEW ---
+// --- 3. DASHBOARD VIEW ---
 function getDashboardHTML() {
-    const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
+    const activeListings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
     const featuredListings = activeListings.slice(0, 3);
+    const customer = getCurrentCustomer();
 
     return `
         <div class="p-5 space-y-6">
-            <!-- Hero Greeting & Search -->
+            <!-- Hero Greeting -->
             <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full inline-block mb-2">Verified Local Pros</span>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full inline-block">Verified Local Pros</span>
+                    <span class="text-[11px] text-slate-400 font-medium">Hello, <strong class="text-slate-700">${customer.name.split(' ')[0]}</strong></span>
+                </div>
                 <h1 class="text-2xl font-extrabold text-slate-900 leading-tight">Find trusted help for your home</h1>
-                <p class="text-xs text-slate-500 mt-1">Book licensed & background-checked neighbors in Portland.</p>
+                <p class="text-xs text-slate-500 mt-1">Book background-checked independent neighbors in Portland, OR.</p>
             </div>
             
             <!-- Real-Time Search Bar -->
@@ -132,7 +305,7 @@ function getDashboardHTML() {
                 `}
             </div>
 
-            <!-- Category Grid -->
+            <!-- Popular Categories Grid -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="font-bold text-sm text-slate-900 tracking-tight">Popular Categories</h2>
@@ -171,7 +344,7 @@ function getDashboardHTML() {
                 </div>
             </div>
 
-            <!-- Featured Providers Carousel -->
+            <!-- Featured Providers -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="font-bold text-sm text-slate-900 tracking-tight">Top-Rated Providers</h2>
@@ -179,7 +352,7 @@ function getDashboardHTML() {
                 </div>
                 <div class="space-y-3">
                     ${featuredListings.map(listing => {
-                        const provider = DB_PROVIDERS.find(p => p.provider_id === listing.provider_id) || {};
+                        const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === listing.provider_id) || {};
                         const rating = listing.rating ? listing.rating.toFixed(1) : '5.0';
                         const priceUnit = listing.price_unit === 'hourly' ? '/hr' : ' flat';
                         return `
@@ -198,9 +371,11 @@ function getDashboardHTML() {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <span class="text-xs font-extrabold text-emerald-600">$${listing.price}</span>
-                                    <span class="text-[10px] text-slate-400 block">${priceUnit}</span>
+                                <div class="text-right flex flex-col items-end space-y-1">
+                                    <span class="text-xs font-extrabold text-emerald-600">$${listing.price}${priceUnit}</span>
+                                    <button onclick="event.stopPropagation(); openProviderChat('${provider.provider_id}', '${listing.listing_id}')" class="text-[11px] text-blue-600 hover:text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-lg" title="Chat with provider">
+                                        <i class="fa-solid fa-message mr-1"></i>Chat
+                                    </button>
                                 </div>
                             </div>
                         `;
@@ -208,16 +383,13 @@ function getDashboardHTML() {
                 </div>
             </div>
 
-            <!-- Bottom spacing -->
             <div class="h-10"></div>
         </div>
     `;
 }
 
 function executeDashboardSearch(query) {
-    state.filters.searchQuery = (query || '').trim();
-    state.filters.category = 'All';
-    navigate('feed');
+    navigate('feed', { search: query, category: 'All' });
 }
 
 function clearSearchAndRefresh() {
@@ -225,185 +397,163 @@ function clearSearchAndRefresh() {
     navigate('dashboard');
 }
 
-// --- 2. FEED VIEW WITH FILTERS & QUICK BOOK ---
-function getFilteredListings() {
-    let list = DB_LISTINGS.filter(l => l.listing_status === 'active');
+// --- 4. FEED / SEARCH RESULTS VIEW ---
+function getFeedHTML() {
+    let listings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
 
-    // 1. Category Filter
+    // 1. Filter by Category
     if (state.filters.category && state.filters.category !== 'All') {
-        const codes = categoryMap[state.filters.category] || [];
-        list = list.filter(l => l.service_type.some(c => codes.includes(c)));
+        const allowedTypes = categoryMap[state.filters.category] || [];
+        listings = listings.filter(l => l.service_type.some(t => allowedTypes.includes(t)));
     }
 
-    // 2. Search Query Filter
+    // 2. Filter by Search Query
     if (state.filters.searchQuery) {
         const q = state.filters.searchQuery.toLowerCase();
-        list = list.filter(l => {
-            const provider = DB_PROVIDERS.find(p => p.provider_id === l.provider_id);
-            const provName = provider ? provider.name.toLowerCase() : '';
-            const provBio = provider ? provider.bio.toLowerCase() : '';
-            const title = (l.title || '').toLowerCase();
-            const desc = (l.listing_description || '').toLowerCase();
-            const loc = (l.provider_location || '').toLowerCase();
-
-            return title.includes(q) || desc.includes(q) || provName.includes(q) || provBio.includes(q) || loc.includes(q);
+        listings = listings.filter(l => {
+            const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === l.provider_id) || {};
+            return (l.title || '').toLowerCase().includes(q) ||
+                   (l.listing_description || '').toLowerCase().includes(q) ||
+                   (provider.name || '').toLowerCase().includes(q) ||
+                   (provider.bio || '').toLowerCase().includes(q) ||
+                   (l.provider_location || '').toLowerCase().includes(q);
         });
     }
 
-    // 3. Max Price Filter
+    // 3. Filter by Max Price
     if (state.filters.maxPrice) {
-        list = list.filter(l => l.price <= state.filters.maxPrice);
+        listings = listings.filter(l => (l.price || 0) <= state.filters.maxPrice);
     }
 
-    // 4. Min Rating Filter
+    // 4. Filter by Min Rating
     if (state.filters.minRating > 0) {
-        list = list.filter(l => (l.rating || 0) >= state.filters.minRating);
+        listings = listings.filter(l => (l.rating || 5.0) >= state.filters.minRating);
     }
 
-    // 5. Sorting
-    if (state.filters.sortBy === 'price-asc') {
-        list.sort((a, b) => a.price - b.price);
+    // 5. Sort By
+    if (state.filters.sortBy === 'rating-desc') {
+        listings.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (state.filters.sortBy === 'price-asc') {
+        listings.sort((a, b) => a.price - b.price);
     } else if (state.filters.sortBy === 'price-desc') {
-        list.sort((a, b) => b.price - a.price);
-    } else if (state.filters.sortBy === 'rating-desc') {
-        list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        listings.sort((a, b) => b.price - a.price);
     } else if (state.filters.sortBy === 'reviews-desc') {
-        list.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
+        listings.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
     }
 
-    return list;
-}
-
-function getFeedHTML() {
-    const pros = getFilteredListings();
-    const activeFiltersCount = (state.filters.category !== 'All' ? 1 : 0) + 
-                               (state.filters.searchQuery ? 1 : 0) + 
-                               (state.filters.maxPrice < 200 ? 1 : 0) + 
-                               (state.filters.minRating > 0 ? 1 : 0) +
-                               (state.filters.sortBy !== 'recommended' ? 1 : 0);
+    const categories = ['All', 'Cleaning', 'Handyman', 'Moving', 'Yard & Outdoor'];
 
     let cardsHTML = '';
-    if (pros.length === 0) {
+    if (listings.length === 0) {
         cardsHTML = `
-            <div class="text-center py-12 px-4 bg-white rounded-3xl border border-slate-200 my-6 shadow-sm">
-                <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-2xl mx-auto mb-3">
-                    <i class="fa-solid fa-search"></i>
+            <div class="text-center py-12 px-4 bg-white rounded-2xl border border-slate-200/80 my-4 shadow-sm">
+                <div class="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-xl mx-auto mb-3">
+                    <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
-                <h3 class="font-bold text-slate-800 text-base mb-1">No matching providers found</h3>
-                <p class="text-xs text-slate-500 mb-5 max-w-xs mx-auto">Try adjusting your category, increasing max price, or clearing filters.</p>
-                <button onclick="resetFilters(); navigate('feed')" class="bg-blue-600 text-white text-xs font-bold py-2.5 px-5 rounded-xl shadow-md shadow-blue-500/20 btn-pop">
+                <h3 class="font-bold text-slate-800 text-sm mb-1">No matching providers found</h3>
+                <p class="text-xs text-slate-500 max-w-xs mx-auto mb-4">Try adjusting your filters or price slider to see more available options.</p>
+                <button onclick="resetFilters()" class="text-xs font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition btn-pop">
                     Reset All Filters
                 </button>
             </div>
         `;
     } else {
-        cardsHTML = pros.map(p => {
-            const provider = DB_PROVIDERS.find(prv => prv.provider_id === p.provider_id) || {};
-            const rating = p.rating ? p.rating.toFixed(1) : '5.0';
-            const priceUnit = p.price_unit === 'hourly' ? '/hr' : ' flat';
+        cardsHTML = listings.map(l => {
+            const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === l.provider_id) || {};
+            const rating = l.rating ? l.rating.toFixed(1) : '5.0';
+            const priceUnit = l.price_unit === 'hourly' ? '/hr' : ' flat';
             const initial = provider.name ? provider.name.charAt(0) : 'P';
 
             return `
-            <div class="bg-white p-4 mb-3.5 rounded-2xl shadow-sm border border-slate-200/80 card-hover">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-sm">
-                            ${initial}
-                        </div>
-                        <div>
-                            <div class="flex items-center space-x-1.5">
-                                <h3 class="font-bold text-slate-900 text-sm hover:text-blue-600 cursor-pointer" onclick="navigate('profile', {id: '${p.listing_id}'})">${provider.name}</h3>
-                                <i class="fa-solid fa-circle-check text-blue-500 text-[11px]" title="Verified Provider"></i>
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm mb-3.5 card-hover transition relative">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div class="flex items-center space-x-3 cursor-pointer" onclick="navigate('profile', {id: '${l.listing_id}'})">
+                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-md">
+                                ${initial}
                             </div>
-                            <p class="text-[11px] text-slate-500 line-clamp-1">${p.title}</p>
+                            <div>
+                                <div class="flex items-center space-x-1">
+                                    <h3 class="font-bold text-slate-900 text-sm hover:text-blue-600 transition">${provider.name}</h3>
+                                    <i class="fa-solid fa-circle-check text-blue-500 text-xs" title="Verified Provider"></i>
+                                </div>
+                                <span class="text-[11px] text-slate-400">${l.provider_location}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-extrabold text-emerald-600">$${l.price}</span>
+                            <span class="text-[11px] text-slate-400 font-normal">${priceUnit}</span>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <div class="font-extrabold text-emerald-600 text-sm">$${p.price}<span class="text-[10px] text-slate-400 font-normal">${priceUnit}</span></div>
+
+                    <div class="cursor-pointer" onclick="navigate('profile', {id: '${l.listing_id}'})">
+                        <h4 class="font-bold text-slate-800 text-xs mb-1">${l.title}</h4>
+                        <p class="text-xs text-slate-500 line-clamp-2 mb-3 leading-relaxed">${l.listing_description}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                        <div class="flex items-center space-x-3 text-slate-500">
+                            <span class="text-amber-500 font-bold flex items-center">
+                                <i class="fa-solid fa-star text-[10px] mr-1"></i> ${rating}
+                                <span class="text-slate-400 font-normal ml-1">(${l.review_count || 0})</span>
+                            </span>
+                            <span class="text-slate-300">•</span>
+                            <span class="text-[11px] text-slate-500"><i class="fa-solid fa-shield-halved text-blue-500 mr-1"></i>Escrow</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="openProviderChat('${provider.provider_id}', '${l.listing_id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Message Provider">
+                                <i class="fa-solid fa-message text-xs"></i>
+                            </button>
+                            <button onclick="navigate('profile', {id: '${l.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-sm btn-pop text-xs">
+                                Book
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <p class="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed pl-1">${p.listing_description}</p>
-
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-                    <div class="flex items-center space-x-3">
-                        <span class="flex items-center text-amber-500 font-bold text-[11px]">
-                            <i class="fa-solid fa-star text-[10px] mr-1"></i> ${rating} 
-                            <span class="text-slate-400 font-normal ml-1">(${p.review_count})</span>
-                        </span>
-                        <span class="text-[11px] text-slate-400 flex items-center">
-                            <i class="fa-solid fa-location-dot mr-1 text-slate-400 text-[10px]"></i> ${p.provider_location}
-                        </span>
-                    </div>
-                    
-                    <!-- Fix 1: Quick Book safely routes to time slot selection directly -->
-                    <div class="flex items-center space-x-2">
-                        <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-[11px] font-bold text-slate-600 hover:text-blue-600 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition btn-pop">
-                            Profile
-                        </button>
-                        <button onclick="navigate('schedule', {id: '${p.listing_id}'})" class="text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl shadow-sm shadow-blue-500/20 transition btn-pop">
-                            Quick Book
-                        </button>
-                    </div>
-                </div>
-            </div>
             `;
         }).join('');
     }
 
     return `
         <!-- Sticky Feed Header -->
-        <div class="glass-header px-4 py-3 border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-            <div class="flex items-center space-x-3">
-                <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 transition btn-pop">
-                    <i class="fa-solid fa-arrow-left text-sm"></i>
+        <div class="glass-header px-4 py-3 border-b border-slate-200 sticky top-0 z-10 space-y-2.5">
+            <div class="flex items-center space-x-2">
+                <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-slate-900 p-1 btn-pop">
+                    <i class="fa-solid fa-arrow-left"></i>
                 </button>
-                <div>
-                    <h2 class="font-extrabold text-sm text-slate-900 leading-tight">
-                        ${state.filters.searchQuery ? `"${state.filters.searchQuery}"` : (state.filters.category === 'All' ? 'All Providers' : state.filters.category)}
-                    </h2>
-                    <span class="text-[10px] text-slate-400 font-semibold">${pros.length} available pros</span>
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" id="feed-search-input" placeholder="Search services..." 
+                        class="w-full pl-8 pr-8 py-2 bg-slate-100 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+                        value="${state.filters.searchQuery}"
+                        oninput="handleFeedSearch(this.value)">
+                    ${state.filters.searchQuery ? `
+                        <button onclick="clearFeedSearch()" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    ` : ''}
                 </div>
+                <button onclick="openFilterModal()" class="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Filter & Sort">
+                    <i class="fa-solid fa-sliders text-xs"></i>
+                    ${state.filters.minRating > 0 || state.filters.maxPrice < 200 || state.filters.sortBy !== 'recommended' ? `
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></span>
+                    ` : ''}
+                </button>
             </div>
-            
-            <!-- Filter Drawer Trigger Button -->
-            <button onclick="openFilterModal()" class="flex items-center space-x-1.5 text-xs font-bold py-1.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-500 hover:text-blue-600 shadow-sm transition btn-pop">
-                <i class="fa-solid fa-sliders text-blue-600"></i>
-                <span>Filter</span>
-                ${activeFiltersCount > 0 ? `
-                    <span class="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center ml-0.5">${activeFiltersCount}</span>
-                ` : ''}
-            </button>
+
+            <!-- Horizontal Category Chips -->
+            <div class="flex space-x-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+                ${categories.map(c => {
+                    const isSelected = state.filters.category === c;
+                    return `
+                        <button onclick="setCategoryFilter('${c}')" class="whitespace-nowrap px-3 py-1.5 rounded-full font-semibold transition btn-pop ${isSelected ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            ${c}
+                        </button>
+                    `;
+                }).join('')}
+            </div>
         </div>
 
-        <!-- Active Filter Pills Bar -->
-        ${(state.filters.category !== 'All' || state.filters.searchQuery || state.filters.maxPrice < 200 || state.filters.minRating > 0) ? `
-            <div class="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center space-x-2 overflow-x-auto text-[11px]">
-                <span class="text-slate-400 font-semibold uppercase text-[9px] whitespace-nowrap">Active:</span>
-                ${state.filters.category !== 'All' ? `
-                    <span class="bg-white border border-slate-200 text-slate-700 font-medium px-2.5 py-0.5 rounded-full flex items-center whitespace-nowrap">
-                        ${state.filters.category} <i class="fa-solid fa-xmark ml-1.5 cursor-pointer text-slate-400 hover:text-red-500" onclick="state.filters.category='All'; navigate('feed')"></i>
-                    </span>
-                ` : ''}
-                ${state.filters.searchQuery ? `
-                    <span class="bg-white border border-slate-200 text-slate-700 font-medium px-2.5 py-0.5 rounded-full flex items-center whitespace-nowrap">
-                        "${state.filters.searchQuery}" <i class="fa-solid fa-xmark ml-1.5 cursor-pointer text-slate-400 hover:text-red-500" onclick="state.filters.searchQuery=''; navigate('feed')"></i>
-                    </span>
-                ` : ''}
-                ${state.filters.maxPrice < 200 ? `
-                    <span class="bg-white border border-slate-200 text-slate-700 font-medium px-2.5 py-0.5 rounded-full flex items-center whitespace-nowrap">
-                        Under $${state.filters.maxPrice} <i class="fa-solid fa-xmark ml-1.5 cursor-pointer text-slate-400 hover:text-red-500" onclick="state.filters.maxPrice=200; navigate('feed')"></i>
-                    </span>
-                ` : ''}
-                ${state.filters.minRating > 0 ? `
-                    <span class="bg-white border border-slate-200 text-slate-700 font-medium px-2.5 py-0.5 rounded-full flex items-center whitespace-nowrap">
-                        ${state.filters.minRating}+ ⭐ <i class="fa-solid fa-xmark ml-1.5 cursor-pointer text-slate-400 hover:text-red-500" onclick="state.filters.minRating=0; navigate('feed')"></i>
-                    </span>
-                ` : ''}
-            </div>
-        ` : ''}
-
-        <!-- Feed List -->
+        <!-- Feed List Container -->
         <div class="p-4 flex-1 overflow-y-auto bg-slate-50">
             ${cardsHTML}
             <div class="h-12"></div>
@@ -411,10 +561,25 @@ function getFeedHTML() {
     `;
 }
 
-// --- 3. PROVIDER PROFILE VIEW ---
+function handleFeedSearch(val) {
+    state.filters.searchQuery = val;
+    navigate('feed');
+}
+
+function clearFeedSearch() {
+    state.filters.searchQuery = '';
+    navigate('feed');
+}
+
+function setCategoryFilter(cat) {
+    state.filters.category = cat;
+    navigate('feed');
+}
+
+// --- 5. PROVIDER PROFILE VIEW ---
 function getProfileHTML(listingId) {
-    const p = DB_LISTINGS.find(l => l.listing_id === listingId) || DB_LISTINGS[0];
-    const provider = DB_PROVIDERS.find(prv => prv.provider_id === p.provider_id) || {};
+    const p = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).find(l => l.listing_id === listingId) || (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS[0] : {});
+    const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(prv => prv.provider_id === p.provider_id) || {};
     state.activeProvider = { listing: p, provider: provider };
 
     const rating = p.rating ? p.rating.toFixed(1) : '5.0';
@@ -474,7 +639,7 @@ function getProfileHTML(listingId) {
             <div class="grid grid-cols-3 gap-2 py-3 my-3 bg-slate-50 rounded-2xl border border-slate-100 text-center text-xs">
                 <div>
                     <span class="text-amber-500 font-extrabold block"><i class="fa-solid fa-star text-[10px]"></i> ${rating}</span>
-                    <span class="text-[10px] text-slate-400">${p.review_count} reviews</span>
+                    <span class="text-[10px] text-slate-400">${p.review_count || 0} reviews</span>
                 </div>
                 <div class="border-x border-slate-200">
                     <span class="font-extrabold text-slate-700 block">${p.provider_location}</span>
@@ -486,6 +651,18 @@ function getProfileHTML(listingId) {
                 </div>
             </div>
 
+            <!-- Provider Direct Chat & Safety Action Row -->
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button onclick="openProviderChat('${provider.provider_id}', '${p.listing_id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 px-3 rounded-xl transition btn-pop text-xs flex items-center justify-center space-x-2 border border-blue-200">
+                    <i class="fa-solid fa-message text-xs"></i>
+                    <span>Message Provider</span>
+                </button>
+                <button onclick="openReportModal('listing', '${p.listing_id}', '${p.listing_id}', null, '${provider.provider_id}')" class="bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold py-2.5 px-3 rounded-xl transition btn-pop text-xs flex items-center justify-center space-x-2 border border-slate-200">
+                    <i class="fa-solid fa-shield-cat text-xs"></i>
+                    <span>Safety Report</span>
+                </button>
+            </div>
+
             <!-- Bio & Service Description -->
             <div class="space-y-3 mb-5 text-xs text-slate-600">
                 <div>
@@ -494,7 +671,7 @@ function getProfileHTML(listingId) {
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-900 mb-1 text-[11px] uppercase tracking-wider">About Provider</h3>
-                    <p class="leading-relaxed text-slate-500 italic">"${provider.bio}"</p>
+                    <p class="leading-relaxed text-slate-500 italic">"${provider.bio || 'Experienced local home service provider.'}"</p>
                 </div>
             </div>
 
@@ -515,10 +692,32 @@ function getProfileHTML(listingId) {
     `;
 }
 
-// --- 4. QUICK BOOK SCHEDULING VIEW (Fix 1 in Workflow) ---
+function selectTime(dateStr) {
+    state.booking.timeSlot = dateStr;
+    const slots = document.querySelectorAll('.time-slot');
+    slots.forEach(slot => {
+        if (slot.getAttribute('data-date') === dateStr) {
+            slot.classList.add('border-blue-600', 'bg-blue-50', 'ring-2', 'ring-blue-500/30');
+            slot.classList.remove('border-slate-200', 'bg-white');
+        } else {
+            slot.classList.remove('border-blue-600', 'bg-blue-50', 'ring-2', 'ring-blue-500/30');
+            slot.classList.add('border-slate-200', 'bg-white');
+        }
+    });
+}
+
+function goToCheckout() {
+    if (!state.booking.timeSlot) {
+        showToast('Please pick a time slot before continuing', 'fa-calendar-exclamation');
+        return;
+    }
+    navigate('checkout');
+}
+
+// --- 6. QUICK BOOK SCHEDULING VIEW ---
 function getScheduleHTML(listingId) {
-    const p = DB_LISTINGS.find(l => l.listing_id === listingId) || DB_LISTINGS[0];
-    const provider = DB_PROVIDERS.find(prv => prv.provider_id === p.provider_id) || {};
+    const p = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).find(l => l.listing_id === listingId) || (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS[0] : {});
+    const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(prv => prv.provider_id === p.provider_id) || {};
     state.activeProvider = { listing: p, provider: provider };
 
     const availSlots = p.availability && p.availability.length > 0 ? p.availability : [
@@ -552,150 +751,152 @@ function getScheduleHTML(listingId) {
 
     return `
         <div class="glass-header px-4 py-3.5 border-b border-slate-200 flex items-center justify-between sticky top-0 z-10">
-            <button onclick="navigate('feed')" class="text-slate-500 hover:text-slate-900 p-1 rounded-lg btn-pop">
+            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-slate-500 hover:text-slate-900 p-1 btn-pop">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <h2 class="font-extrabold text-sm text-slate-900">Select Booking Time</h2>
+            <h2 class="font-extrabold text-sm text-slate-900">Schedule Service</h2>
             <div class="w-6"></div>
         </div>
 
-        <div class="p-5 flex-1 flex flex-col justify-between">
+        <div class="p-5 flex-1 flex flex-col justify-between overflow-y-auto">
             <div>
-                <!-- Provider Summary Card -->
-                <div class="bg-blue-50/80 border border-blue-100 p-4 rounded-2xl mb-5 flex items-center space-x-3">
-                    <div class="w-11 h-11 rounded-xl bg-blue-600 text-white font-extrabold flex items-center justify-center text-sm shadow-sm">
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3 mb-5">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-sm shadow-inner">
                         ${provider.name ? provider.name.charAt(0) : 'P'}
                     </div>
                     <div>
-                        <h3 class="font-bold text-slate-900 text-sm">${provider.name}</h3>
-                        <p class="text-xs text-blue-700 font-medium">${p.title}</p>
-                        <div class="text-[11px] text-slate-500 mt-0.5">$${p.price} ${p.price_unit === 'hourly' ? '/ hr' : 'flat rate'}</div>
+                        <h4 class="font-bold text-slate-800 text-xs">${provider.name}</h4>
+                        <p class="text-[11px] text-slate-500 line-clamp-1">${p.title}</p>
                     </div>
                 </div>
 
-                <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider mb-3">Available Slots for this Job</h3>
-                <div id="availability-grid">
+                <h3 class="font-bold text-xs uppercase tracking-wider text-slate-600 mb-3">Available Appointment Slots</h3>
+                <div class="space-y-2">
                     ${availHTML}
                 </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-200">
-                <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-blue-500/25 transition btn-pop flex items-center justify-center space-x-2">
-                    <span>Continue to Address & Payment</span>
-                    <i class="fa-solid fa-arrow-right text-xs"></i>
+            <div class="pt-4">
+                <button onclick="goToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-blue-500/25 transition btn-pop">
+                    Proceed to Escrow Checkout
                 </button>
             </div>
         </div>
     `;
 }
 
-function selectTime(date) {
-    document.querySelectorAll('.time-slot').forEach(el => {
-        el.classList.remove('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-200');
-    });
-    const selected = document.querySelector(`.time-slot[data-date="${date}"]`);
-    if (selected) {
-        selected.classList.add('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-200');
-        state.booking.timeSlot = date;
-    }
-}
-
-function goToCheckout() {
-    if (!state.booking.timeSlot) {
-        showToast('Please select an available time slot first!', 'fa-circle-exclamation');
-        return;
-    }
-    navigate('checkout');
-}
-
-// --- 5. CHECKOUT & ESCROW AUTHORIZATION VIEW ---
+// --- 7. ESCROW CHECKOUT VIEW ---
 function getCheckoutHTML() {
-    const p = state.activeProvider?.listing || DB_LISTINGS[0];
-    const provider = state.activeProvider?.provider || DB_PROVIDERS[0];
-    
-    const commission = parseFloat((p.price * 0.15).toFixed(2));
-    state.booking.total = p.price + commission; 
+    const listing = state.activeProvider?.listing || (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS[0] : {});
+    const provider = state.activeProvider?.provider || {};
+    const customer = getCurrentCustomer();
+
+    const price = listing.price || 50;
+    const isHourly = listing.price_unit === 'hourly';
+    const hours = state.booking.hours || 1;
+    const subtotal = isHourly ? price * hours : price;
+    const platformFee = subtotal * 0.15; // 15% marketplace fee
+    const total = subtotal + platformFee;
+    state.booking.total = total;
+
+    const timeStr = state.booking.timeSlot ? new Date(state.booking.timeSlot).toLocaleString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    }) : 'Pending Slot';
 
     return `
-        <div class="glass-header px-4 py-3.5 border-b border-slate-200 flex items-center sticky top-0 z-10">
-            <button onclick="navigate('profile', {id: '${p.listing_id}'})" class="text-slate-500 hover:text-slate-900 mr-3 btn-pop">
+        <div class="glass-header px-4 py-3.5 border-b border-slate-200 flex items-center justify-between sticky top-0 z-10">
+            <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="text-slate-500 hover:text-slate-900 p-1 btn-pop">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <h2 class="font-extrabold text-sm text-slate-900">Secure Escrow Checkout</h2>
+            <h2 class="font-extrabold text-sm text-slate-900">Escrow Checkout</h2>
+            <div class="w-6"></div>
         </div>
 
-        <div class="p-5 flex-1 overflow-y-auto space-y-4">
-            <!-- Order Summary Card -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80">
-                <div class="flex items-center space-x-3 mb-3 pb-3 border-b border-slate-100">
-                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-calendar-check"></i>
+        <div class="p-5 flex-1 overflow-y-auto space-y-4 text-xs">
+            <!-- Job Summary Card -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-sm shadow-inner">
+                        ${provider.name ? provider.name.charAt(0) : 'P'}
                     </div>
                     <div>
-                        <h3 class="font-bold text-slate-900 text-xs">${p.title}</h3>
-                        <p class="text-[11px] text-blue-600 font-semibold">${new Date(state.booking.timeSlot || Date.now()).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
+                        <h4 class="font-bold text-slate-900 text-xs">${provider.name}</h4>
+                        <p class="text-[11px] text-slate-500">${listing.title}</p>
                     </div>
                 </div>
 
-                <div class="space-y-2 text-xs text-slate-600">
-                    <div class="flex justify-between">
-                        <span>Provider Rate (${provider.name})</span>
-                        <span class="font-bold text-slate-800">$${p.price.toFixed(2)}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Doorstep Protection & Escrow (15%)</span>
-                        <span class="font-bold text-slate-800">$${commission.toFixed(2)}</span>
-                    </div>
-                    <div class="flex justify-between font-extrabold text-sm text-slate-900 border-t border-slate-100 pt-2.5 mt-2.5">
-                        <span>Total Authorization</span>
-                        <span class="text-emerald-600">$${state.booking.total.toFixed(2)}</span>
-                    </div>
+                <div class="flex justify-between items-center text-slate-600">
+                    <span><i class="fa-solid fa-calendar mr-1.5 text-blue-500"></i> Date & Time</span>
+                    <span class="font-bold text-slate-800">${timeStr}</span>
                 </div>
-            </div>
 
-            <!-- Job Address (Fix 4: Sequencing) -->
-            <div>
-                <label class="font-bold text-slate-700 text-xs uppercase tracking-wider block mb-1.5">Job Location Address</label>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex items-center space-x-2.5">
-                    <i class="fa-solid fa-location-dot text-rose-500"></i>
-                    <input type="text" id="job-address" class="flex-1 bg-transparent text-xs font-medium text-slate-800 outline-none" value="${state.booking.address}" placeholder="Enter service address...">
-                </div>
-            </div>
-
-            <!-- Payment Method Selection -->
-            <div>
-                <label class="font-bold text-slate-700 text-xs uppercase tracking-wider block mb-1.5">Payment Method</label>
-                <div class="bg-white rounded-2xl border border-blue-500 ring-2 ring-blue-100 p-3.5 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-9 h-6 bg-slate-900 text-white rounded flex items-center justify-center text-xs font-bold">
-                            VISA
-                        </div>
-                        <div>
-                            <div class="font-bold text-xs text-slate-800">•••• 4242</div>
-                            <div class="text-[10px] text-slate-400">Expires 08/28</div>
+                ${isHourly ? `
+                    <div class="flex justify-between items-center text-slate-600 pt-2 border-t border-slate-100">
+                        <span><i class="fa-solid fa-clock mr-1.5 text-blue-500"></i> Estimated Duration</span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="adjustHours(-1)" class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 btn-pop">-</button>
+                            <span class="font-extrabold text-slate-800">${hours} hr</span>
+                            <button onclick="adjustHours(1)" class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 btn-pop">+</button>
                         </div>
                     </div>
-                    <i class="fa-solid fa-circle-check text-blue-600 text-base"></i>
+                ` : ''}
+            </div>
+
+            <!-- Service Address Input -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                <label class="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Service Location</label>
+                <div class="relative">
+                    <i class="fa-solid fa-location-dot absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="job-address" value="${customer.address || state.booking.address}" class="w-full pl-8 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs text-slate-800">
                 </div>
             </div>
 
-            <!-- Escrow Badge -->
-            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-start space-x-2.5">
-                <i class="fa-solid fa-shield-halved text-emerald-600 text-sm mt-0.5"></i>
-                <div class="text-[11px] text-emerald-800 leading-relaxed">
-                    <strong class="font-bold">Zero-Risk Escrow Guarantee:</strong> Your funds are held safely until you confirm that the service has been satisfactorily completed.
+            <!-- Escrow Trust Notice -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 p-3.5 rounded-2xl flex items-start space-x-3">
+                <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shadow-md">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h4 class="font-extrabold text-blue-950 text-xs mb-0.5">Doorstep Escrow Guarantee</h4>
+                    <p class="text-[11px] text-blue-800 leading-relaxed">
+                        Funds are held securely by Doorstep and only released to the provider <strong>after you verify job completion</strong>.
+                    </p>
                 </div>
             </div>
 
-            <!-- Submit Button -->
+            <!-- Price Breakdown -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                <div class="flex justify-between text-slate-500">
+                    <span>Base Service ${isHourly ? `($${price}/hr × ${hours}h)` : 'Rate'}</span>
+                    <span class="font-semibold text-slate-800">$${subtotal.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                    <span>Doorstep Trust & Escrow Fee (15%)</span>
+                    <span class="font-semibold text-slate-800">$${platformFee.toFixed(2)}</span>
+                </div>
+                <div class="border-t border-slate-100 pt-2 flex justify-between items-center text-sm font-extrabold">
+                    <span class="text-slate-900">Total Held in Escrow</span>
+                    <span class="text-emerald-600 text-base">$${total.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <!-- Authorize Payment CTA -->
             <div class="pt-2">
-                <button onclick="processPayment()" id="pay-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-2xl shadow-xl transition btn-pop flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-lock text-xs text-emerald-400"></i>
-                    <span>Authorize $${state.booking.total.toFixed(2)} in Escrow</span>
+                <button onclick="processPayment()" id="pay-btn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-emerald-500/25 transition btn-pop flex items-center justify-center space-x-2 text-sm">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                    <span>Authorize $${total.toFixed(2)} in Escrow</span>
                 </button>
             </div>
         </div>
     `;
+}
+
+function adjustHours(delta) {
+    const newHours = (state.booking.hours || 1) + delta;
+    if (newHours >= 1 && newHours <= 8) {
+        state.booking.hours = newHours;
+        navigate('checkout');
+    }
 }
 
 function processPayment() {
@@ -711,10 +912,10 @@ function processPayment() {
     }
 
     setTimeout(() => {
-        // Save new booking to state
         const newBooking = {
             id: 'BK-' + Math.floor(10000 + Math.random() * 90000),
             listing_id: state.activeProvider?.listing?.listing_id || 'lst_001',
+            provider_id: state.activeProvider?.provider?.provider_id || 'prv_001',
             title: state.activeProvider?.listing?.title || 'Home Service',
             provider_name: state.activeProvider?.provider?.name || 'Local Pro',
             timeSlot: state.booking.timeSlot || new Date().toISOString(),
@@ -727,12 +928,13 @@ function processPayment() {
         };
 
         state.bookingsList.unshift(newBooking);
+        saveCurrentCustomerState();
         navigate('confirmation');
         showToast('Escrow Payment Authorized!', 'fa-shield-halved');
-    }, 1200);
+    }, 1100);
 }
 
-// --- 6. CONFIRMATION VIEW ---
+// --- 8. CONFIRMATION VIEW ---
 function getConfirmationHTML() {
     const latest = state.bookingsList[0] || {};
     return `
@@ -774,18 +976,25 @@ function getConfirmationHTML() {
     `;
 }
 
-// --- 7. "MY BOOKINGS" & POST-SERVICE REVIEW VIEW (Phase 4 in Workflow) ---
+// --- 9. MY BOOKINGS, REVIEWS & SAFETY AUDIT VIEW ---
 function getMyBookingsHTML() {
     const upcoming = state.bookingsList.filter(b => b.status === 'upcoming');
     const completed = state.bookingsList.filter(b => b.status === 'completed');
+    const reports = state.reportsList || [];
+    const customer = getCurrentCustomer();
 
     return `
         <div class="glass-header px-4 py-3.5 border-b border-slate-200 flex items-center justify-between sticky top-0 z-10">
             <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-slate-900 p-1 btn-pop">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <h2 class="font-extrabold text-sm text-slate-900">My Bookings & Receipts</h2>
-            <div class="w-6"></div>
+            <div class="text-center">
+                <h2 class="font-extrabold text-sm text-slate-900">My Bookings & Activity</h2>
+                <span class="text-[10px] text-slate-400">Account: ${customer.name}</span>
+            </div>
+            <button onclick="openPersonaModal()" class="text-blue-600 text-xs font-bold bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 transition btn-pop">
+                Switch
+            </button>
         </div>
 
         <div class="p-4 flex-1 overflow-y-auto space-y-6">
@@ -819,11 +1028,16 @@ function getMyBookingsHTML() {
                             <div><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i> ${b.address}</div>
                         </div>
 
-                        <!-- Post-service completion simulation button -->
-                        <div class="pt-2 border-t border-slate-100 flex space-x-2">
-                            <button onclick="triggerJobCompletion('${b.id}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition shadow-sm btn-pop flex items-center justify-center space-x-1.5">
-                                <i class="fa-solid fa-check text-xs"></i>
-                                <span>Mark Job Completed</span>
+                        <!-- Action Bar for Upcoming Booking -->
+                        <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-2">
+                            <button onclick="openProviderChat('${b.provider_id || 'prv_001'}', '${b.listing_id || 'lst_001'}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold py-2 rounded-xl transition btn-pop text-center">
+                                <i class="fa-solid fa-message mr-1"></i>Chat
+                            </button>
+                            <button onclick="openReportModal('booking', '${b.id}', '${b.listing_id}', '${b.id}', '${b.provider_id}')" class="bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold py-2 rounded-xl transition btn-pop text-center">
+                                <i class="fa-solid fa-shield-cat mr-1"></i>Report
+                            </button>
+                            <button onclick="triggerJobCompletion('${b.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-xl transition shadow-sm btn-pop text-center">
+                                <i class="fa-solid fa-check mr-1"></i>Complete
                             </button>
                         </div>
                     </div>
@@ -872,6 +1086,38 @@ function getMyBookingsHTML() {
                 `).join('')}
             </div>
 
+            <!-- Trust & Safety Reports Section (Product B ➔ Product D Bridge) -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-rose-700 flex items-center">
+                        <i class="fa-solid fa-shield-cat mr-2 text-rose-500"></i> Trust & Safety Cases (${reports.length})
+                    </h3>
+                </div>
+
+                ${reports.length === 0 ? `
+                    <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
+                        No active safety reports filed for this account.
+                    </div>
+                ` : reports.map(rep => `
+                    <div class="bg-white p-3.5 rounded-2xl border border-rose-100 shadow-sm mb-3">
+                        <div class="flex justify-between items-start mb-1.5">
+                            <div>
+                                <span class="font-mono text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-full">${rep.report_id}</span>
+                                <h4 class="font-bold text-slate-900 text-xs mt-1 capitalize">${(rep.safety_flag_type || '').replace(/_/g, ' ')}</h4>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                ${rep.status || 'Under Review'}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100 mt-1">${rep.report_details}</p>
+                        <div class="text-[10px] text-slate-400 mt-2 flex justify-between items-center">
+                            <span>Filed: ${new Date(rep.created_at).toLocaleDateString()}</span>
+                            <span class="text-rose-600 font-medium">Assigned to Product D Moderation</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
             <div class="h-10"></div>
         </div>
     `;
@@ -883,40 +1129,248 @@ function triggerJobCompletion(bookingId) {
 
     b.status = 'completed';
     b.escrowStatus = 'released';
-    showToast('Job marked completed! Escrow released to provider.', 'fa-circle-check');
-    
-    // Prompt Rating & Review Modal
+    saveCurrentCustomerState();
+    showToast('Job completed! Escrow released to provider.', 'fa-circle-check');
     openReviewModal(bookingId);
 }
 
-// --- 8. FILTER MODAL CONTROLLER ---
+// --- 10. DIRECT CUSTOMER ↔ PROVIDER CHAT ENGINE ---
+function openProviderChat(providerId, listingId) {
+    const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === providerId) || {
+        provider_id: providerId,
+        name: 'Provider Pro'
+    };
+    const listing = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).find(l => l.listing_id === listingId) || (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS[0] : {});
+
+    state.activeChatProvider = provider;
+    state.activeChatListing = listing;
+
+    const modal = document.getElementById('provider-chat-modal');
+    const avatarEl = document.getElementById('provider-chat-avatar');
+    const nameEl = document.getElementById('provider-chat-name');
+    const statusEl = document.getElementById('provider-chat-status');
+    const bookBtn = document.getElementById('provider-chat-book-btn');
+
+    if (avatarEl) avatarEl.textContent = provider.name.charAt(0);
+    if (nameEl) nameEl.textContent = provider.name;
+    if (statusEl) statusEl.textContent = `Active • ${listing.title || 'Verified Provider'}`;
+    if (bookBtn) {
+        bookBtn.onclick = () => {
+            closeProviderChat();
+            navigate('schedule', { id: listing.listing_id });
+        };
+    }
+
+    renderProviderChatFeed(providerId);
+
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeProviderChat() {
+    const modal = document.getElementById('provider-chat-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function renderProviderChatFeed(providerId) {
+    const feed = document.getElementById('provider-chat-feed');
+    if (!feed) return;
+
+    const thread = state.messages[providerId] || [
+        {
+            id: 'init_msg',
+            sender: 'provider',
+            text: `Hi there! I'm ${state.activeChatProvider?.name || 'your provider'}. Feel free to message me with any questions about my services!`,
+            timestamp: new Date().toISOString()
+        }
+    ];
+
+    feed.innerHTML = thread.map(m => {
+        const isCustomer = m.sender === 'customer';
+        const timeStr = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (isCustomer) {
+            return `
+                <div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none self-end max-w-[85%] shadow-sm text-xs leading-relaxed">
+                    <p>${m.text}</p>
+                    <div class="text-[9px] text-blue-200 text-right mt-1">${timeStr} ✓</div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="bg-white border border-slate-200/80 p-3 rounded-2xl rounded-tl-none self-start max-w-[85%] shadow-sm text-xs text-slate-800 leading-relaxed">
+                    <p>${m.text}</p>
+                    <div class="text-[9px] text-slate-400 mt-1">${timeStr}</div>
+                </div>
+            `;
+        }
+    }).join('');
+
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function sendProviderQuickMsg(text) {
+    const input = document.getElementById('provider-chat-input');
+    if (input) input.value = text;
+    sendProviderChatMessage();
+}
+
+function sendProviderChatMessage() {
+    const input = document.getElementById('provider-chat-input');
+    const msg = (input ? input.value : '').trim();
+    if (!msg || !state.activeChatProvider) return;
+
+    const providerId = state.activeChatProvider.provider_id;
+    if (!state.messages[providerId]) state.messages[providerId] = [];
+
+    const newMsg = {
+        id: 'msg_' + Date.now(),
+        sender: 'customer',
+        text: msg,
+        timestamp: new Date().toISOString()
+    };
+
+    state.messages[providerId].push(newMsg);
+    saveCurrentCustomerState();
+    input.value = '';
+    renderProviderChatFeed(providerId);
+
+    // Show Provider Typing Indicator
+    const typingIndicator = document.getElementById('provider-typing-indicator');
+    const typingLabel = document.getElementById('typing-provider-label');
+    if (typingIndicator) {
+        if (typingLabel) typingLabel.textContent = `${state.activeChatProvider.name} is typing...`;
+        typingIndicator.classList.remove('hidden');
+    }
+
+    // Realistic Simulated Provider Response Engine
+    setTimeout(() => {
+        if (typingIndicator) typingIndicator.classList.add('hidden');
+
+        const lowerMsg = msg.toLowerCase();
+        let reply = "Thanks for your message! Yes, I have open slots available this week. Feel free to book directly through my schedule!";
+
+        if (lowerMsg.includes('saturday') || lowerMsg.includes('weekend') || lowerMsg.includes('availab')) {
+            reply = `Yes, I am available this weekend! You can pick any of the green time slots on my booking page.`;
+        } else if (lowerMsg.includes('estimate') || lowerMsg.includes('quote') || lowerMsg.includes('cost') || lowerMsg.includes('price')) {
+            reply = `My standard rate is $${state.activeChatListing?.price || 50} ${state.activeChatListing?.price_unit === 'hourly' ? 'per hour' : 'flat'}. Everything is protected through Doorstep Escrow!`;
+        } else if (lowerMsg.includes('tool') || lowerMsg.includes('suppl') || lowerMsg.includes('equipment')) {
+            reply = `I bring all necessary tools, supplies, and protective equipment for the job unless you have special preferences.`;
+        } else if (lowerMsg.includes('clean')) {
+            reply = `I bring non-toxic, eco-friendly supplies and microfiber mops for thorough cleaning. Looking forward to helping!`;
+        }
+
+        const replyMsg = {
+            id: 'msg_reply_' + Date.now(),
+            sender: 'provider',
+            text: reply,
+            timestamp: new Date().toISOString()
+        };
+
+        state.messages[providerId].push(replyMsg);
+        saveCurrentCustomerState();
+        renderProviderChatFeed(providerId);
+    }, 950);
+}
+
+// --- 11. TRUST & SAFETY INCIDENT REPORTING ENGINE (Product B ➔ Product D Bridge) ---
+function openReportModal(targetType, targetId, listingId, bookingId, providerId) {
+    const listing = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).find(l => l.listing_id === listingId) || {};
+    const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === (providerId || listing.provider_id)) || {};
+    const customer = getCurrentCustomer();
+
+    state.activeReportTarget = {
+        targetType: targetType || 'listing',
+        targetId: targetId,
+        listing_id: listingId || 'lst_001',
+        provider_id: provider.provider_id || 'prv_001',
+        booking_id: bookingId || null
+    };
+
+    const titleEl = document.getElementById('report-target-title');
+    const metaEl = document.getElementById('report-target-meta');
+    const detailsInput = document.getElementById('report-details-input');
+    const evidenceInput = document.getElementById('report-evidence-input');
+
+    if (titleEl) titleEl.textContent = `${provider.name || 'Provider'} • ${listing.title || 'Home Service'}`;
+    if (metaEl) metaEl.textContent = `Listing ID: ${listing.listing_id || 'lst_001'} • Reporter: ${customer.name}`;
+    if (detailsInput) detailsInput.value = '';
+    if (evidenceInput) evidenceInput.value = '';
+
+    const modal = document.getElementById('report-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeReportModal() {
+    const modal = document.getElementById('report-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function submitSafetyReport() {
+    const detailsInput = document.getElementById('report-details-input');
+    const evidenceInput = document.getElementById('report-evidence-input');
+    const selectedRadio = document.querySelector('input[name="safety_flag"]:checked');
+
+    const details = (detailsInput ? detailsInput.value : '').trim();
+    const evidence = (evidenceInput ? evidenceInput.value : '').trim();
+    const flagType = selectedRadio ? selectedRadio.value : 'payment_request_off_platform';
+
+    if (!details) {
+        showToast('Please provide details about the incident', 'fa-triangle-exclamation');
+        return;
+    }
+
+    const reportObj = {
+        report_id: 'report_' + Math.floor(10000 + Math.random() * 90000),
+        reporter_customer_id: state.currentCustomerId,
+        listing_id: state.activeReportTarget?.listing_id || 'lst_001',
+        provider_id: state.activeReportTarget?.provider_id || 'prv_001',
+        booking_id: state.activeReportTarget?.booking_id || null,
+        safety_flag_type: flagType,
+        report_details: details,
+        evidence_url: evidence,
+        created_at: new Date().toISOString(),
+        status: 'in_review'
+    };
+
+    if (!state.reportsList) state.reportsList = [];
+    state.reportsList.unshift(reportObj);
+    saveCurrentCustomerState();
+
+    closeReportModal();
+    showToast('Report filed with Trust & Safety (Product D)', 'fa-shield-cat');
+
+    if (state.currentView === 'my-bookings') {
+        navigate('my-bookings');
+    }
+}
+
+// --- 12. FILTER & SORT MODAL CONTROLLER ---
 function openFilterModal() {
     const modal = document.getElementById('filter-modal');
     if (!modal) return;
 
-    // Clone current filters into temp
     state.tempFilters = { ...state.filters };
 
-    // Render category chips
-    const categories = ['All', 'Cleaning', 'Handyman', 'Moving', 'Yard & Outdoor'];
+    // Render category chips in filter drawer
     const container = document.getElementById('filter-category-chips');
-    container.innerHTML = categories.map(cat => `
-        <button type="button" onclick="selectFilterCategory('${cat}')" 
-            class="filter-cat-chip px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition ${state.tempFilters.category === cat ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-400'}"
-            data-cat="${cat}">
-            ${cat}
-        </button>
-    `).join('');
+    if (container) {
+        const cats = ['All', 'Cleaning', 'Handyman', 'Moving', 'Yard & Outdoor'];
+        container.innerHTML = cats.map(cat => {
+            const isSelected = state.tempFilters.category === cat;
+            return `
+                <button onclick="selectTempCategory('${cat}')" class="category-filter-chip px-3.5 py-2 rounded-xl text-xs font-bold transition btn-pop ${isSelected ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" data-category="${cat}">
+                    ${cat}
+                </button>
+            `;
+        }).join('');
+    }
 
-    // Set price slider
     const slider = document.getElementById('filter-price-slider');
     if (slider) slider.value = state.tempFilters.maxPrice;
     updatePriceSliderDisplay(state.tempFilters.maxPrice);
 
-    // Set rating
     selectMinRating(state.tempFilters.minRating);
 
-    // Set sort
     const sortSelect = document.getElementById('filter-sort-select');
     if (sortSelect) sortSelect.value = state.tempFilters.sortBy;
 
@@ -928,47 +1382,48 @@ function closeFilterModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-function selectFilterCategory(cat) {
+function selectTempCategory(cat) {
     state.tempFilters.category = cat;
-    document.querySelectorAll('.filter-cat-chip').forEach(el => {
-        if (el.getAttribute('data-cat') === cat) {
-            el.className = 'filter-cat-chip px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition bg-blue-600 text-white border-blue-600 shadow-sm';
+    const chips = document.querySelectorAll('.category-filter-chip');
+    chips.forEach(chip => {
+        if (chip.getAttribute('data-category') === cat) {
+            chip.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            chip.classList.remove('bg-slate-100', 'text-slate-700');
         } else {
-            el.className = 'filter-cat-chip px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-400';
+            chip.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+            chip.classList.add('bg-slate-100', 'text-slate-700');
         }
     });
 }
 
 function updatePriceSliderDisplay(val) {
-    const display = document.getElementById('filter-price-val');
-    if (display) display.textContent = `$${val}`;
+    const label = document.getElementById('filter-price-val');
+    if (label) label.textContent = `$${val}`;
     state.tempFilters.maxPrice = parseInt(val, 10);
 }
 
 function selectMinRating(rating) {
-    state.tempFilters.minRating = rating;
-    document.querySelectorAll('.rating-chip').forEach(el => {
-        const chipRating = parseFloat(el.getAttribute('data-rating'));
-        if (chipRating === rating) {
-            el.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
-            el.classList.remove('border-slate-200');
+    state.tempFilters.minRating = parseFloat(rating);
+    const chips = document.querySelectorAll('.rating-chip');
+    chips.forEach(chip => {
+        if (parseFloat(chip.getAttribute('data-rating')) === state.tempFilters.minRating) {
+            chip.classList.add('border-blue-600', 'bg-blue-50', 'text-blue-700', 'font-bold');
+            chip.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
         } else {
-            el.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
-            el.classList.add('border-slate-200');
+            chip.classList.remove('border-blue-600', 'bg-blue-50', 'text-blue-700', 'font-bold');
+            chip.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
         }
     });
 }
 
 function applyFiltersAndClose() {
     const sortSelect = document.getElementById('filter-sort-select');
-    if (sortSelect) {
-        state.tempFilters.sortBy = sortSelect.value;
-    }
+    if (sortSelect) state.tempFilters.sortBy = sortSelect.value;
 
     state.filters = { ...state.tempFilters };
     closeFilterModal();
     navigate('feed');
-    showToast('Filters applied!', 'fa-sliders');
+    showToast('Filters applied successfully', 'fa-sliders');
 }
 
 function resetFilters() {
@@ -979,12 +1434,13 @@ function resetFilters() {
         minRating: 0,
         sortBy: 'recommended'
     };
+    state.tempFilters = { ...state.filters };
     closeFilterModal();
     navigate('feed');
     showToast('Filters reset to default', 'fa-rotate-left');
 }
 
-// --- 9. RATING & REVIEW MODAL CONTROLLER ---
+// --- 13. RATING & REVIEW MODAL CONTROLLER ---
 function openReviewModal(bookingId) {
     state.currentReviewBookingId = bookingId;
     state.reviewRating = 5;
@@ -992,16 +1448,22 @@ function openReviewModal(bookingId) {
 
     const b = state.bookingsList.find(item => item.id === bookingId);
     if (b) {
-        document.getElementById('review-modal-title').textContent = `Rate ${b.provider_name}`;
-        document.getElementById('review-modal-subtitle').textContent = b.title;
+        const titleEl = document.getElementById('review-modal-title');
+        const subEl = document.getElementById('review-modal-subtitle');
+        if (titleEl) titleEl.textContent = `Rate ${b.provider_name}`;
+        if (subEl) subEl.textContent = b.title;
     }
 
-    document.getElementById('review-text').value = '';
-    document.getElementById('review-modal').classList.remove('hidden');
+    const reviewInput = document.getElementById('review-text');
+    if (reviewInput) reviewInput.value = '';
+
+    const modal = document.getElementById('review-modal');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeReviewModal() {
-    document.getElementById('review-modal').classList.add('hidden');
+    const modal = document.getElementById('review-modal');
+    if (modal) modal.classList.add('hidden');
     navigate('my-bookings');
 }
 
@@ -1021,19 +1483,21 @@ function setReviewStar(star) {
 
 function submitReview() {
     const b = state.bookingsList.find(item => item.id === state.currentReviewBookingId);
-    const text = document.getElementById('review-text').value.trim();
+    const reviewInput = document.getElementById('review-text');
+    const text = (reviewInput ? reviewInput.value : '').trim();
 
     if (b) {
         b.rating = state.reviewRating;
         b.review = text || 'Excellent service and great communication!';
     }
 
+    saveCurrentCustomerState();
     closeReviewModal();
-    showToast('Review submitted & Escrow completed! ★★★★★', 'fa-star');
+    showToast('Review submitted & Escrow finalized! ★★★★★', 'fa-star');
     navigate('my-bookings');
 }
 
-// --- 10. LEAFLET MAP CONTROLLER ---
+// --- 14. LEAFLET MAP CONTROLLER ---
 function initMap() {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
@@ -1050,10 +1514,10 @@ function initMap() {
         attribution: '&copy; OpenStreetMap'
     }).addTo(mapInstance);
 
-    const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
+    const activeListings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
 
     activeListings.forEach(listing => {
-        const provider = DB_PROVIDERS.find(prv => prv.provider_id === listing.provider_id);
+        const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(prv => prv.provider_id === listing.provider_id);
         if (!provider || !provider.latitude || !provider.longitude) return;
 
         const rating = listing.rating ? listing.rating.toFixed(1) : '5.0';
@@ -1078,13 +1542,12 @@ function initMap() {
             .bindPopup(popupHTML);
     });
 
-    // Invalidate size to ensure clean render
     setTimeout(() => {
         if (mapInstance) mapInstance.invalidateSize();
     }, 200);
 }
 
-// --- 11. GROUNDED GEMINI CHATBOT LOGIC ---
+// --- 15. GROUNDED AI ASSISTANT / CHATBOT LOGIC (Product C Simulation) ---
 function toggleChatbot() {
     const modal = document.getElementById('chatbot-modal');
     if (modal) modal.classList.toggle('hidden');
@@ -1104,6 +1567,7 @@ function sendChatMessage() {
     if (!msg) return;
 
     const history = document.getElementById('chat-history');
+    if (!history) return;
     
     // User message bubble
     history.innerHTML += `
@@ -1119,12 +1583,12 @@ function sendChatMessage() {
         const lowerMsg = msg.toLowerCase();
         let match = null;
         
-        const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
+        const activeListings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
         const keywords = lowerMsg.split(/\s+/).filter(w => w.length > 2);
 
         // 1. Dynamic Search Scan
         match = activeListings.find(l => {
-            const provider = DB_PROVIDERS.find(p => p.provider_id === l.provider_id);
+            const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === l.provider_id);
             const titleLower = (l.title || '').toLowerCase();
             const descLower = (l.listing_description || '').toLowerCase();
             const bioLower = provider ? (provider.bio || '').toLowerCase() : '';
@@ -1149,7 +1613,7 @@ function sendChatMessage() {
         }
 
         if (match) {
-            const provider = DB_PROVIDERS.find(prv => prv.provider_id === match.provider_id) || {};
+            const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(prv => prv.provider_id === match.provider_id) || {};
             const rating = match.rating ? match.rating.toFixed(1) : '5.0';
             const priceUnit = match.price_unit === 'hourly' ? '/hr' : ' flat';
 
@@ -1192,7 +1656,7 @@ function sendChatMessage() {
     }, 700);
 }
 
-// --- 12. TOAST NOTIFICATION HELPER ---
+// --- 16. TOAST NOTIFICATION HELPER ---
 function showToast(message, iconClass = 'fa-circle-check') {
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toast-msg');
@@ -1205,12 +1669,12 @@ function showToast(message, iconClass = 'fa-circle-check') {
 
     setTimeout(() => {
         toast.classList.add('hidden');
-    }, 3000);
+    }, 3200);
 }
 
-// --- 13. INITIALIZATION ---
+// --- 17. APP BOOTSTRAP ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Chat enter key support
+    // Chat enter key listeners
     const chatInput = document.getElementById('chat-input');
     if (chatInput) {
         chatInput.addEventListener('keypress', (e) => {
@@ -1218,8 +1682,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const providerChatInput = document.getElementById('provider-chat-input');
+    if (providerChatInput) {
+        providerChatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendProviderChatMessage();
+        });
+    }
+
     try {
         await initData();
+        const savedPersona = localStorage.getItem('doorstep_active_persona') || 'cust_00001';
+        state.currentCustomerId = savedPersona;
+        initCustomerState(savedPersona);
         navigate('dashboard');
     } catch (err) {
         console.error("Initialization error:", err);
