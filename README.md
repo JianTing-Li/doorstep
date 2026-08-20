@@ -4,21 +4,21 @@ A two-sided local marketplace for home services. It connects independent home-se
 
 ## Products
 
-Doorstep is built as four standalone products, each owned by one developer:
+Doorstep is built as four standalone products, each owned by one developer, each living in its own folder at the repo root.
 
-### Provider App (Product A)
+### Provider App — Product A ([`/provider`](provider/))
 
 Providers create listings describing a specific service, set a price, and manage incoming bookings.
 
-### Customer App (Product B)
+### Customer App — Product B ([`/customer`](customer/))
 
 Customers browse and filter active listings by service type, price, and availability, and book directly.
 
-### Matching Chatbot (Product C)
+### Matching Chatbot — Product C ([`/chat`](chat/))
 
 Customers describe a job in their own words and get matched to current active listings that best fit jobs that do not map cleanly onto one service type.
 
-### Trust & Safety Dashboard (Product D)
+### Trust & Safety Dashboard — Product D ([`/admin`](admin/))
 
 The internal team reviews listings and bookings with reports or low reviews, prioritizes risky cases, records a human moderation decision, and writes an audit entry. Suspended listings are excluded from Products B and C.
 
@@ -50,9 +50,26 @@ Historical reference: the earlier spreadsheet draft,
 It used a different schema (single-value `service_category`, prices in cents, a separate audit log) and has
 been superseded by `mock-data/`.
 
+## Repo Rules
+
+1. Each product lives in its own folder and never imports from another product folder.
+2. `/mock-data` is read-only and shared. Changing it requires team agreement.
+3. Service type codes come from `mock-data/service-types.json`. Never invent new ones.
+4. Use `_meta.reference_date` as "today", never `new Date()`.
+5. The customer and chat products show only listings where `listing_status` is `"active"`.
+6. Keep business logic in pure functions in `src/lib` or `lib/`, separate from rendering.
+7. Run `python3 mock-data/validate.py` before committing any dataset change.
+8. Never commit `node_modules` or `dist`.
+
+## Local Development
+
+There is no root `package.json`, no workspaces, and no monorepo tooling. Each product is a standalone
+app with its own stack and dependencies, and runs independently from inside its own folder — see that
+product's own README/setup instructions once its owner has added them.
+
 ## Developers
 
-- Kamal Mohamed — Provider App (Product A)
-- Abheeshu Dhungana — Customer App (Product B)
-- Jian Ting Li — Matching Chatbot (Product C)
-- Ibtisam Hossain — Trust & Safety Dashboard (Product D)
+- Kamal Mohamed — Provider App (Product A) — [`/provider`](provider/)
+- Abheeshu Dhungana — Customer App (Product B) — [`/customer`](customer/)
+- Jian Ting Li — Matching Chatbot (Product C) — [`/chat`](chat/)
+- Ibtisam Hossain — Trust & Safety Dashboard (Product D) — [`/admin`](admin/)
