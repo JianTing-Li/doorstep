@@ -1,17 +1,21 @@
 :root {
-  --color-bg: #efe7d8;
-  --color-surface: #f8f3e9;
-  --color-ink: #2c2620;
-  --color-ink-soft: #5c5346;
-  --color-evergreen: #2f4a3c;
-  --color-evergreen-dark: #223529;
-  --color-clay: #a15c3e;
-  --color-clay-soft: #f0dccb;
-  --color-line: #ddd1ba;
-  --color-user-bubble: #2f4a3c;
-  --color-user-bubble-text: #f8f3e9;
-  --color-bot-bubble: #f8f3e9;
-  --color-bot-bubble-text: #2c2620;
+  /* Page wash: light, airy, optimistic. Ink sits on this at 12:1. */
+  --grad-page: linear-gradient(170deg, #eff6ff 0%, #dbeafe 45%, #e0f2fe 100%);
+
+  /* Text-bearing gradients stay in the deeper blues so white copy clears
+     4.5:1 at the light end. Brighter sky tones are decorative only. */
+  --grad-primary: linear-gradient(135deg, #1d4ed8 0%, #0369a1 100%);
+  --grad-primary-strong: linear-gradient(135deg, #1e3a8a 0%, #075985 100%);
+  --grad-brand: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+
+  --color-ink: #0f2744;
+  --color-ink-soft: #4a6180;
+  --color-surface: #ffffff;
+  --color-line: #c3dcf7;
+  --color-accent-ink: #1d4ed8;
+  --color-accent-soft: #dbeafe;
+  --color-on-primary: #ffffff;
+
   --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
   --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
   --radius-lg: 20px;
@@ -32,7 +36,8 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-bg);
+  background: var(--grad-page);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -48,7 +53,6 @@ button {
   height: 100vh;
   max-width: 640px;
   margin: 0 auto;
-  background: var(--color-bg);
 }
 
 .app-header {
@@ -60,8 +64,12 @@ button {
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 600;
-  color: var(--color-evergreen-dark);
   margin: 0;
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  width: fit-content;
 }
 
 .app-header .tagline {
@@ -96,9 +104,12 @@ button {
   font-size: 1.5rem;
   font-weight: 500;
   font-style: italic;
-  color: var(--color-evergreen-dark);
   margin: 0 0 16px;
   line-height: 1.3;
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .message-enter {
@@ -140,14 +151,14 @@ button {
 }
 
 .message-bubble.user {
-  background: var(--color-user-bubble);
-  color: var(--color-user-bubble-text);
+  background: var(--grad-primary);
+  color: var(--color-on-primary);
   border-bottom-right-radius: 4px;
 }
 
 .message-bubble.bot {
-  background: var(--color-bot-bubble);
-  color: var(--color-bot-bubble-text);
+  background: var(--color-surface);
+  color: var(--color-ink);
   border: 1px solid var(--color-line);
   border-bottom-left-radius: 4px;
   font-family: var(--font-display);
@@ -161,7 +172,7 @@ button {
   align-items: center;
   gap: 5px;
   padding: 14px 16px;
-  background: var(--color-bot-bubble);
+  background: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   border-bottom-left-radius: 4px;
@@ -172,7 +183,7 @@ button {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--color-ink-soft);
+  background: var(--color-accent-ink);
   animation: dot-pulse 1.1s ease-in-out infinite;
 }
 
@@ -241,7 +252,7 @@ button {
   font-family: var(--font-display);
   font-size: 1.08rem;
   font-weight: 600;
-  color: var(--color-evergreen-dark);
+  color: var(--color-accent-ink);
   margin: 0;
 }
 
@@ -274,8 +285,8 @@ button {
   display: inline-block;
   padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: var(--color-clay-soft);
-  color: var(--color-clay);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -283,7 +294,7 @@ button {
 .listing-card-reason {
   margin: 10px 0 0;
   font-size: 0.86rem;
-  color: var(--color-evergreen);
+  color: var(--color-ink-soft);
 }
 
 .listing-card-button {
@@ -292,15 +303,15 @@ button {
   min-height: 44px;
   border: none;
   border-radius: var(--radius-md);
-  background: var(--color-evergreen);
-  color: var(--color-user-bubble-text);
+  background: var(--grad-primary);
+  color: var(--color-on-primary);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
 }
 
 .listing-card-button:hover {
-  background: var(--color-evergreen-dark);
+  background: var(--grad-primary-strong);
 }
 
 /* ---- Filter chips ---- */
@@ -319,8 +330,8 @@ button {
   min-height: 44px;
   padding: 0 2px 0 14px;
   border-radius: var(--radius-full);
-  background: var(--color-evergreen);
-  color: var(--color-user-bubble-text);
+  background: var(--grad-primary);
+  color: var(--color-on-primary);
   font-size: 0.85rem;
   font-weight: 500;
   animation: chip-in 150ms ease-out both;
@@ -373,13 +384,13 @@ button {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(248, 243, 233, 0.2);
+  background: rgba(255, 255, 255, 0.22);
   font-size: 0.9rem;
   line-height: 1;
 }
 
 .filter-chip-remove:hover .filter-chip-remove-glyph {
-  background: rgba(248, 243, 233, 0.35);
+  background: rgba(255, 255, 255, 0.38);
 }
 
 /* ---- Example chips ---- */
@@ -393,17 +404,18 @@ button {
 .example-chip {
   min-height: 44px;
   padding: 10px 16px;
-  border: 1px solid var(--color-evergreen);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-evergreen-dark);
+  background: var(--color-surface);
+  color: var(--color-accent-ink);
   font-size: 0.9rem;
   cursor: pointer;
   text-align: left;
 }
 
 .example-chip:hover {
-  background: var(--color-clay-soft);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-ink);
 }
 
 /* ---- Input ---- */
@@ -414,7 +426,9 @@ button {
   gap: 8px;
   padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-line);
-  background: var(--color-bg);
+  background: rgba(255, 255, 255, 0.75);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .chat-input-bar input {
@@ -430,7 +444,7 @@ button {
 }
 
 .chat-input-bar input:focus {
-  outline: 2px solid var(--color-evergreen);
+  outline: 2px solid var(--color-accent-ink);
   outline-offset: 1px;
 }
 
@@ -439,18 +453,32 @@ button {
   min-height: 44px;
   border: none;
   border-radius: var(--radius-full);
-  background: var(--color-evergreen);
-  color: var(--color-user-bubble-text);
+  background: var(--grad-primary);
+  color: var(--color-on-primary);
   font-weight: 600;
   font-size: 0.95rem;
   padding: 0 18px;
   cursor: pointer;
 }
 
+.chat-input-bar button:hover:not(:disabled) {
+  background: var(--grad-primary-strong);
+}
+
 .chat-input-bar button:disabled {
-  background: var(--color-line);
-  color: var(--color-ink-soft);
+  background: #cbd5e1;
+  color: #414e61;
   cursor: not-allowed;
+}
+
+/* Gradient-clipped headings rely on transparent text, which disappears when
+   the OS forces its own palette. Hand the color back in that mode. */
+@media (forced-colors: active) {
+  .app-header .brand,
+  .empty-state .empty-prompt {
+    background: none;
+    color: CanvasText;
+  }
 }
 
 /* ---- Reduced motion ---- */
