@@ -26,6 +26,12 @@ function navigate(view, params = {}) {
     else if (view === 'confirmation') html = getConfirmationHTML();
     
     container.innerHTML = `<div class="fade-in h-full flex flex-col bg-gray-50">${html}</div>`;
+
+    if (view === 'dashboard') {
+        setTimeout(() => {
+            initMap();
+        }, 50);
+    }
 }
 
 // --- 1. DASHBOARD VIEW ---
@@ -57,12 +63,7 @@ function getDashboardHTML() {
             </div>
             
             <h2 class="font-semibold mt-8 mb-4">Map View (Nearby Pros)</h2>
-            <div class="h-40 rounded-xl map-bg shadow-inner border relative cursor-pointer" onclick="navigate('feed', {category: 'All'})">
-                <!-- Map Pins -->
-                <div class="absolute top-10 left-1/4 text-red-500 text-2xl drop-shadow-md"><i class="fa-solid fa-location-dot"></i></div>
-                <div class="absolute top-20 right-1/3 text-red-500 text-2xl drop-shadow-md"><i class="fa-solid fa-location-dot"></i></div>
-                <div class="absolute bottom-10 right-1/4 text-blue-600 text-3xl drop-shadow-md z-10"><i class="fa-solid fa-street-view"></i></div>
-            </div>
+            <div id="map" class="h-64 rounded-xl shadow-sm z-0 border border-gray-200"></div>
         </div>
     `;
 }
@@ -369,3 +370,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('app-container').innerHTML = `<div class="p-8 text-red-500 font-bold">Failed to load data from remote branch: ${err.message}</div>`;
     }
 });
+
+// --- MAP RENDERING (LEAFLET) ---
+function initMap() {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return;
+
+    // Center map over Portland (epicenter of mock data coordinates)
+    const map = L.map('map').setView([45.5152, -122.6784], 11);
+
+    // Add standard OpenStreetMap layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Plot pins for all active listings
+    const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
+
+    activeListings.forEach(listing => {
+        const provider = DB_PROVIDERS.find(prv => prv.provider_id === listing.provider_id);
+        if (!provider || !provider.latitude || !provider.longitude) return;
+
+        const rating = listing.rating ? listing.rating.toFixed(1) : 'New';
+        const priceUnit = listing.price_unit === 'hourly' ? '/hr' : ' flat';
+
+        const popupHTML = `
+            <div class="p-1 font-sans text-xs" style="min-width: 140px;">
+                <h4 class="font-bold text-gray-800 text-sm">${provider.name}</h4>
+                <p class="text-blue-600 font-medium mb-1">${listing.title}</p>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-yellow-500 font-semibold"><i class="fa-solid fa-star"></i> ${rating}</span>
+                    <span class="text-green-600 font-bold">$${listing.price}${priceUnit}</span>
+                </div>
+                <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="w-full text-center bg-blue-600 text-white font-bold py-1 px-2 rounded hover:bg-blue-700 transition">
+                    View Profile
+                </button>
+            </div>
+        `;
+
+        L.marker([provider.latitude, provider.longitude])
+            .addTo(map)
+            .bindPopup(popupHTML);
+    });
+}
