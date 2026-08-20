@@ -50,6 +50,18 @@ Historical reference: the earlier spreadsheet draft,
 It used a different schema (single-value `service_category`, prices in cents, a separate audit log) and has
 been superseded by `mock-data/`.
 
+## Product D build
+
+Ibtisam's [Trust & Safety Dashboard](product-d/) implements the full Product D workflow against
+`mock-data/`: prioritized report queue → connected evidence review → human action → audit history.
+A suspend decision changes the demo listing status to `suspended`, proving why Products B and C must
+exclude it from customer-facing results. The shared JSON fixtures remain read-only; demo decisions are
+kept in browser-local state.
+
+Run `python3 -m http.server 4173` from the repository root, then open
+`http://localhost:4173/product-d/`. Run `node product-d/test.mjs` to verify queue priority and the
+marketplace visibility rule.
+
 ## Developers
 
 - Kamal Mohamed — Provider App (Product A)
