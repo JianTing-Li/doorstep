@@ -324,13 +324,23 @@ function sendChatMessage() {
         
         const activeListings = DB_LISTINGS.filter(l => l.listing_status === 'active');
 
-        // Grounding Rule: Only match actual JSON dummy data and ensure they are active
-        if (lowerMsg.includes('clean') || lowerMsg.includes('maid')) {
-            match = activeListings.find(l => l.service_type.some(c => categoryMap['Cleaning'].includes(c)));
-        } else if (lowerMsg.includes('plumb') || lowerMsg.includes('sink') || lowerMsg.includes('fix') || lowerMsg.includes('handyman')) {
-            match = activeListings.find(l => l.service_type.some(c => categoryMap['Handyman'].includes(c)));
-        } else if (lowerMsg.includes('move') || lowerMsg.includes('box')) {
-            match = activeListings.find(l => l.service_type.some(c => categoryMap['Moving'].includes(c)));
+        // 1. Dynamic Search Grounding: Try to find a listing where the title or description matches keywords in the user's message
+        const keywords = lowerMsg.split(/\s+/).filter(w => w.length > 2); // filter out short words
+        match = activeListings.find(l => {
+            const titleLower = l.title.toLowerCase();
+            const descLower = l.listing_description.toLowerCase();
+            return keywords.some(keyword => titleLower.includes(keyword) || descLower.includes(keyword));
+        });
+
+        // 2. Fallback Rule-based Matching: Categorical fallback if no direct text match was found
+        if (!match) {
+            if (lowerMsg.includes('clean') || lowerMsg.includes('maid') || lowerMsg.includes('wash')) {
+                match = activeListings.find(l => l.service_type.some(c => categoryMap['Cleaning'].includes(c)));
+            } else if (lowerMsg.includes('plumb') || lowerMsg.includes('sink') || lowerMsg.includes('fix') || lowerMsg.includes('handyman') || lowerMsg.includes('assemble') || lowerMsg.includes('furniture') || lowerMsg.includes('cabinet')) {
+                match = activeListings.find(l => l.service_type.some(c => categoryMap['Handyman'].includes(c)));
+            } else if (lowerMsg.includes('move') || lowerMsg.includes('box') || lowerMsg.includes('haul')) {
+                match = activeListings.find(l => l.service_type.some(c => categoryMap['Moving'].includes(c)));
+            }
         }
 
         if (match) {
