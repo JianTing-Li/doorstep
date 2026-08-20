@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doorstep - Local Home Services Marketplace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet.js Mapping Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            background-color: #0f172a;
+        }
+
+        /* Modern Glassmorphism & Surface */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(241, 245, 249, 1);
+        }
+
+        /* Micro-animations */
+        .card-hover {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 6px 12px -4px rgba(15, 23, 42, 0.04);
+        }
+
+        .btn-pop {
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        .btn-pop:active { 
+            transform: scale(0.96); 
+        }
+
+        /* Smooth Slide Animations */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .slide-up {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .slide-in-right {
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Fade transition */
+        .fade-in {
+            animation: fadeIn 0.25s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Floating action button pulse */
+        .fab-pulse {
+            animation: fabPulse 2.5s infinite;
+        }
+        @keyframes fabPulse {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+            70% { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Custom Leaflet styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            padding: 4px;
+        }
+        .leaflet-popup-content {
+            margin: 8px 10px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 antialiased h-screen flex flex-col items-center justify-center p-0 md:p-4 overflow-hidden">
+    
+    <!-- Mobile/Desktop Wrapper Frame -->
+    <div class="w-full max-w-md h-full md:h-[92vh] md:max-h-[900px] bg-slate-50 flex flex-col md:rounded-3xl shadow-2xl overflow-hidden relative border border-slate-700/30">
+
+        <!-- Top Navigation Bar -->
+        <header class="glass-header px-4 py-3.5 flex items-center justify-between z-20 sticky top-0">
+            <div class="flex items-center space-x-2.5 cursor-pointer btn-pop" onclick="navigate('dashboard')">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                    <i class="fa-solid fa-door-open text-base"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">Doorstep</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider block text-slate-400 -mt-1">Portland, OR</span>
+                </div>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center space-x-2">
+                <button onclick="navigate('my-bookings')" class="relative p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50/80 transition btn-pop" title="My Bookings">
+                    <i class="fa-solid fa-receipt text-lg"></i>
+                    <span id="nav-booking-badge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white"></span>
+                </button>
+                <div onclick="navigate('my-bookings')" class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-500 transition">
+                    <i class="fa-solid fa-user text-xs text-slate-600"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main App Screen Container -->
+        <main id="app-container" class="flex-1 overflow-y-auto relative w-full bg-slate-50">
+            <!-- Dynamic view injected via JavaScript -->
+        </main>
+
+        <!-- Global Chatbot FAB -->
+        <div class="fixed md:absolute bottom-5 right-5 z-40">
+            <button onclick="toggleChatbot()" class="fab-pulse bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white w-13 h-13 p-3.5 rounded-2xl shadow-xl shadow-blue-600/30 flex items-center justify-center text-xl transition-transform transform hover:scale-105 active:scale-95" aria-label="Open AI Assistant">
+                <i class="fa-solid fa-sparkles text-yellow-300 mr-1.5 text-xs"></i>
+                <i class="fa-solid fa-comment-dots text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Chatbot Modal -->
+        <div id="chatbot-modal" class="hidden fixed md:absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center">
+            <div class="bg-white w-full h-[85%] rounded-t-3xl flex flex-col shadow-2xl slide-up overflow-hidden">
+                <!-- Chatbot Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex justify-between items-center z-10 shadow-md">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+                            <i class="fa-solid fa-robot text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm leading-tight">Doorstep Concierge</div>
+                            <div class="text-[11px] text-blue-100 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 inline-block animate-pulse"></span> Grounded AI Matching
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="toggleChatbot()" class="text-white/80 hover:text-white p-1.5 rounded-full hover:bg-white/10 btn-pop">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Chat Suggestions Chips -->
+                <div class="px-4 py-2 bg-slate-100/90 border-b border-slate-200 flex space-x-2 overflow-x-auto text-xs py-2.5">
+                    <button onclick="sendQuickPrompt('Need someone to assemble IKEA furniture')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
+                        🪑 Assemble furniture
+                    </button>
+                    <button onclick="sendQuickPrompt('Deep clean 2-bedroom apartment')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
+                        ✨ Deep apartment clean
+                    </button>
+                    <button onclick="sendQuickPrompt('Fix leaking kitchen pipe')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
+                        🔧 Fix leaking sink
+                    </button>
+                    <button onclick="sendQuickPrompt('Help moving boxes with truck')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
+                        📦 Movers + Truck
+                    </button>
+                </div>
+
+                <!-- Chat History Feed -->
+                <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col space-y-3.5 bg-slate-50/70">
+                    <div class="bg-white border border-slate-200/80 p-3.5 rounded-2xl rounded-tl-none self-start max-w-[85%] shadow-sm text-sm text-slate-700 leading-relaxed">
+                        <p class="font-semibold text-blue-600 mb-1">Hello! 👋</p>
+                        <p>I can instantly match you with verified Portland pros for cleaning, handyman tasks, moving, electrical, plumbing, or yard care.</p>
+                    </div>
+                </div>
+
+                <!-- Chat Input Box -->
+                <div class="p-3 bg-white border-t border-slate-200 flex items-center space-x-2">
+                    <input type="text" id="chat-input" placeholder="e.g. Need furniture assembly this weekend..." class="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm">
+                    <button onclick="sendChatMessage()" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md shadow-blue-500/20 btn-pop">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Sort Drawer Modal -->
+        <div id="filter-modal" class="hidden fixed md:absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center">
+            <div class="bg-white w-full max-h-[90%] rounded-t-3xl flex flex-col shadow-2xl slide-up overflow-hidden">
+                <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                    <h3 class="font-extrabold text-base text-slate-800 flex items-center">
+                        <i class="fa-solid fa-sliders text-blue-600 mr-2"></i> Filter & Sort Providers
+                    </h3>
+                    <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-full btn-pop">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="p-5 flex-1 overflow-y-auto space-y-5 text-sm">
+                    <!-- Category Selector -->
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-2 text-xs uppercase tracking-wider">Category</label>
+                        <div class="flex flex-wrap gap-2" id="filter-category-chips">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Max Price Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-bold text-slate-700 text-xs uppercase tracking-wider">Max Price</label>
+                            <span id="filter-price-val" class="font-extrabold text-blue-600 text-sm">$200</span>
+                        </div>
+                        <input type="range" id="filter-price-slider" min="30" max="250" step="5" value="200" class="w-full accent-blue-600 cursor-pointer" oninput="updatePriceSliderDisplay(this.value)">
+                        <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                            <span>$30</span>
+                            <span>$140</span>
+                            <span>$250+</span>
+                        </div>
+                    </div>
+
+                    <!-- Min Rating Filter -->
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-2 text-xs uppercase tracking-wider">Minimum Rating</label>
+                        <div class="grid grid-cols-4 gap-2" id="filter-rating-chips">
+                            <button onclick="selectMinRating(0)" class="rating-chip border border-slate-200 rounded-xl py-2 font-semibold text-center text-xs hover:border-blue-500 transition" data-rating="0">Any</button>
+                            <button onclick="selectMinRating(4.0)" class="rating-chip border border-slate-200 rounded-xl py-2 font-semibold text-center text-xs hover:border-blue-500 transition" data-rating="4.0">4.0+ ⭐</button>
+                            <button onclick="selectMinRating(4.5)" class="rating-chip border border-slate-200 rounded-xl py-2 font-semibold text-center text-xs hover:border-blue-500 transition" data-rating="4.5">4.5+ ⭐</button>
+                            <button onclick="selectMinRating(4.8)" class="rating-chip border border-slate-200 rounded-xl py-2 font-semibold text-center text-xs hover:border-blue-500 transition" data-rating="4.8">4.8+ ⭐</button>
+                        </div>
+                    </div>
+
+                    <!-- Sort By -->
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-2 text-xs uppercase tracking-wider">Sort By</label>
+                        <select id="filter-sort-select" class="w-full border border-slate-200 rounded-xl p-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                            <option value="recommended">Recommended / Featured</option>
+                            <option value="rating-desc">Highest Rated (★ 5.0 - 1.0)</option>
+                            <option value="price-asc">Price: Low to High ($)</option>
+                            <option value="price-desc">Price: High to Low ($$$)</option>
+                            <option value="reviews-desc">Most Reviewed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-slate-200 bg-white flex space-x-3">
+                    <button onclick="resetFilters()" class="flex-1 py-3 px-4 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 transition btn-pop">
+                        Reset All
+                    </button>
+                    <button onclick="applyFiltersAndClose()" class="flex-2 py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-lg shadow-blue-500/25 btn-pop">
+                        Show Results
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post-Service Rating & Review Modal -->
+        <div id="review-modal" class="hidden fixed md:absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl slide-up">
+                <div class="text-center mb-4">
+                    <div class="w-14 h-14 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <h3 class="text-lg font-extrabold text-slate-900" id="review-modal-title">Rate your service</h3>
+                    <p class="text-xs text-slate-500" id="review-modal-subtitle">How was your service with the provider?</p>
+                </div>
+
+                <!-- Star Rating Selector -->
+                <div class="flex justify-center space-x-2 text-2xl text-slate-300 my-4" id="review-stars-container">
+                    <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition" onclick="setReviewStar(1)"></i>
+                    <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition" onclick="setReviewStar(2)"></i>
+                    <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition" onclick="setReviewStar(3)"></i>
+                    <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition" onclick="setReviewStar(4)"></i>
+                    <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition text-amber-400" onclick="setReviewStar(5)"></i>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-slate-600 block mb-1">Write your review</label>
+                    <textarea id="review-text" rows="3" placeholder="Friendly, punctual, and did an outstanding job!" class="w-full border border-slate-200 rounded-xl p-3 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></textarea>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button onclick="closeReviewModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 btn-pop">
+                        Skip
+                    </button>
+                    <button onclick="submitReview()" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 btn-pop">
+                        Submit & Release Escrow
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification Box -->
+        <div id="toast" class="hidden fixed md:absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center space-x-2 text-xs font-semibold slide-up">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toast-msg">Action completed!</span>
+        </div>
+
+    </div>
+
+    <!-- Data & App Logic -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
