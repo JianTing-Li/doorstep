@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Together - Community Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <!-- GPS Loading Overlay -->
+    <div id="gps-loading" class="overlay active">
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <h2>Finding local events near you...</h2>
+            <p>Locating...</p>
+        </div>
+    </div>
+
+    <!-- Main Corkboard -->
+    <div id="corkboard-frame">
+        <div id="corkboard">
+            <h1 class="board-title">Local Happenings</h1>
+            
+            <!-- Notes will be injected here by app.js -->
+            <div id="notes-container"></div>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div id="event-modal" class="overlay hidden">
+        <div class="modal-content">
+            <button id="close-modal" class="close-btn">&times;</button>
+            <div class="modal-note" id="modal-note-content">
+                <!-- Dynamic Content -->
+            </div>
+            
+            <div class="modal-actions">
+                <a href="#" id="modal-link" target="_blank" class="action-btn link-btn">Visit Website</a>
+                <button class="action-btn share-btn">Share to IG / FB</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
