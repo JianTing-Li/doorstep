@@ -3,7 +3,7 @@ import ChatThread from "./components/ChatThread.jsx";
 import ChatInput from "./components/ChatInput.jsx";
 import ExampleChips from "./components/ExampleChips.jsx";
 import FilterChips from "./components/FilterChips.jsx";
-import { parseJob } from "./lib/parseJob.js";
+import { getFilters } from "./lib/getFilters.js";
 import { matchListings } from "./lib/matchListings.js";
 import { activeListings } from "./data/listings.js";
 import { getProviders, getServiceTypes } from "./data/loadData.js";
@@ -31,8 +31,19 @@ function enrichResults(rankedListings, filters) {
   });
 }
 
-function botReplyFor(totalCount, shownCount) {
+function botReplyFor(totalCount, shownCount, source) {
   if (totalCount === 0) return "No matches yet — try adjusting the filters below.";
+
+  // The keyword fallback reads intent less reliably, so the copy says less and
+  // points at the chips the customer can correct.
+  if (source === "fallback") {
+    const lead =
+      totalCount > shownCount
+        ? `Here are ${shownCount} that look close.`
+        : `Here ${totalCount === 1 ? "is one that looks" : `are ${totalCount} that look`} close.`;
+    return `${lead} Adjust the filters below if I read that wrong.`;
+  }
+
   if (totalCount > shownCount) return `Found ${totalCount} matches — here are the closest ${shownCount}.`;
   return `Found ${totalCount} match${totalCount === 1 ? "" : "es"} for that.`;
 }
@@ -60,27 +71,27 @@ export default function App() {
     setFilters(next);
   }
 
-  function runMatch(parsedFilters) {
+  function showResults(parsedFilters, source) {
     applyFilters(parsedFilters);
-    setTimeout(() => {
-      const ranked = matchListings(parsedFilters, activeListings());
-      const results = enrichResults(ranked, parsedFilters);
-      setIsTyping(false);
-      appendMessage({ type: "bot_text", text: botReplyFor(ranked.length, results.length) });
-      appendMessage({ type: "results", results });
-    }, THINKING_DELAY_MS);
+    const ranked = matchListings(parsedFilters, activeListings());
+    const results = enrichResults(ranked, parsedFilters);
+    setIsTyping(false);
+    appendMessage({ type: "bot_text", text: botReplyFor(ranked.length, results.length, source) });
+    appendMessage({ type: "results", results });
   }
 
-  function handleUserText(text) {
+  async function handleUserText(text) {
     appendMessage({ type: "user_text", text });
     setIsTyping(true);
-    runMatch(parseJob(text));
+    const filtersWithSource = await getFilters(text);
+    showResults(filtersWithSource, filtersWithSource.source);
   }
 
   function handleExampleChip(example) {
     appendMessage({ type: "user_text", text: example.text });
     setIsTyping(true);
-    runMatch(example.filters);
+    // Chips carry their own filters, so they skip both the LLM and parseJob.
+    setTimeout(() => showResults(example.filters, "chip"), THINKING_DELAY_MS);
   }
 
   function handleRemoveFilter(key, value) {
