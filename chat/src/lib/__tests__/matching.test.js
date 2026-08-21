@@ -121,13 +121,38 @@ async function endpointStatus() {
   }
 }
 
+// The free Gemini tier allows only 20 generate requests per day per model, so
+// sweeping all 25 fixtures exhausts the day's budget and locks out the running
+// app. Sample one query per match_type by default; LLM_SAMPLE=all forces the
+// full set, LLM_SAMPLE=<n> takes the first n.
+function sampleQueries(all) {
+  const requested = process.env.LLM_SAMPLE;
+  if (requested === "all") return { list: all, note: "full set" };
+  if (requested && Number.isInteger(Number(requested))) {
+    const n = Number(requested);
+    return { list: all.slice(0, n), note: `first ${n} of ${all.length}` };
+  }
+
+  const byType = new Map();
+  for (const example of all) {
+    if (!byType.has(example.match_type)) byType.set(example.match_type, example);
+  }
+  const list = [...byType.values()];
+  return {
+    list,
+    note: `${list.length} of ${all.length}, one per match_type — free tier allows 20 req/day; LLM_SAMPLE=all to sweep everything`,
+  };
+}
+
 let llmResult = null;
 const status = await endpointStatus();
+const sample = sampleQueries(queries);
 
 if (!status.ready) {
   console.log(`\n--- LLM path: skipped (${status.reason}) ---`);
 } else {
-  const llmOutcomes = await mapWithLimit(queries, LLM_CONCURRENCY, async (example) => {
+  console.log(`\n(LLM sample: ${sample.note})`);
+  const llmOutcomes = await mapWithLimit(sample.list, LLM_CONCURRENCY, async (example) => {
     const base = { query_id: example.query_id, query: example.query, expected: example.expected_codes };
     try {
       const filters = await askWithBackoff(example.query);
@@ -146,5 +171,10 @@ console.log(
   llmResult
     ? `LLM      : ${llmResult.passed}/${llmResult.total} (${llmResult.rate}%)`
     : `LLM      : skipped (${status.reason})`,
+);
+console.log(
+  llmResult && llmResult.total < parseResult.total
+    ? `           (sampled ${llmResult.total} of ${parseResult.total} — the two rates are not directly comparable)`
+    : "",
 );
 console.log(`(active listings available for matching: ${activeListings().length})`);
