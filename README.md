@@ -63,9 +63,26 @@ been superseded by `mock-data/`.
 
 ## Local Development
 
-There is no root `package.json`, no workspaces, and no monorepo tooling. Each product is a standalone
-app with its own stack and dependencies, and runs independently from inside its own folder — see that
-product's own README/setup instructions once its owner has added them.
+There are no workspaces and no monorepo tooling. Each product is a standalone app with its own stack
+and dependencies, and runs independently from inside its own folder — see that product's own
+README/setup instructions once its owner has added them.
+
+The root `package.json` is **not** a workspace root and does not build or own any product. It exists
+only because the repo deploys as a single Vercel project whose root directory is the repo root, and
+Vercel resolves dependencies for the serverless functions in `/api` from the root manifest. Add a
+dependency there only if a function under `/api` imports it; product dependencies belong in that
+product's own `package.json`.
+
+## Deployment
+
+The repo deploys as one Vercel project, configured by `vercel.json` at the root:
+
+- `/` — the static landing page in `index.html`
+- `/chat/` — the Matching Chatbot, built from `chat/` (its Vite `base` is `/chat/`)
+- `/api/*` — serverless functions; each file re-exports the handler from its product folder
+
+`/api/chat` needs a `GEMINI_API_KEY` environment variable set in the Vercel project. It is read
+server-side only — never expose it to a client bundle, and never prefix it with `VITE_`.
 
 ## Developers
 

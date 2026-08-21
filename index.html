@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Doorstep — a Portland home services marketplace, built as four connected products." />
+    <meta name="theme-color" content="#eff6ff" />
+    <title>Doorstep</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --grad-page: linear-gradient(170deg, #eff6ff 0%, #dbeafe 45%, #e0f2fe 100%);
+        --grad-primary: linear-gradient(135deg, #1d4ed8 0%, #0369a1 100%);
+        --grad-primary-strong: linear-gradient(135deg, #1e3a8a 0%, #075985 100%);
+        --grad-brand: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+        --color-ink: #0f2744;
+        --color-ink-soft: #4a6180;
+        --color-surface: #ffffff;
+        --color-line: #c3dcf7;
+        --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+        --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: var(--grad-page);
+        background-attachment: fixed;
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        width: 100%;
+        max-width: 560px;
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 9vw, 3.5rem);
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.05;
+        background: var(--grad-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        width: fit-content;
+      }
+
+      .tagline {
+        font-family: var(--font-display);
+        font-style: italic;
+        font-size: 1.2rem;
+        color: var(--color-ink-soft);
+        margin: 10px 0 32px;
+        line-height: 1.4;
+      }
+
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 20px;
+        padding: 24px;
+      }
+
+      .card h2 {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 6px;
+      }
+
+      .card p {
+        margin: 0 0 20px;
+        color: var(--color-ink-soft);
+        line-height: 1.5;
+        font-size: 0.95rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 0 24px;
+        border-radius: 999px;
+        background: var(--grad-primary);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+      }
+
+      .button:hover {
+        background: var(--grad-primary-strong);
+      }
+
+      .button:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 3px;
+      }
+
+      .soon {
+        margin: 20px 0 0;
+        font-size: 0.85rem;
+        color: var(--color-ink-soft);
+      }
+
+      @media (forced-colors: active) {
+        h1 {
+          background: none;
+          color: CanvasText;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Doorstep</h1>
+      <p class="tagline">Portland home services, matched to the job you describe.</p>
+
+      <div class="card">
+        <h2>Matching Chatbot</h2>
+        <p>
+          Describe a household job in plain language and get ranked local providers, with
+          prices, ratings, and open slots.
+        </p>
+        <a class="button" href="/chat/">Open the chatbot</a>
+      </div>
+
+      <p class="soon">Provider, Customer, and Trust &amp; Safety apps are in progress.</p>
+    </main>
+  </body>
+</html>
