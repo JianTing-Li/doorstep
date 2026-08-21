@@ -2,6 +2,7 @@ import { getExampleQueries, getListings } from "../../data/loadData.js";
 import { activeListings } from "../../data/listings.js";
 import { parseJob } from "../parseJob.js";
 import { matchListings } from "../matchListings.js";
+import { findBundle, remainingCodes } from "../booking.js";
 
 const LLM_CONCURRENCY = 1;
 const LLM_MIN_INTERVAL_MS = 15000;
@@ -41,6 +42,70 @@ async function mapWithLimit(items, limit, fn) {
 }
 
 const queries = getExampleQueries();
+
+// ---- booking / routing behaviour ----
+
+const behaviour = [];
+function check(label, condition, detail = "") {
+  behaviour.push({ label, pass: Boolean(condition), detail });
+}
+
+{
+  const listings = activeListings();
+
+  // matchListings must never run on an off-topic message. The App routes on
+  // intent before matching, so the guarantee under test is that an off_topic
+  // result carries nothing to match on and would return the whole catalogue
+  // if it were matched anyway — which is why routing has to short-circuit.
+  const offTopic = { intent: "off_topic", service_types: [], max_price: null, neighborhood: null };
+  const wouldReturn = matchListings(offTopic, listings);
+  check(
+    "off_topic filters would match the entire catalogue if matched",
+    wouldReturn.length === listings.length,
+    `${wouldReturn.length} of ${listings.length} — App must short-circuit on intent before calling matchListings`,
+  );
+
+  // Bundle branch: one active listing covers every requested code.
+  const bundleRequest = ["handyman_general", "electrical"];
+  const bundle = findBundle(bundleRequest, listings);
+  check(
+    "bundle branch: a single listing covers every requested code",
+    bundle && bundleRequest.every((code) => bundle.service_type.includes(code)),
+    bundle ? `${bundle.listing_id} ${JSON.stringify(bundle.service_type)}` : "no bundle found",
+  );
+
+  // Sequential branch: nothing covers both, so the job needs two bookings.
+  const splitRequest = ["plumbing", "yard_outdoor"];
+  const noBundle = findBundle(splitRequest, listings);
+  check(
+    "sequential branch: no single listing covers every requested code",
+    noBundle === null,
+    noBundle ? `unexpectedly found ${noBundle.listing_id}` : "none — falls through to sequential",
+  );
+
+  // After booking a plumbing listing, yard_outdoor is still outstanding.
+  const booked = listings.find((l) => l.service_type.includes("plumbing"));
+  const stillOpen = remainingCodes(splitRequest, booked.service_type);
+  check(
+    "sequential branch: remaining codes recomputed after a booking",
+    stillOpen.length === 1 && stillOpen[0] === "yard_outdoor",
+    `booked ${booked.listing_id} → remaining ${JSON.stringify(stillOpen)}`,
+  );
+
+  // And the follow-up ranking is scoped to only what is left.
+  const followUp = matchListings({ ...offTopic, service_types: stillOpen }, listings);
+  check(
+    "sequential branch: follow-up results only cover the remaining code",
+    followUp.length > 0 && followUp.every((l) => l.service_type.includes("yard_outdoor")),
+    `${followUp.length} listings, all covering yard_outdoor`,
+  );
+}
+
+console.log("--- booking / routing ---");
+for (const b of behaviour) {
+  console.log(`  ${b.pass ? "PASS" : "FAIL"}  ${b.label}${b.detail ? `\n          ${b.detail}` : ""}`);
+}
+const behaviourPassed = behaviour.filter((b) => b.pass).length;
 
 // ---- parseJob path ----
 
@@ -115,7 +180,7 @@ async function endpointStatus() {
     return {
       ready: false,
       reason: unreachable
-        ? `no server at ${API_URL} — start \`vercel dev\` for the LLM path`
+        ? `no server at ${API_URL} — run \`npm run dev\` and set CHAT_API_BASE to its origin`
         : `endpoint returned ${error.message} — check the key in .env.local`,
     };
   }
@@ -166,6 +231,7 @@ if (!status.ready) {
 }
 
 console.log("\n========================================");
+console.log(`booking  : ${behaviourPassed}/${behaviour.length}`);
 console.log(`parseJob : ${parseResult.passed}/${parseResult.total} (${parseResult.rate}%)`);
 console.log(
   llmResult

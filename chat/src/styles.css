@@ -314,6 +314,229 @@ button {
   background: var(--grad-primary-strong);
 }
 
+.listing-card-tappable {
+  cursor: pointer;
+}
+
+.listing-card-tappable:hover {
+  border-color: var(--color-accent-ink);
+}
+
+.listing-card-tappable:focus-visible {
+  outline: 2px solid var(--color-accent-ink);
+  outline-offset: 2px;
+}
+
+.message-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 85%;
+}
+
+.message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skip-button {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-accent-ink);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.skip-button:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-ink);
+}
+
+/* ---- Detail ---- */
+
+.detail-card {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.detail-provider-name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-accent-ink);
+  margin: 0;
+}
+
+.detail-provider-meta {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+}
+
+.detail-provider-bio {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+.detail-listing {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line);
+}
+
+.detail-listing-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.detail-listing-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.detail-listing-price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.detail-listing-description {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.detail-availability {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+}
+
+.detail-book-button {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--grad-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.detail-book-button:hover:not(:disabled) {
+  background: var(--grad-primary-strong);
+}
+
+.detail-book-button:disabled {
+  background: #cbd5e1;
+  color: #414e61;
+  cursor: not-allowed;
+}
+
+/* ---- Slot picker ---- */
+
+.slot-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.slot-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-accent-ink);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.slot-button:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-ink);
+}
+
+/* ---- Confirmation ---- */
+
+.confirmation-card {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent-ink);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.confirmation-heading {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  width: fit-content;
+}
+
+.confirmation-rows {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.confirmation-rows > div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.confirmation-rows dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-soft);
+}
+
+.confirmation-rows dd {
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.4;
+}
+
+.confirmation-job-text {
+  color: var(--color-ink-soft);
+  font-style: italic;
+}
+
+.confirmation-reference {
+  margin: 14px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-line);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+}
+
 /* ---- Filter chips ---- */
 
 .filter-chips {

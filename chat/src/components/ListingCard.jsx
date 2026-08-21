@@ -1,9 +1,20 @@
-export default function ListingCard({ listing }) {
+export default function ListingCard({ listing, onSelect }) {
   const priceLabel =
     listing.price_unit === "hourly" ? `$${listing.price}/hr` : `$${listing.price} flat`;
 
   return (
-    <article className="listing-card">
+    <article
+      className="listing-card listing-card-tappable"
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(listing)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(listing);
+        }
+      }}
+    >
       <div className="listing-card-top">
         <h3 className="listing-card-title">{listing.title}</h3>
         <span className="listing-card-price">{priceLabel}</span>
