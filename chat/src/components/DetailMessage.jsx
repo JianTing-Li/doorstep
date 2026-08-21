@@ -33,7 +33,11 @@ export default function DetailMessage({ listing, onBook, showBookButton }) {
         <button
           type="button"
           className="detail-book-button"
-          onClick={() => onBook(listing)}
+          // Book opens the slot picker; it must not also collapse the card.
+          onClick={(event) => {
+            event.stopPropagation();
+            onBook(listing);
+          }}
           disabled={slotCount === 0}
         >
           Book

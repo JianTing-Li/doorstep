@@ -7,9 +7,13 @@ export default function ResultsList({
   openKey,
   bookingKey,
   bookings,
+  reschedulingKey,
   onToggle,
   onStartBooking,
   onChooseSlot,
+  onCancelBooking,
+  onToggleReschedule,
+  onChooseReschedule,
   skipLabel,
   onSkip,
 }) {
@@ -34,9 +38,13 @@ export default function ResultsList({
               listing={listing}
               state={stateFor(key)}
               booking={bookings[key]}
+              isRescheduling={reschedulingKey === key}
               onToggle={() => onToggle(key)}
               onStartBooking={() => onStartBooking(key)}
               onChooseSlot={(_, slot) => onChooseSlot(key, listing, slot)}
+              onCancelBooking={() => onCancelBooking(key)}
+              onToggleReschedule={() => onToggleReschedule(key)}
+              onChooseReschedule={(_, slot) => onChooseReschedule(key, listing, slot)}
             />
           );
         })}

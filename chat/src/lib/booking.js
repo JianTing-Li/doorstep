@@ -43,6 +43,29 @@ export function createBooking(listing, slot) {
 export function applyBooking(bookings, key, listing, slot) {
   if (bookings[key]) return { bookings, booking: null };
   const booking = createBooking(listing, slot);
+  // The listing rides along so list_bookings and cancel_booking can read one
+  // source of truth rather than re-deriving it.
+  return { bookings: { ...bookings, [key]: { ...booking, listing } }, booking };
+}
+
+// Mirrors applyBooking: the single writer for freeing a booked key. A key not
+// present is a no-op, so a stale tap or a second cancel cannot re-fire the
+// caller's follow-up (re-offering the code a second time).
+export function cancelBookingByKey(bookings, key) {
+  if (!bookings[key]) return { bookings, cancelled: null };
+  const next = { ...bookings };
+  const cancelled = next[key];
+  delete next[key];
+  return { bookings: next, cancelled };
+}
+
+// Reschedule only ever replaces the slot on an existing booking — listing,
+// provider and price ride along unchanged, and a missing key means there is
+// nothing to reschedule.
+export function rescheduleBooking(bookings, key, slot) {
+  const existing = bookings[key];
+  if (!existing) return { bookings, booking: null };
+  const booking = { ...existing, slot };
   return { bookings: { ...bookings, [key]: booking }, booking };
 }
 
@@ -57,6 +80,17 @@ export function formatSlot(slot) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+// Three equal columns leave roughly 100px per slot on a phone, which the single
+// line above overflows. Split it so each button holds a short date and a time.
+export function formatSlotParts(slot) {
+  const at = new Date(slot);
+  const timeZone = getMeta().timezone;
+  return {
+    day: at.toLocaleString("en-US", { timeZone, weekday: "short", month: "short", day: "numeric" }),
+    time: at.toLocaleString("en-US", { timeZone, hour: "numeric", minute: "2-digit" }),
+  };
 }
 
 export function priceLabel(listing) {

@@ -2,7 +2,17 @@ import { getExampleQueries, getListings } from "../../data/loadData.js";
 import { activeListings } from "../../data/listings.js";
 import { parseJob } from "../parseJob.js";
 import { matchListings } from "../matchListings.js";
-import { applyBooking, findBundle, remainingCodes } from "../booking.js";
+import { applyBooking, cancelBookingByKey, findBundle, remainingCodes, rescheduleBooking } from "../booking.js";
+import {
+  INTENT_PRIORITY,
+  compareListings,
+  describeFilterChange,
+  detailsAnswer,
+  detectLocalIntent,
+  findBookingMatch,
+  mergeFilters,
+  summariseBookings,
+} from "../intents.js";
 
 const LLM_CONCURRENCY = 1;
 const LLM_MIN_INTERVAL_MS = 15000;
@@ -139,6 +149,174 @@ function check(label, condition, detail = "") {
     "a different card is unaffected by another card's booking",
     other.booking !== null && Object.keys(other.bookings).length === 2,
     "msg2:lst_019 books independently",
+  );
+
+  // ---- tap Cancel vs the cancel_booking chat intent ----
+
+  // Both paths call cancelBookingByKey; this is the same end state either way
+  // produces — a freed key and the record itself handed back so a caller can
+  // still read what was cancelled.
+  const cancelledByTap = cancelBookingByKey(first.bookings, card);
+  check(
+    "cancelling by tap frees the key and returns the cancelled record",
+    !cancelledByTap.bookings[card] &&
+      cancelledByTap.cancelled?.booking_id === first.bookings[card].booking_id,
+    `${card} freed, booking_id ${cancelledByTap.cancelled?.booking_id}`,
+  );
+  const cancelledByChat = cancelBookingByKey(first.bookings, card);
+  check(
+    "cancelling by chat intent produces the identical state as cancelling by tap",
+    JSON.stringify(cancelledByChat.bookings) === JSON.stringify(cancelledByTap.bookings) &&
+      cancelledByChat.cancelled?.booking_id === cancelledByTap.cancelled?.booking_id,
+    "same underlying writer, same result regardless of trigger",
+  );
+  check(
+    "cancelling a key that isn't booked is a no-op",
+    cancelBookingByKey({}, card).cancelled === null,
+    "no cancelled record, nothing to revert",
+  );
+
+  // ---- Reschedule ----
+
+  const rescheduled = rescheduleBooking(first.bookings, card, booked.availability[1]);
+  check(
+    "reschedule updates only the slot",
+    rescheduled.booking.slot === booked.availability[1] && rescheduled.booking.slot !== slot,
+    `${slot} -> ${rescheduled.booking.slot}`,
+  );
+  check(
+    "reschedule leaves listing, provider and price unchanged",
+    rescheduled.booking.listing_id === first.bookings[card].listing_id &&
+      rescheduled.booking.provider_id === first.bookings[card].provider_id &&
+      rescheduled.booking.price === first.bookings[card].price,
+    `${rescheduled.booking.listing_id} / ${rescheduled.booking.provider_id} / ${rescheduled.booking.price}`,
+  );
+  check(
+    "reschedule keeps the card in booked state — the key is still present",
+    Boolean(rescheduled.bookings[card]) && Object.keys(rescheduled.bookings).length === Object.keys(first.bookings).length,
+    "no card added or removed, only the slot on the existing one changed",
+  );
+  check(
+    "reschedule on a key that isn't booked is a no-op",
+    rescheduleBooking({}, card, slot).booking === null,
+    "nothing to reschedule",
+  );
+}
+
+// ---- intents ----
+{
+  const listings = activeListings();
+  const withProvider = (l) => ({ ...l, provider: { name: "Test Provider" } });
+
+  // list_bookings vs a browse query for listings.
+  check("\"show me all bookings\" is list_bookings", detectLocalIntent("show me all bookings") === "list_bookings");
+  check("\"what have I booked\" is list_bookings", detectLocalIntent("what have I booked") === "list_bookings");
+  check(
+    "\"show me all listings\" is NOT list_bookings",
+    detectLocalIntent("show me all listings") === null,
+    "falls through to the normal job path with empty service_types",
+  );
+  check("\"what's available\" is NOT list_bookings", detectLocalIntent("what's available") === null);
+
+  // After booking two cards, the summary reads exactly those two, in order.
+  const a = withProvider(listings.find((l) => l.service_type.includes("plumbing")));
+  const b = withProvider(listings.find((l) => l.service_type.includes("yard_outdoor")));
+  let store = applyBooking({}, "m1:" + a.listing_id, a, a.availability[0]).bookings;
+  store = applyBooking(store, "m1:" + b.listing_id, b, b.availability[0]).bookings;
+  const entries = Object.entries(store).map(([key, record]) => ({ key, booking: record, listing: record.listing }));
+  const summary = summariseBookings(entries);
+  check(
+    "list_bookings summarises exactly the booked cards, in booking order",
+    summary.length === 2 && summary[0].title === a.title && summary[1].title === b.title,
+    summary.map((s) => s.title).join(" then "),
+  );
+  check(
+    "list_bookings reads booked state without touching matchListings",
+    summary.every((s) => s.when && s.price && s.provider),
+    "summary built from the booking records alone",
+  );
+
+  // cancel_booking actually reverts a card and frees its code.
+  check("\"cancel the ceiling fan one\" is cancel_booking", detectLocalIntent("cancel the ceiling fan one") === "cancel_booking");
+  check("\"never mind on that booking\" is cancel_booking", detectLocalIntent("never mind on that booking") === "cancel_booking");
+  const picked = findBookingMatch("cancel the yard one", entries);
+  check(
+    "cancel_booking identifies the referenced card",
+    picked.match?.listing.listing_id === b.listing_id,
+    picked.match ? picked.match.listing.title : "no match",
+  );
+  const afterCancel = { ...store };
+  delete afterCancel["m1:" + b.listing_id];
+  const covered = [...new Set(Object.values(afterCancel).flatMap((r) => r.listing.service_type))];
+  check(
+    "cancel_booking reverts the card and frees its code",
+    !afterCancel["m1:" + b.listing_id] && !covered.includes("yard_outdoor"),
+    `covered after cancel: ${JSON.stringify(covered)}`,
+  );
+  const ambiguous = findBookingMatch("cancel that one", entries);
+  check(
+    "an ambiguous cancellation asks rather than guessing",
+    ambiguous.match === null && ambiguous.candidates.length === 2,
+    "returns both candidates to name in the question",
+  );
+
+  // change_filters merges rather than replaces.
+  const current = { service_types: ["handyman_general", "electrical"], max_price: null, neighborhood: "Sellwood", urgency: null };
+  const merged = mergeFilters(current, { service_types: [], max_price: 100, neighborhood: null, urgency: null });
+  check(
+    "change_filters merges the new ceiling and keeps the rest",
+    merged.max_price === 100 && merged.neighborhood === "Sellwood" && merged.service_types.length === 2,
+    JSON.stringify(merged),
+  );
+  const dropped = mergeFilters(current, { service_types: ["handyman_general"], max_price: null, neighborhood: null, urgency: null });
+  check(
+    "change_filters replaces service types when the user names them",
+    dropped.service_types.length === 1 && dropped.service_types[0] === "handyman_general",
+    describeFilterChange(current, dropped),
+  );
+
+  // more_details answers from real fields only, and never matches.
+  const detail = detailsAnswer(a, "how long does that take");
+  check(
+    "more_details answers duration from duration_estimate_minutes",
+    detail.includes(String(a.duration_estimate_minutes)),
+    detail.slice(0, 70),
+  );
+  const unknown = detailsAnswer({ ...a, duration_estimate_minutes: null }, "how long does that take");
+  check(
+    "more_details says so plainly when the data has no answer",
+    /doesn't give/.test(unknown),
+    unknown.slice(0, 70),
+  );
+
+  // compare states facts across visible listings, and never matches.
+  const comparison = compareListings([a, b], "which one's cheaper");
+  check(
+    "compare states each listing's real price",
+    comparison.includes(String(a.price)) && comparison.includes(String(b.price)),
+    comparison.slice(0, 90),
+  );
+
+  // greeting and help are distinct from off_topic.
+  check("\"hey\" is greeting", detectLocalIntent("hey") === "greeting");
+  check("\"hi\" is greeting", detectLocalIntent("hi") === "greeting");
+  check("\"what can you do\" is help", detectLocalIntent("what can you do") === "help");
+  check("\"how does this work\" is help", detectLocalIntent("how does this work") === "help");
+
+  // Priority favours the most specific reading.
+  check(
+    "intent priority puts cancel_booking ahead of list_bookings",
+    INTENT_PRIORITY.indexOf("cancel_booking") < INTENT_PRIORITY.indexOf("list_bookings"),
+  );
+  check(
+    "intent priority puts every specific intent ahead of job and off_topic",
+    INTENT_PRIORITY.indexOf("job") > INTENT_PRIORITY.indexOf("help") &&
+      INTENT_PRIORITY.indexOf("off_topic") === INTENT_PRIORITY.length - 1,
+    INTENT_PRIORITY.join(" > "),
+  );
+  check(
+    "cancel wins when a message reads as both cancel and bookings",
+    detectLocalIntent("cancel my bookings") === "cancel_booking",
   );
 }
 

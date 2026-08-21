@@ -14,13 +14,28 @@ import { getNeighborhoods, getServiceTypes } from "../src/data/loadData.js";
 const MODEL = "gemini-3.5-flash-lite";
 const URGENCY_VALUES = ["urgent", "today", "tomorrow", "this_week"];
 
+// Ordered most-specific first. Where a message could plausibly be read as more
+// than one of these, the earlier value wins.
+const INTENTS = [
+  "cancel_booking",
+  "change_filters",
+  "more_details",
+  "compare",
+  "list_bookings",
+  "greeting",
+  "help",
+  "job",
+  "unclear",
+  "off_topic",
+];
+
 const SERVICE_CODES = getServiceTypes().map(({ code }) => code);
 const NEIGHBORHOOD_NAMES = getNeighborhoods().map(({ name }) => name);
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
-    intent: { type: Type.STRING, enum: ["job", "off_topic", "unclear"] },
+    intent: { type: Type.STRING, enum: INTENTS },
     service_types: { type: Type.ARRAY, items: { type: Type.STRING, enum: SERVICE_CODES } },
     max_price: { type: Type.NUMBER, nullable: true },
     neighborhood: { type: Type.STRING, enum: NEIGHBORHOOD_NAMES, nullable: true },
@@ -52,6 +67,20 @@ Rules:
   (painting, roofing, childcare, pet care, pest control). Return an empty service_types.
 - intent "unclear": it is a household job but too vague to pick confidently between plausible types.
   Still return every plausible service type so the customer can be asked about them.
+- intent "list_bookings": asking to see what THEY have already booked in this session.
+- intent "cancel_booking": asking to undo or cancel a booking they already made.
+- intent "change_filters": adjusting the CURRENT search rather than starting a new one —
+  a new ceiling, a different area, or dropping one service type they no longer want.
+- intent "more_details": a question about a listing or provider already under discussion.
+- intent "compare": asking how the listings already on screen differ.
+- intent "greeting": a bare hello with no request attached.
+- intent "help": asking what this assistant can do or how it works.
+
+Asking to see LISTINGS is a "job" with empty service_types, not "list_bookings".
+"Show me all bookings" is list_bookings; "show me all listings" is job.
+
+When a message fits more than one, prefer in this order:
+${INTENTS.join(" > ")}
 - Never invent a service code or a neighborhood name. Use only the exact strings above.
 - max_price is the customer's stated ceiling in whole dollars, else null.
 - urgency is one of ${URGENCY_VALUES.join(", ")}, else null.
@@ -74,7 +103,58 @@ Input: "My sink is a mess."
 Output: {"intent":"unclear","service_types":["cleaning_standard","plumbing"],"max_price":null,"neighborhood":null,"urgency":null}
 
 Input: "Can someone paint the exterior of my house?"
-Output: {"intent":"off_topic","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}`;
+Output: {"intent":"off_topic","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "show me all bookings"
+Output: {"intent":"list_bookings","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "what have I booked so far"
+Output: {"intent":"list_bookings","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "show me all listings"
+Output: {"intent":"job","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "what's available"
+Output: {"intent":"job","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "cancel the ceiling fan one"
+Output: {"intent":"cancel_booking","service_types":["handyman_general","electrical"],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "never mind on that booking, undo it"
+Output: {"intent":"cancel_booking","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "actually make it under $100"
+Output: {"intent":"change_filters","service_types":[],"max_price":100,"neighborhood":null,"urgency":null}
+
+Input: "just handyman, drop electrical"
+Output: {"intent":"change_filters","service_types":["handyman_general"],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "somewhere in Sellwood instead"
+Output: {"intent":"change_filters","service_types":[],"max_price":null,"neighborhood":"Sellwood","urgency":null}
+
+Input: "does Dan do electrical too"
+Output: {"intent":"more_details","service_types":["electrical"],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "what's included in that price"
+Output: {"intent":"more_details","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "how long does that take"
+Output: {"intent":"more_details","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "which one's cheaper"
+Output: {"intent":"compare","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "what's the difference between these two"
+Output: {"intent":"compare","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "hey"
+Output: {"intent":"greeting","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "what can you do"
+Output: {"intent":"help","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+
+Input: "how does this work"
+Output: {"intent":"help","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}`;
 }
 
 function isRateLimit(error) {

@@ -125,6 +125,98 @@ check(
   [...new Set(styles.map((s) => `${s.bg} ${s.font}`))].join("  ///  "),
 );
 
+console.log("--- booked card: tap Cancel, tap Reschedule ---");
+
+// Opens the first card with open slots, books it, and returns a locator on
+// the resulting booked card. Some listings in a result set have no
+// availability, so this skips past a disabled Book button rather than
+// assuming the first card always has one.
+async function bookFirstAvailable(resultsLocator) {
+  const cards = resultsLocator.locator(".listing-card-tappable");
+  const count = await cards.count();
+  for (let i = 0; i < count; i++) {
+    const card = cards.nth(i);
+    await card.click();
+    await page.waitForTimeout(350);
+    const bookButton = card.locator(".detail-book-button");
+    if (await bookButton.isDisabled()) {
+      await card.click();
+      await page.waitForTimeout(350);
+      continue;
+    }
+    const title = (await card.locator(".listing-card-title").innerText()).trim();
+    await bookButton.click();
+    await page.waitForTimeout(350);
+    await card.locator(".slot-button").first().click();
+    await page.waitForTimeout(700);
+    return title;
+  }
+  return null;
+}
+
+const bookedByTapTitle = await bookFirstAvailable(page.locator(".results-list").first());
+const bookedCard = page.locator(".listing-card.is-booked").filter({ hasText: bookedByTapTitle ?? "" });
+await bookedCard.waitFor({ timeout: 5000 });
+
+check("booking a card reaches booked state", (await bookedCard.count()) === 1, bookedByTapTitle ?? "no bookable card found");
+
+const priceBefore = (await bookedCard.locator(".booked-line").nth(1).innerText()).trim();
+const whenBefore = (await bookedCard.locator(".booked-line").first().innerText()).trim();
+
+// Reschedule: reopens the picker in place, marks the current slot, and picking
+// a different one must change only the time.
+await bookedCard.locator(".booked-action", { hasText: "Reschedule" }).click();
+await page.waitForTimeout(350);
+const currentMark = bookedCard.locator(".slot-button.is-current");
+check("reschedule marks the currently booked slot", (await currentMark.count()) === 1, `${await currentMark.count()} marked`);
+
+await bookedCard.locator(".slot-button:not(.is-current)").first().click();
+await page.waitForTimeout(700);
+
+check("reschedule keeps the card in booked state", (await bookedCard.locator(".booked-marker").count()) === 1, "still shows the Booked marker");
+const whenAfter = (await bookedCard.locator(".booked-line").first().innerText()).trim();
+const priceAfter = (await bookedCard.locator(".booked-line").nth(1).innerText()).trim();
+check("reschedule changes only the slot", whenAfter !== whenBefore && priceAfter === priceBefore, `${whenBefore} -> ${whenAfter}, price ${priceAfter}`);
+
+// Cancel by tap: inline confirm, then the card reverts to a normal tappable
+// card — same as what the chat intent does. A follow-up "Still open" message
+// can land after it if the job had other codes outstanding, so the check
+// looks across the new bot bubbles rather than assuming "Cancelled" is last.
+let botCountBefore = (await bubbles(".message-bubble.bot")).length;
+await bookedCard.locator(".booked-action", { hasText: "Cancel" }).click();
+await page.waitForTimeout(300);
+await bookedCard.locator(".booked-confirm-yes").click();
+await page.waitForTimeout(700);
+
+let newBotTexts = (await bubbles(".message-bubble.bot")).slice(botCountBefore);
+check(
+  "tap Cancel posts the same confirmation copy as the chat intent",
+  newBotTexts.some((t) => t.includes("Cancelled")),
+  newBotTexts.join(" | "),
+);
+check(
+  "tap Cancel reverts the card out of booked state",
+  (await page.locator(".listing-card.is-booked").filter({ hasText: bookedByTapTitle ?? "" }).count()) === 0,
+  `${bookedByTapTitle} no longer booked`,
+);
+
+// Cancel by chat intent, on a fresh booking, should land in the identical
+// end state: same confirmation copy, same reversion out of booked state.
+const bookedByChatTitle = await bookFirstAvailable(page.locator(".results-list").first());
+botCountBefore = (await bubbles(".message-bubble.bot")).length;
+await send("cancel it");
+newBotTexts = (await bubbles(".message-bubble.bot")).slice(botCountBefore);
+check(
+  "cancel_booking chat intent produces the same confirmation copy as tap Cancel",
+  newBotTexts.some((t) => t.includes("Cancelled")),
+  newBotTexts.join(" | "),
+);
+check(
+  "cancel_booking chat intent reverts the card exactly like tap Cancel does",
+  (await page.locator(".listing-card.is-booked").filter({ hasText: bookedByChatTitle ?? "" }).count()) === 0,
+  `${bookedByChatTitle} no longer booked`,
+);
+
 check("no console or page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 const passed = results.filter((r) => r.pass).length;

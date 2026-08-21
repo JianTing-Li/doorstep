@@ -2,7 +2,9 @@ import { getNeighborhoods, getServiceTypes } from "../data/loadData.js";
 import { parseJob } from "./parseJob.js";
 
 const TIMEOUT_MS = 5000;
-const VALID_INTENTS = new Set(["job", "off_topic", "unclear"]);
+import { INTENT_PRIORITY, detectLocalIntent } from "./intents.js";
+
+const VALID_INTENTS = new Set(INTENT_PRIORITY);
 
 // Whatever the model returns is untrusted until it matches the real vocabulary.
 function sanitize(payload) {
@@ -36,6 +38,11 @@ function needsExtraction(parsed) {
 
 export async function getFilters(text) {
   const parsed = parseJob(text);
+
+  // Some intents are unmistakable from wording alone. Settling them here keeps
+  // them working without a key and spends none of the daily request budget.
+  const local = detectLocalIntent(text);
+  if (local) return { ...parsed, intent: local, source: "keyword" };
 
   // A confident single-code keyword read; no request needed.
   if (!needsExtraction(parsed)) return { ...parsed, intent: "job", source: "keyword" };

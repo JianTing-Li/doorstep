@@ -11,34 +11,50 @@ export default function ListingCard({
   state = "collapsed",
   booking,
   transitionName,
+  isRescheduling,
   onToggle,
   onStartBooking,
   onChooseSlot,
+  onCancelBooking,
+  onToggleReschedule,
+  onChooseReschedule,
 }) {
   if (state === "booked") {
-    return <ConfirmationMessage booking={booking} listing={listing} transitionName={transitionName} />;
+    return (
+      <ConfirmationMessage
+        booking={booking}
+        listing={listing}
+        transitionName={transitionName}
+        isRescheduling={isRescheduling}
+        onCancel={onCancelBooking}
+        onReschedule={onToggleReschedule}
+        onChooseSlot={onChooseReschedule}
+      />
+    );
   }
 
   const isOpen = state === "expanded" || state === "booking";
 
   return (
+    // The whole card is the toggle — title, description, ratings, whitespace.
+    // The Book button and the slot picker stop propagation so they only ever
+    // perform their own action.
     <article
-      className={`listing-card ${isOpen ? "is-open" : ""}`}
+      className={`listing-card listing-card-tappable ${isOpen ? "is-open" : ""}`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isOpen}
       style={transitionName ? { viewTransitionName: transitionName } : undefined}
+      onClick={() => onToggle(listing)}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onToggle(listing);
+        }
+      }}
     >
-      <div
-        className="listing-card-head"
-        role="button"
-        tabIndex={0}
-        aria-expanded={isOpen}
-        onClick={() => onToggle(listing)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onToggle(listing);
-          }
-        }}
-      >
+      <div className="listing-card-head">
         <div className="listing-card-top">
           <h3 className="listing-card-title">{listing.title}</h3>
           <span className="listing-card-price">{priceLabel(listing)}</span>

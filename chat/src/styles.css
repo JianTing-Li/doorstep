@@ -1,3 +1,23 @@
+/* A gradient lives in background-image, which cannot transition. Registering
+   its stops as typed custom properties makes them animatable, so the ground
+   cross-fades on a theme swap instead of snapping. */
+@property --color-page {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0c1626;
+}
+@property --color-page-deep {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #091220;
+}
+
+:root {
+  transition:
+    --color-page var(--duration-theme) var(--ease),
+    --color-page-deep var(--duration-theme) var(--ease);
+}
+
 :root {
   /* Ground: deep, desaturated navy. Muted on purpose — the surfaces above it
      are what carry lightness and saturation. */
@@ -24,14 +44,14 @@
   --color-ink: #eef2f7;
   --color-ink-soft: #b3c4dc;
 
-  /* The one accent — deliberately amber, not blue, so actions cannot sink into
-     the surfaces. Actions only: Book, Send, chosen slot, focus rings. */
-  --color-accent: #f0a63e;
-  --color-accent-strong: #ffbd63;
-  /* Accent used as text on a glass surface needs to be brighter than the fill
-     accent to clear AA against it. */
-  --color-accent-text: #ffbd63;
-  --color-on-accent: #21160a;
+  /* The one accent: soft teal. Actions only — Send, Book, active chip,
+     selected slot, focus rings. Never a background, card fill, or body text.
+     Text on a teal fill takes the darkest shade of the same family rather
+     than black or white. */
+  --color-accent: #87c7bc;
+  --color-accent-strong: #9dd6cc;
+  --color-accent-text: #87c7bc;
+  --color-on-accent: #123028;
 
   --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
   --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
@@ -43,8 +63,34 @@
   --duration-enter: 180ms;
   --duration-collapse: 220ms;
   --duration-hover: 150ms;
+  --duration-theme: 200ms;
   --ease: cubic-bezier(0.32, 0.72, 0.35, 1);
 }
+/* ---- Light theme: bright sky, near-white glass, warm coral accent ---- */
+:root[data-theme="light"] {
+  --color-page: #cfe6fb;
+  --color-page-deep: #a9d0f2;
+
+  --glass-fill: rgba(255, 255, 255, 0.74);
+  --glass-fill-strong: rgba(255, 255, 255, 0.82);
+  --glass-fill-user: rgba(255, 255, 255, 0.92);
+
+  --hairline: rgba(26, 58, 92, 0.18);
+  --shadow-soft: 0 8px 24px rgba(31, 68, 112, 0.10);
+  --shadow-lift: 0 14px 38px rgba(31, 68, 112, 0.14);
+
+  --color-ink: #16304d;
+  /* Darkened until secondary text clears AA on the sky ground as well as on
+     glass — the pastel first pass failed at 2.77:1 there. */
+  --color-ink-soft: #35506b;
+  --color-accent: #6fb3a8;
+  --color-accent-strong: #7cbcb1;
+  /* The fill teal is only 2.32:1 as text on near-white glass, so accent text
+     drops to a deeper shade of the same family. */
+  --color-accent-text: #3b7568;
+  --color-on-accent: #1c3d37;
+}
+
 
 * {
   box-sizing: border-box;
@@ -59,6 +105,7 @@ body,
 body {
   margin: 0;
   background: linear-gradient(168deg, var(--color-page) 0%, var(--color-page-deep) 100%);
+  transition: background-color var(--duration-theme) var(--ease), color var(--duration-theme) var(--ease);
   background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-body);
@@ -75,6 +122,21 @@ body::after {
   pointer-events: none;
   opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* A theme swap eases rather than snapping. */
+.listing-card,
+.message-bubble,
+.typing-indicator,
+.composer,
+.filter-chip,
+.header-button,
+.service-label,
+.app-header .brand {
+  transition:
+    background-color var(--duration-theme) var(--ease),
+    border-color var(--duration-theme) var(--ease),
+    color var(--duration-theme) var(--ease);
 }
 
 /* Interactive surfaces ease between their states instead of snapping. */
@@ -146,8 +208,76 @@ button {
 }
 
 .app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 20px 20px 12px;
   flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: var(--glass-fill);
+  color: var(--color-ink);
+  cursor: pointer;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.header-button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.header-button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.clear-confirm-label,
+.booked-confirm-label {
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+}
+
+.clear-confirm,
+.clear-cancel,
+.booked-confirm-yes,
+.booked-confirm-no {
+  min-height: 36px;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clear-confirm,
+.booked-confirm-yes {
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.clear-cancel,
+.booked-confirm-no {
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--color-ink);
 }
 
 /* The accent belongs to actions, so the wordmark is ink. The monoline mark is
@@ -342,7 +472,7 @@ button {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-ink-soft);
   animation: dot-pulse 1.1s ease-in-out infinite;
 }
 
@@ -376,7 +506,9 @@ button {
   grid-template-columns: 1fr;
   gap: 10px;
   width: 100%;
-  align-items: start;
+  /* stretch (the default) makes every card in a row match the tallest, so a
+     title wrapping to two lines no longer breaks row alignment. */
+  align-items: stretch;
 }
 
 @media (min-width: 640px) {
@@ -398,7 +530,22 @@ button {
   animation-timing-function: var(--ease);
 }
 
+/* During a view transition the snapshots render in the top layer, above every
+   fixed element — so an expanding card would sweep over the floating input.
+   Naming the composer gives it its own group, and its group is painted last
+   because it comes after the thread in the DOM. */
+.composer {
+  view-transition-name: composer;
+}
+
+::view-transition-group(composer) {
+  z-index: 100;
+}
+
 .listing-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: var(--glass-fill-strong);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
@@ -478,28 +625,11 @@ button {
   color: var(--color-ink-soft);
 }
 
-.listing-card-button {
-  margin-top: 12px;
-  width: 100%;
-  min-height: 44px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-}
-
-.listing-card-button:hover {
-  background: var(--color-accent-strong);
-}
-
 .listing-card-head {
   cursor: pointer;
 }
 
-.listing-card-head:focus-visible {
+.listing-card-tappable:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: var(--radius-md);
@@ -553,7 +683,7 @@ button {
 }
 
 .skip-button:hover {
-  background: rgba(240, 166, 62, 0.14);
+  background: rgba(135, 199, 188, 0.16);
   border-color: var(--color-accent);
 }
 
@@ -610,30 +740,64 @@ button {
 
 /* ---- Slot picker ---- */
 
+/* Equal columns so every button shares a width and the left/right edges line
+   up exactly across rows. Padded to sit inside the card's text margin. */
 .slot-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
   width: 100%;
+  margin: 14px 0 4px;
 }
 
 /* A selectable time: squared-off tile, outlined not filled, heavier text.
    Shape and weight carry the difference from a filter chip, not colour. */
 .slot-button {
-  min-height: 44px;
-  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 11px 15px;
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
   background: var(--glass-fill-strong);
   color: var(--color-accent-text);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
   cursor: pointer;
 }
 
+.slot-day {
+  white-space: nowrap;
+}
+
+.slot-time {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .slot-button:hover {
-  background: rgba(240, 166, 62, 0.14);
+  background: rgba(135, 199, 188, 0.16);
   border-color: var(--color-accent);
+}
+
+/* The slot the card is already booked into, shown alongside the others in a
+   reschedule picker so the customer can see what they'd be changing. */
+.slot-button.is-current {
+  border-color: var(--color-ink-soft);
+  background: var(--glass-fill);
+}
+
+.slot-current-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
 }
 
 /* ---- Booked card (compact record) ---- */
@@ -648,7 +812,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-accent-text);
+  color: var(--color-ink-soft);
 }
 
 .booked-title {
@@ -670,6 +834,73 @@ button {
   margin: 4px 0 0;
   font-size: 0.9rem;
   color: var(--color-ink-soft);
+}
+
+/* Secondary, text-weight actions on a settled card — deliberately lighter
+   than the original Book button so a booked card doesn't compete with an
+   unbooked one for attention. */
+.booked-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.booked-action {
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.booked-action:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.booked-confirm {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.booked-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.booked-reschedule {
+  margin-top: 14px;
+}
+
+.booked-reschedule-label {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+}
+
+.booked-reschedule-back {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.booked-reschedule-back:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 /* ---- Filter chips ---- */
@@ -745,13 +976,13 @@ button {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(33, 22, 10, 0.20);
+  background: rgba(18, 48, 40, 0.22);
   font-size: 0.9rem;
   line-height: 1;
 }
 
 .filter-chip-remove:hover .filter-chip-remove-glyph {
-  background: rgba(33, 22, 10, 0.34);
+  background: rgba(18, 48, 40, 0.36);
 }
 
 /* ---- Example chips ---- */
@@ -775,7 +1006,7 @@ button {
 }
 
 .example-chip:hover {
-  background: rgba(240, 166, 62, 0.14);
+  background: rgba(135, 199, 188, 0.16);
   border-color: var(--color-accent);
 }
 

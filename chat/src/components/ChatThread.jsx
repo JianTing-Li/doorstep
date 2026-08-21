@@ -3,6 +3,7 @@ import MessageBubble from "./MessageBubble.jsx";
 import ResultsList from "./ResultsList.jsx";
 import TypingIndicator from "./TypingIndicator.jsx";
 import ExampleChips from "./ExampleChips.jsx";
+import BookingList from "./BookingList.jsx";
 
 const NEAR_BOTTOM_THRESHOLD = 80;
 
@@ -13,9 +14,13 @@ export default function ChatThread({
   openKey,
   bookingKey,
   bookings,
+  reschedulingKey,
   onToggleCard,
   onStartBooking,
   onChooseSlot,
+  onCancelBooking,
+  onToggleReschedule,
+  onChooseReschedule,
   onAction,
   onExampleSelect,
 }) {
@@ -76,13 +81,19 @@ export default function ChatThread({
                 openKey={openKey}
                 bookingKey={bookingKey}
                 bookings={bookings}
+                reschedulingKey={reschedulingKey}
                 onToggle={onToggleCard}
                 onStartBooking={onStartBooking}
                 onChooseSlot={onChooseSlot}
+                onCancelBooking={onCancelBooking}
+                onToggleReschedule={onToggleReschedule}
+                onChooseReschedule={onChooseReschedule}
                 skipLabel={message.skipLabel}
                 onSkip={() => onAction("skip_remaining")}
               />
             );
+          case "booking_list":
+            return <BookingList key={message.id} bookings={message.bookings} />;
           default:
             return null;
         }

@@ -1,15 +1,32 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatThread from "./components/ChatThread.jsx";
 import ChatInput from "./components/ChatInput.jsx";
 import ExampleChips from "./components/ExampleChips.jsx";
 import FilterChips from "./components/FilterChips.jsx";
+import HeaderActions from "./components/HeaderActions.jsx";
 import { getFilters } from "./lib/getFilters.js";
 import { parseJob } from "./lib/parseJob.js";
 import { matchListings } from "./lib/matchListings.js";
-import { applyBooking, findBundle, remainingCodes } from "./lib/booking.js";
-import { withGridTransition } from "./lib/viewTransition.js";
+import {
+  applyBooking,
+  cancelBookingByKey,
+  findBundle,
+  formatSlot,
+  remainingCodes,
+  rescheduleBooking,
+} from "./lib/booking.js";
+import { revealExpandedCard, withGridTransition } from "./lib/viewTransition.js";
 import { activeListings } from "./data/listings.js";
 import { getProviders, getServiceTypes } from "./data/loadData.js";
+import { applyTheme, systemTheme } from "./lib/theme.js";
+import {
+  compareListings,
+  describeFilterChange,
+  detailsAnswer,
+  findBookingMatch,
+  mergeFilters,
+  summariseBookings,
+} from "./lib/intents.js";
 
 const RESULTS_DISPLAY_CAP = 5;
 const THINKING_DELAY_MS = 450;
@@ -96,6 +113,8 @@ const EMPTY_CONVERSATION = {
   jobText: "",
   unclearTurns: 0,
   offTopicIndex: 0,
+  visibleListings: [],
+  lastListing: null,
 };
 
 export default function App() {
@@ -103,11 +122,20 @@ export default function App() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [isTyping, setIsTyping] = useState(false);
 
+  // Defaults to the system preference; an explicit choice lasts the session
+  // only, matching the rest of the app — nothing here survives a reload.
+  const [theme, setTheme] = useState(systemTheme);
+  useEffect(() => applyTheme(theme), [theme]);
+
   // Booking lives on the card, not in the thread. openKey is the one expanded
   // card, bookingKey the one showing its slots, and bookings records the
   // cards that are done — a key in bookings can never leave that state.
   const [openKey, setOpenKey] = useState(null);
   const [bookingKey, setBookingKey] = useState(null);
+  // A booked card reopening its slot picker to change the time, distinct from
+  // bookingKey (an unbooked card choosing its first slot) — the card must
+  // stay in booked state throughout, never revert to collapsed.
+  const [reschedulingKey, setReschedulingKey] = useState(null);
   const [bookings, setBookings] = useState({});
   const bookingsRef = useRef({});
 
@@ -194,6 +222,7 @@ export default function App() {
     }
 
     const results = enrichResults(ranked, nextFilters);
+    updateConversation({ visibleListings: results });
     appendMessage({ type: "bot_text", text: botReplyFor(ranked.length, results.length, source) });
     appendMessage({ type: "results", results });
   }
@@ -219,6 +248,64 @@ export default function App() {
         text: OFF_TOPIC_REPLIES[offTopicIndex % OFF_TOPIC_REPLIES.length],
         showExamples: true,
       });
+      return;
+    }
+
+    if (result.intent === "greeting") {
+      setIsTyping(false);
+      appendMessage({ type: "bot_text", text: "Hey! What job can I help you get done?", showExamples: true });
+      return;
+    }
+
+    if (result.intent === "help") {
+      setIsTyping(false);
+      appendMessage({
+        type: "bot_text",
+        text: "Describe a job in plain language and I'll match you to real providers, then you can book a time — all right here.",
+        showExamples: true,
+      });
+      return;
+    }
+
+    if (result.intent === "list_bookings") {
+      setIsTyping(false);
+      showBookings();
+      return;
+    }
+
+    if (result.intent === "cancel_booking") {
+      setIsTyping(false);
+      cancelBooking(text);
+      return;
+    }
+
+    if (result.intent === "change_filters") {
+      const merged = mergeFilters(filtersRef.current, result);
+      setIsTyping(false);
+      appendMessage({ type: "bot_text", text: describeFilterChange(filtersRef.current, merged) });
+      showResults(merged, result.source, text);
+      return;
+    }
+
+    if (result.intent === "more_details") {
+      setIsTyping(false);
+      const listing = currentListing();
+      if (!listing) {
+        appendMessage({ type: "bot_text", text: "Which listing do you mean? Open one and ask again." });
+        return;
+      }
+      appendMessage({ type: "bot_text", text: detailsAnswer(listing, text) });
+      return;
+    }
+
+    if (result.intent === "compare") {
+      setIsTyping(false);
+      const visible = conversationRef.current.visibleListings;
+      if (visible.length < 2) {
+        appendMessage({ type: "bot_text", text: "I need at least two options on screen to compare. Try a search first." });
+        return;
+      }
+      appendMessage({ type: "bot_text", text: compareListings(visible, text) });
       return;
     }
 
@@ -271,16 +358,27 @@ export default function App() {
   function handleToggleCard(key) {
     // A booked card is a record, not a control.
     if (bookingsRef.current[key]) return;
+    const opening = openKey !== key;
+    if (opening) {
+      const match = conversationRef.current.visibleListings.find((l) => key.endsWith(l.listing_id));
+      if (match) updateConversation({ lastListing: match });
+    }
     // Expanding makes the card span the whole grid row, so the siblings reflow.
     withGridTransition(() => {
       setBookingKey(null);
       setOpenKey((current) => (current === key ? null : key));
     });
+    // A card near the bottom grows underneath the floating composer. Nudge the
+    // thread just far enough that the newly revealed content clears it.
+    if (opening) revealExpandedCard(key);
   }
 
   function handleStartBooking(key) {
     if (bookingsRef.current[key]) return;
     setBookingKey(key);
+    // Revealing the slots grows the card again, so it may now run under the
+    // composer even though expanding alone did not.
+    revealExpandedCard(key);
   }
 
   function handleChooseSlot(key, listing, slot) {
@@ -332,6 +430,134 @@ export default function App() {
     }
   }
 
+  function bookedEntries() {
+    // The same map the multi-service logic reads — one source of truth.
+    return Object.entries(bookingsRef.current).map(([key, record]) => ({
+      key,
+      booking: record,
+      listing: record.listing,
+    }));
+  }
+
+  function currentListing() {
+    const entries = bookedEntries();
+    if (openKey) {
+      const visible = conversationRef.current.visibleListings;
+      const match = visible.find((l) => openKey.endsWith(l.listing_id));
+      if (match) return match;
+    }
+    return conversationRef.current.lastListing ?? entries.at(-1)?.listing ?? conversationRef.current.visibleListings[0] ?? null;
+  }
+
+  function showBookings() {
+    const entries = bookedEntries();
+    if (entries.length === 0) {
+      appendMessage({
+        type: "bot_text",
+        text: "You haven't booked anything yet this session.",
+        showExamples: true,
+      });
+      return;
+    }
+    appendMessage({
+      type: "bot_text",
+      text: `You have ${entries.length} booking${entries.length === 1 ? "" : "s"} this session.`,
+    });
+    appendMessage({ type: "booking_list", bookings: summariseBookings(entries) });
+  }
+
+  // The single writer for freeing a booked key — called from both the
+  // cancel_booking chat intent and the card's own Cancel button, so tapping
+  // and typing produce identical state.
+  function performCancel(key) {
+    const { bookings: next, cancelled } = cancelBookingByKey(bookingsRef.current, key);
+    if (!cancelled) return null;
+
+    bookingsRef.current = next;
+    withGridTransition(() => setBookings(next));
+
+    // Free the codes it covered so the sequential offer recalculates.
+    const stillCovered = Object.values(next).flatMap((r) => r.listing.service_type);
+    updateConversation({ coveredCodes: [...new Set(stillCovered)] });
+    return cancelled;
+  }
+
+  // The messaging that follows any successful cancellation, regardless of how
+  // it was triggered.
+  function finishCancel() {
+    appendMessage({ type: "bot_text", text: "Cancelled. Let me know if you'd like to find someone else for that." });
+
+    const remaining = remainingCodes(conversationRef.current.requestedCodes, conversationRef.current.coveredCodes);
+    if (remaining.length > 0) {
+      appendMessage({ type: "bot_text", text: `Still open: ${joinLabels(remaining)}.` });
+      appendMessage({ type: "results", results: rankFor(remaining), skipLabel: "No thanks, I'm done" });
+    }
+  }
+
+  function cancelBooking(text) {
+    const entries = bookedEntries();
+    if (entries.length === 0) {
+      appendMessage({ type: "bot_text", text: "There's nothing booked to cancel yet." });
+      return;
+    }
+
+    const { match, candidates } = findBookingMatch(text, entries);
+    if (!match) {
+      appendMessage({
+        type: "bot_text",
+        text: `Which one — ${candidates.map((c) => c.listing.title).join(", or ")}?`,
+      });
+      return;
+    }
+
+    if (!performCancel(match.key)) return;
+    finishCancel();
+  }
+
+  function handleCancelCard(key) {
+    if (!performCancel(key)) return;
+    finishCancel();
+  }
+
+  function handleToggleReschedule(key) {
+    const opening = reschedulingKey !== key;
+    setReschedulingKey((current) => (current === key ? null : key));
+    if (opening) revealExpandedCard(key);
+  }
+
+  function handleChooseReschedule(key, listing, slot) {
+    const current = bookingsRef.current[key];
+    if (!current) return;
+
+    // Picking the slot already booked is just backing out of the picker.
+    if (slot === current.slot) {
+      setReschedulingKey(null);
+      return;
+    }
+
+    const { bookings: next, booking } = rescheduleBooking(bookingsRef.current, key, slot);
+    if (!booking) return;
+
+    bookingsRef.current = next;
+    setBookings(next);
+    setReschedulingKey(null);
+    appendMessage({ type: "bot_text", text: `Rescheduled to ${formatSlot(slot)}.` });
+  }
+
+  function handleClearChat() {
+    // Every store resets together — thread, filters, card state, bookings and
+    // the multi-service bookkeeping — so nothing is left half-cleared.
+    setMessages([]);
+    applyFilters(EMPTY_FILTERS);
+    conversationRef.current = EMPTY_CONVERSATION;
+    setOpenKey(null);
+    setBookingKey(null);
+    setReschedulingKey(null);
+    bookingsRef.current = {};
+    setBookings({});
+    setIsTyping(false);
+  }
+
   const hasStarted = messages.length > 0;
 
   return (
@@ -355,6 +581,12 @@ export default function App() {
           </svg>
           Doorstep
         </span>
+        <HeaderActions
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          onClearChat={handleClearChat}
+          canClear={messages.length > 0}
+        />
       </header>
 
       <ChatThread
@@ -363,9 +595,13 @@ export default function App() {
         openKey={openKey}
         bookingKey={bookingKey}
         bookings={bookings}
+        reschedulingKey={reschedulingKey}
         onToggleCard={handleToggleCard}
         onStartBooking={handleStartBooking}
         onChooseSlot={handleChooseSlot}
+        onCancelBooking={handleCancelCard}
+        onToggleReschedule={handleToggleReschedule}
+        onChooseReschedule={handleChooseReschedule}
         onAction={handleAction}
         onExampleSelect={handleExampleChip}
         emptyState={
