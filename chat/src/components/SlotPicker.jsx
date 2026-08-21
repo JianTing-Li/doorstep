@@ -8,19 +8,17 @@ export default function SlotPicker({ listing, onChoose }) {
   if (slots.length === 0) return null;
 
   return (
-    <div className="message-row from-bot message-enter">
-      <div className="slot-picker">
-        {slots.map((slot) => (
-          <button
-            type="button"
-            key={slot}
-            className="slot-button"
-            onClick={() => onChoose(listing, slot)}
-          >
-            {formatSlot(slot)}
-          </button>
-        ))}
-      </div>
+    <div className="slot-picker">
+      {slots.map((slot) => (
+        <button
+          type="button"
+          key={slot}
+          className="slot-button"
+          onClick={() => onChoose(listing, slot)}
+        >
+          {formatSlot(slot)}
+        </button>
+      ))}
     </div>
   );
 }

@@ -6,7 +6,8 @@ import FilterChips from "./components/FilterChips.jsx";
 import { getFilters } from "./lib/getFilters.js";
 import { parseJob } from "./lib/parseJob.js";
 import { matchListings } from "./lib/matchListings.js";
-import { createBooking, findBundle, remainingCodes } from "./lib/booking.js";
+import { applyBooking, findBundle, remainingCodes } from "./lib/booking.js";
+import { withGridTransition } from "./lib/viewTransition.js";
 import { activeListings } from "./data/listings.js";
 import { getProviders, getServiceTypes } from "./data/loadData.js";
 
@@ -81,9 +82,11 @@ function conflictNote(previous, next) {
   return `Updated your ${changes.join(" and ")}.`;
 }
 
-let nextId = 1;
+// Not a module-level counter: Vite's Fast Refresh re-runs this module on every
+// edit, which would reset the counter to 1 while the thread still holds ids
+// 1, 2, 3 — React then sees duplicate keys and renders duplicated bubbles.
 function makeId() {
-  return nextId++;
+  return globalThis.crypto?.randomUUID?.() ?? `m_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
 const EMPTY_CONVERSATION = {
@@ -99,6 +102,14 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [isTyping, setIsTyping] = useState(false);
+
+  // Booking lives on the card, not in the thread. openKey is the one expanded
+  // card, bookingKey the one showing its slots, and bookings records the
+  // cards that are done — a key in bookings can never leave that state.
+  const [openKey, setOpenKey] = useState(null);
+  const [bookingKey, setBookingKey] = useState(null);
+  const [bookings, setBookings] = useState({});
+  const bookingsRef = useRef({});
 
   // Chip removal and booking taps run after the state that produced them was
   // captured, so these reads come from refs rather than stale closures.
@@ -257,23 +268,38 @@ export default function App() {
 
   // ---- booking ----
 
-  function handleSelectListing(listing) {
-    appendMessage({ type: "detail", listing });
-  }
-
-  function handleBook(listing) {
-    appendMessage({
-      type: "bot_text",
-      text: `Pick a time that suits you.`,
+  function handleToggleCard(key) {
+    // A booked card is a record, not a control.
+    if (bookingsRef.current[key]) return;
+    // Expanding makes the card span the whole grid row, so the siblings reflow.
+    withGridTransition(() => {
+      setBookingKey(null);
+      setOpenKey((current) => (current === key ? null : key));
     });
-    appendMessage({ type: "slot_picker", listing });
   }
 
-  function handleChooseSlot(listing, slot) {
-    const { requestedCodes, coveredCodes, jobText } = conversationRef.current;
-    const booking = createBooking(listing, slot);
-    appendMessage({ type: "confirmation", booking, listing, jobText });
+  function handleStartBooking(key) {
+    if (bookingsRef.current[key]) return;
+    setBookingKey(key);
+  }
 
+  function handleChooseSlot(key, listing, slot) {
+    // Guard the state machine rather than trusting the UI: a second slot tap on
+    // an already-booked card must not create a second booking or re-run the
+    // multi-service follow-up.
+    const { bookings: nextBookings, booking } = applyBooking(bookingsRef.current, key, listing, slot);
+    if (!booking) return;
+
+    bookingsRef.current = nextBookings;
+    // The card shrinks from full-row back into a grid cell, so this reflows too.
+    withGridTransition(() => {
+      setBookings(nextBookings);
+      setBookingKey(null);
+      setOpenKey(null);
+    });
+
+    // Only now, once the card is genuinely booked, does the bot speak.
+    const { requestedCodes, coveredCodes } = conversationRef.current;
     const nowCovered = [...new Set([...coveredCodes, ...listing.service_type])];
     updateConversation({ coveredCodes: nowCovered });
 
@@ -283,7 +309,6 @@ export default function App() {
       return;
     }
 
-    // Sequential branch: name what is still uncovered and rank only for it.
     appendMessage({
       type: "bot_text",
       text: `Still open: ${joinLabels(remaining)}. Here's who can cover it.`,
@@ -312,14 +337,34 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <p className="brand">Doorstep</p>
+        <span className="brand">
+          <svg
+            className="brand-mark"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3.5 10.5 12 3.5l8.5 7" />
+            <path d="M5.5 9.4V20h13V9.4" />
+            <path d="M12 20v-4.2" />
+            <path d="M10.1 13.1a2.6 2.6 0 0 1 3.6-3.1l-1.3 1.3 1.4 1.4 1.3-1.3a2.6 2.6 0 0 1-3.1 3.6" />
+          </svg>
+          Doorstep
+        </span>
       </header>
 
       <ChatThread
         messages={messages}
         isTyping={isTyping}
-        onSelectListing={handleSelectListing}
-        onBook={handleBook}
+        openKey={openKey}
+        bookingKey={bookingKey}
+        bookings={bookings}
+        onToggleCard={handleToggleCard}
+        onStartBooking={handleStartBooking}
         onChooseSlot={handleChooseSlot}
         onAction={handleAction}
         onExampleSelect={handleExampleChip}
@@ -331,8 +376,12 @@ export default function App() {
         }
       />
 
-      {hasStarted && <FilterChips filters={filters} onRemove={handleRemoveFilter} />}
-      <ChatInput onSubmit={handleUserText} />
+      {/* Chips and field share one raised surface so the filters read as part
+          of what you are about to send, not as a separate strip. */}
+      <div className="composer">
+        {hasStarted && <FilterChips filters={filters} onRemove={handleRemoveFilter} />}
+        <ChatInput onSubmit={handleUserText} />
+      </div>
     </div>
   );
 }

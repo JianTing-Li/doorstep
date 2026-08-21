@@ -28,6 +28,8 @@ function buildChips(filters, labelByCode) {
 }
 
 export default function FilterChips({ filters, onRemove }) {
+  // Matches --duration-enter so the chip finishes fading before it unmounts.
+  const EXIT_MS = 180;
   const [removingIds, setRemovingIds] = useState(() => new Set());
   const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
   const chips = buildChips(filters, labelByCode);
@@ -36,7 +38,7 @@ export default function FilterChips({ filters, onRemove }) {
 
   function handleRemove(chip) {
     setRemovingIds((current) => new Set(current).add(chip.id));
-    setTimeout(() => onRemove(chip.key, chip.value), 150);
+    setTimeout(() => onRemove(chip.key, chip.value), EXIT_MS);
   }
 
   return (

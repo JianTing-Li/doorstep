@@ -1,11 +1,8 @@
 import { Fragment, useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble.jsx";
-import ExampleChips from "./ExampleChips.jsx";
 import ResultsList from "./ResultsList.jsx";
 import TypingIndicator from "./TypingIndicator.jsx";
-import DetailMessage from "./DetailMessage.jsx";
-import SlotPicker from "./SlotPicker.jsx";
-import ConfirmationMessage from "./ConfirmationMessage.jsx";
+import ExampleChips from "./ExampleChips.jsx";
 
 const NEAR_BOTTOM_THRESHOLD = 80;
 
@@ -13,8 +10,11 @@ export default function ChatThread({
   messages,
   isTyping,
   emptyState,
-  onSelectListing,
-  onBook,
+  openKey,
+  bookingKey,
+  bookings,
+  onToggleCard,
+  onStartBooking,
   onChooseSlot,
   onAction,
   onExampleSelect,
@@ -29,6 +29,8 @@ export default function ChatThread({
     stickToBottomRef.current = distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
   }
 
+  // Only new messages move the view. Expanding or booking a card changes layout
+  // in place and must leave the reader where they are.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !stickToBottomRef.current) return;
@@ -69,30 +71,28 @@ export default function ChatThread({
             return (
               <ResultsList
                 key={message.id}
+                messageId={message.id}
                 listings={message.results}
-                onSelect={onSelectListing}
+                openKey={openKey}
+                bookingKey={bookingKey}
+                bookings={bookings}
+                onToggle={onToggleCard}
+                onStartBooking={onStartBooking}
+                onChooseSlot={onChooseSlot}
                 skipLabel={message.skipLabel}
                 onSkip={() => onAction("skip_remaining")}
-              />
-            );
-          case "detail":
-            return <DetailMessage key={message.id} listing={message.listing} onBook={onBook} />;
-          case "slot_picker":
-            return <SlotPicker key={message.id} listing={message.listing} onChoose={onChooseSlot} />;
-          case "confirmation":
-            return (
-              <ConfirmationMessage
-                key={message.id}
-                booking={message.booking}
-                listing={message.listing}
-                jobText={message.jobText}
               />
             );
           default:
             return null;
         }
       })}
-      {isTyping && <TypingIndicator />}
+      {/* Stays mounted so it can fade and collapse out rather than vanishing. */}
+      <div className={`collapse ${isTyping ? "is-open" : ""}`} aria-hidden={!isTyping}>
+        <div className="collapse-inner">
+          <TypingIndicator />
+        </div>
+      </div>
     </div>
   );
 }

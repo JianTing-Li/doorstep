@@ -37,6 +37,15 @@ export function createBooking(listing, slot) {
   };
 }
 
+// The single writer for booked state. A key already present is terminal: the
+// card cannot be booked twice, and the caller gets booking === null so the
+// multi-service follow-up cannot fire a second time either.
+export function applyBooking(bookings, key, listing, slot) {
+  if (bookings[key]) return { bookings, booking: null };
+  const booking = createBooking(listing, slot);
+  return { bookings: { ...bookings, [key]: booking }, booking };
+}
+
 // Slots carry their own UTC offset, so parsing them is safe — unlike the
 // date-only reference_date, which must stay a string.
 export function formatSlot(slot) {

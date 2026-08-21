@@ -1,36 +1,35 @@
-import { bookableSlots, priceLabel } from "../lib/booking.js";
+import { bookableSlots } from "../lib/booking.js";
 
-export default function DetailMessage({ listing, onBook }) {
+// The expanded section of a listing card — provider background and the full
+// listing text. Rendered inside the card, never as its own thread message.
+export default function DetailMessage({ listing, onBook, showBookButton }) {
   const provider = listing.provider;
   const slotCount = bookableSlots(listing).length;
 
   return (
-    <div className="message-row from-bot message-enter">
-      <article className="detail-card">
-        <header className="detail-provider">
-          <h3 className="detail-provider-name">{provider?.name ?? "Doorstep provider"}</h3>
-          <p className="detail-provider-meta">
-            {provider?.rating != null
-              ? `★ ${provider.rating.toFixed(1)} (${provider.review_count})`
-              : "Not yet rated"}
-            {provider?.member_since ? ` · on Doorstep since ${provider.member_since.slice(0, 4)}` : ""}
-          </p>
-          {provider?.bio && <p className="detail-provider-bio">{provider.bio}</p>}
-        </header>
+    <div className="detail-section">
+      {/* provider.rating — the provider's overall score across all their
+          listings, not this listing's. Labelled so the two never read as the
+          same number. */}
+      <p className="detail-provider-meta">
+        {provider?.rating != null ? (
+          <>
+            ★ {provider.rating.toFixed(1)} ({provider.review_count}){" "}
+            <span className="rating-scope">provider overall</span>
+          </>
+        ) : (
+          <span className="rating-scope">Provider not yet rated</span>
+        )}
+        {provider?.member_since ? ` · on Doorstep since ${provider.member_since.slice(0, 4)}` : ""}
+      </p>
+      {provider?.bio && <p className="detail-provider-bio">{provider.bio}</p>}
 
-        <div className="detail-listing">
-          <div className="detail-listing-top">
-            <h4 className="detail-listing-title">{listing.title}</h4>
-            <span className="detail-listing-price">{priceLabel(listing)}</span>
-          </div>
-          <p className="detail-listing-description">{listing.listing_description}</p>
-          <p className="detail-availability">
-            {slotCount > 0
-              ? `${slotCount} open time${slotCount === 1 ? "" : "s"}`
-              : "No open times right now"}
-          </p>
-        </div>
+      <p className="detail-listing-description">{listing.listing_description}</p>
+      <p className="detail-availability">
+        {slotCount > 0 ? `${slotCount} open time${slotCount === 1 ? "" : "s"}` : "No open times right now"}
+      </p>
 
+      {showBookButton && (
         <button
           type="button"
           className="detail-book-button"
@@ -39,7 +38,7 @@ export default function DetailMessage({ listing, onBook }) {
         >
           Book
         </button>
-      </article>
+      )}
     </div>
   );
 }

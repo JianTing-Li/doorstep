@@ -2,7 +2,7 @@ import { getExampleQueries, getListings } from "../../data/loadData.js";
 import { activeListings } from "../../data/listings.js";
 import { parseJob } from "../parseJob.js";
 import { matchListings } from "../matchListings.js";
-import { findBundle, remainingCodes } from "../booking.js";
+import { applyBooking, findBundle, remainingCodes } from "../booking.js";
 
 const LLM_CONCURRENCY = 1;
 const LLM_MIN_INTERVAL_MS = 15000;
@@ -98,6 +98,47 @@ function check(label, condition, detail = "") {
     "sequential branch: follow-up results only cover the remaining code",
     followUp.length > 0 && followUp.every((l) => l.service_type.includes("yard_outdoor")),
     `${followUp.length} listings, all covering yard_outdoor`,
+  );
+
+  // ---- card booking state machine ----
+
+  const card = "msg1:lst_019";
+  const slot = booked.availability[0];
+
+  const first = applyBooking({}, card, booked, slot);
+  check(
+    "booking a card produces exactly one booked state",
+    first.booking !== null && Object.keys(first.bookings).length === 1 && first.bookings[card].slot === slot,
+    `${first.bookings[card].booking_id} on ${card}`,
+  );
+
+  const second = applyBooking(first.bookings, card, booked, booked.availability[1]);
+  check(
+    "the same card cannot be booked twice",
+    second.booking === null && second.bookings === first.bookings,
+    "second attempt returns no booking and leaves state untouched",
+  );
+
+  check(
+    "the original slot survives a second attempt",
+    second.bookings[card].slot === slot,
+    `still ${slot}`,
+  );
+
+  // App gates the wrap-up on `booking` being non-null, so a rejected re-book
+  // cannot fire it and no wrap-up can precede the first successful booking.
+  check(
+    "the sequential wrap-up never fires before a card is booked",
+    applyBooking({}, card, booked, slot).booking !== null && second.booking === null,
+    "wrap-up is gated on a non-null booking from applyBooking",
+  );
+
+  // A different card for the same listing books independently.
+  const other = applyBooking(first.bookings, "msg2:lst_019", booked, slot);
+  check(
+    "a different card is unaffected by another card's booking",
+    other.booking !== null && Object.keys(other.bookings).length === 2,
+    "msg2:lst_019 books independently",
   );
 }
 

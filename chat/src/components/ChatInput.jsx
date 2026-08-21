@@ -17,7 +17,7 @@ export default function ChatInput({ onSubmit }) {
         type="text"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="Describe the job you need done"
+        placeholder="Describe the job"
         aria-label="Describe the job you need done"
       />
       <button type="submit" disabled={!value.trim()}>
