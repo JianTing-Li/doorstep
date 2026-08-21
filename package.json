@@ -3,9 +3,6 @@
   "private": true,
   "type": "module",
   "description": "Deployment manifest for the Vercel project root. Each product under its own folder keeps its own package.json; this file exists so Vercel can install dependencies for the serverless functions in /api.",
-  "scripts": {
-    "dev": "npm --prefix chat run dev"
-  },
   "dependencies": {
     "@google/genai": "^2.18.0"
   }
