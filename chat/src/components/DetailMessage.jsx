@@ -1,10 +1,11 @@
-import { bookableSlots } from "../lib/booking.js";
+import { bookableSlots, formatSlot } from "../lib/booking.js";
 
 // The expanded section of a listing card — provider background and the full
 // listing text. Rendered inside the card, never as its own thread message.
-export default function DetailMessage({ listing, onBook, showBookButton }) {
+export default function DetailMessage({ listing, onBook, showBookButton, disabled = false }) {
   const provider = listing.provider;
-  const slotCount = bookableSlots(listing).length;
+  const slots = bookableSlots(listing);
+  const slotCount = slots.length;
 
   return (
     <div className="detail-section">
@@ -24,10 +25,23 @@ export default function DetailMessage({ listing, onBook, showBookButton }) {
       </p>
       {provider?.bio && <p className="detail-provider-bio">{provider.bio}</p>}
 
+      <p className="detail-provider-meta">
+        Based in {listing.provider_location} · serves up to {listing.service_radius_miles} miles
+      </p>
+
       <p className="detail-listing-description">{listing.listing_description}</p>
       <p className="detail-availability">
-        {slotCount > 0 ? `${slotCount} open time${slotCount === 1 ? "" : "s"}` : "No open times right now"}
+        {slotCount > 0
+          ? `Earliest: ${formatSlot(slots[0])} · ${slotCount} open time${slotCount === 1 ? "" : "s"}`
+          : "No open times right now"}
       </p>
+
+      {listing.relevantReview?.text && (
+        <blockquote className="detail-review">
+          “{listing.relevantReview.text}”
+          <cite>Verified Doorstep booking · {listing.relevantReview.rating}/5</cite>
+        </blockquote>
+      )}
 
       {showBookButton && (
         <button
@@ -38,9 +52,9 @@ export default function DetailMessage({ listing, onBook, showBookButton }) {
             event.stopPropagation();
             onBook(listing);
           }}
-          disabled={slotCount === 0}
+          disabled={disabled || slotCount === 0}
         >
-          Book
+          Choose a time
         </button>
       )}
     </div>

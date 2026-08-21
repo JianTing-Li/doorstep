@@ -16,6 +16,8 @@ export default function ResultsList({
   onChooseReschedule,
   skipLabel,
   onSkip,
+  requestCompleted,
+  onReopen,
 }) {
   if (listings.length === 0) return null;
 
@@ -45,13 +47,20 @@ export default function ResultsList({
               onCancelBooking={() => onCancelBooking(key)}
               onToggleReschedule={() => onToggleReschedule(key)}
               onChooseReschedule={(_, slot) => onChooseReschedule(key, listing, slot)}
+              disabled={requestCompleted && !bookings[key]}
             />
           );
         })}
-        {skipLabel && (
+        {skipLabel && !requestCompleted && (
           <button type="button" className="skip-button" onClick={onSkip}>
             {skipLabel}
           </button>
+        )}
+        {skipLabel && requestCompleted && (
+          <div className="request-complete-state">
+            <span>Request complete</span>
+            <button type="button" onClick={onReopen}>Reopen options</button>
+          </div>
         )}
       </div>
     </div>

@@ -25,7 +25,7 @@ export function bookableSlots(listing) {
 
 let bookingCounter = 0;
 
-export function createBooking(listing, slot) {
+export function createBooking(listing, slot, request = null) {
   bookingCounter += 1;
   return {
     booking_id: `bkg_local_${String(bookingCounter).padStart(3, "0")}`,
@@ -34,15 +34,16 @@ export function createBooking(listing, slot) {
     customer_id: CUSTOMER_ID,
     slot,
     price: listing.price,
+    request,
   };
 }
 
 // The single writer for booked state. A key already present is terminal: the
 // card cannot be booked twice, and the caller gets booking === null so the
 // multi-service follow-up cannot fire a second time either.
-export function applyBooking(bookings, key, listing, slot) {
+export function applyBooking(bookings, key, listing, slot, request = null) {
   if (bookings[key]) return { bookings, booking: null };
-  const booking = createBooking(listing, slot);
+  const booking = createBooking(listing, slot, request);
   // The listing rides along so list_bookings and cancel_booking can read one
   // source of truth rather than re-deriving it.
   return { bookings: { ...bookings, [key]: { ...booking, listing } }, booking };
@@ -93,6 +94,28 @@ export function formatSlotParts(slot) {
   };
 }
 
+function dateAfter(date, days) {
+  const at = new Date(`${date}T12:00:00Z`);
+  at.setUTCDate(at.getUTCDate() + days);
+  return at.toISOString().slice(0, 10);
+}
+
+export function availabilityLabel(listing) {
+  const slots = [...bookableSlots(listing)].sort();
+  if (slots.length === 0) return "No current openings";
+
+  const first = slots[0];
+  const date = first.slice(0, 10);
+  const referenceDate = getMeta().reference_date;
+  const { day, time } = formatSlotParts(first);
+  if (date === referenceDate) return `Available today · ${time}`;
+  if (date === dateAfter(referenceDate, 1)) return `Available tomorrow · ${time}`;
+  return `Next available ${day} · ${time}`;
+}
+
 export function priceLabel(listing) {
-  return listing.price_unit === "hourly" ? `$${listing.price}/hr` : `$${listing.price} flat`;
+  if (listing.price_unit !== "hourly") return `$${listing.price} flat`;
+  const minimum = listing.minimum_quantity ?? 1;
+  const commitment = minimum > 1 ? ` · ${minimum}-hr min · $${listing.price * minimum} minimum` : "";
+  return `$${listing.price}/hr${commitment}`;
 }

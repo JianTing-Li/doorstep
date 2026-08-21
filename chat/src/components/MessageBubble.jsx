@@ -10,7 +10,7 @@ export default function MessageBubble({ from, text, actions, onAction }) {
                 type="button"
                 key={action.action}
                 className="skip-button"
-                onClick={() => onAction(action.action)}
+                onClick={() => onAction(action.action, action.requestId)}
               >
                 {action.label}
               </button>

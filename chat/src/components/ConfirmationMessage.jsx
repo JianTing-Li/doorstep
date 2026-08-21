@@ -23,12 +23,14 @@ export default function ConfirmationMessage({
       className="listing-card is-booked"
       style={transitionName ? { viewTransitionName: transitionName } : undefined}
     >
-      <p className="booked-marker">Booked</p>
+      <p className="booked-marker">Request prepared</p>
       <p className="booked-title">
         {listing.title} <span className="booked-provider">· {listing.provider?.name ?? "Doorstep provider"}</span>
       </p>
       <p className="booked-line">{formatSlot(booking.slot)}</p>
       <p className="booked-line">{priceLabel(listing)}</p>
+      {booking.request?.description && <p className="booked-request">“{booking.request.description}”</p>}
+      <p className="booked-next-step">Demo only · in a live marketplace, {listing.provider?.name ?? "the provider"} would confirm next.</p>
 
       {/* Kept mounted so each panel can animate open and closed, same as the
           card body and slot picker elsewhere. */}
@@ -48,10 +50,10 @@ export default function ConfirmationMessage({
       <div className={`collapse ${confirmingCancel ? "is-open" : ""}`} aria-hidden={!confirmingCancel}>
         <div className="collapse-inner">
           <div className="booked-confirm">
-            <span className="booked-confirm-label">Cancel this booking?</span>
+            <span className="booked-confirm-label">Cancel this request?</span>
             <div className="booked-confirm-actions">
               <button type="button" className="booked-confirm-yes" onClick={onCancel}>
-                Cancel booking
+                Cancel request
               </button>
               <button type="button" className="booked-confirm-no" onClick={() => setConfirmingCancel(false)}>
                 Keep it

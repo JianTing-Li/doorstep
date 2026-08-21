@@ -4,6 +4,7 @@ import ResultsList from "./ResultsList.jsx";
 import TypingIndicator from "./TypingIndicator.jsx";
 import ExampleChips from "./ExampleChips.jsx";
 import BookingList from "./BookingList.jsx";
+import RequestSummary from "./RequestSummary.jsx";
 
 const NEAR_BOTTOM_THRESHOLD = 80;
 
@@ -23,6 +24,7 @@ export default function ChatThread({
   onChooseReschedule,
   onAction,
   onExampleSelect,
+  completedRequestIds,
 }) {
   const scrollRef = useRef(null);
   const stickToBottomRef = useRef(true);
@@ -62,7 +64,9 @@ export default function ChatThread({
                 <MessageBubble
                   from="bot"
                   text={message.text}
-                  actions={message.actions}
+                  actions={message.actions?.filter(
+                    (action) => !action.requestId || !completedRequestIds.has(action.requestId),
+                  )}
                   onAction={onAction}
                 />
                 {message.showExamples && (
@@ -84,16 +88,28 @@ export default function ChatThread({
                 reschedulingKey={reschedulingKey}
                 onToggle={onToggleCard}
                 onStartBooking={onStartBooking}
-                onChooseSlot={onChooseSlot}
+                onChooseSlot={(key, listing, slot) => onChooseSlot(key, listing, slot, message.request)}
                 onCancelBooking={onCancelBooking}
                 onToggleReschedule={onToggleReschedule}
                 onChooseReschedule={onChooseReschedule}
                 skipLabel={message.skipLabel}
-                onSkip={() => onAction("skip_remaining")}
+                requestCompleted={completedRequestIds.has(message.requestId)}
+                onSkip={() => onAction("skip_remaining", message.requestId)}
+                onReopen={() => onAction("reopen_request", message.requestId)}
               />
             );
           case "booking_list":
-            return <BookingList key={message.id} bookings={message.bookings} />;
+            return (
+              <BookingList
+                key={message.id}
+                entries={message.bookings}
+                currentBookings={bookings}
+                onCancel={onCancelBooking}
+                onReschedule={onChooseReschedule}
+              />
+            );
+          case "request_summary":
+            return <RequestSummary key={message.id} request={message.request} />;
           default:
             return null;
         }

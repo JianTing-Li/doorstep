@@ -11,6 +11,7 @@ export const INTENT_PRIORITY = [
   "list_bookings",
   "greeting",
   "help",
+  "unsupported_service",
   "job",
   "unclear",
   "off_topic",
@@ -24,6 +25,7 @@ const LOCAL_INTENT_PATTERNS = [
   ["list_bookings", /\b(my|all|the)\s+(bookings?|appointments?)\b|\bwhat have i booked\b|\bwhat did i book\b/i],
   ["greeting", /^\s*(hi|hey|hello|yo|howdy|good (morning|afternoon|evening))\s*[!.?]*\s*$/i],
   ["help", /\bwhat can you do\b|\bhow does this (work|thing work)\b|\bnot sure how to use\b|\bhow do i use\b/i],
+  ["unsupported_service", /\b(paint(?:ed|ing)?|roof(?:ing)?|roofer|pest control|exterminator|childcare|babysitt(?:er|ing)|pet care|dog walk(?:er|ing))\b/i],
 ];
 
 export function detectLocalIntent(text) {
@@ -68,6 +70,10 @@ export function findBookingMatch(message, entries) {
   return { match: leaders[0].entry, candidates: entries };
 }
 
+export function requestsAllBookings(message) {
+  return /\b(both|all|every|each|them|these|those)\b/i.test(String(message ?? ""));
+}
+
 // change_filters modifies the active search rather than replacing it: only the
 // stated parts are merged in.
 export function mergeFilters(current, change) {
@@ -106,8 +112,7 @@ export function detailsAnswer(listing, message) {
   }
   if (/\b(price|cost|included|charge|rate)\b/.test(ask)) {
     const unit = listing.price_unit === "hourly" ? "an hourly rate" : "a flat price for the job";
-    const min = listing.minimum_quantity ? ` with a ${listing.minimum_quantity}-hour minimum` : "";
-    return `${priceLabel(listing)} — ${unit}${min}. ${listing.listing_description}`;
+    return `${priceLabel(listing)} — ${unit}. ${listing.listing_description}`;
   }
   if (/\b(also|too|other|else|cover|do)\b/.test(ask)) {
     return `${listing.provider?.name ?? "This provider"} covers ${listing.service_type.map((c) => labelByCode[c] ?? c).join(" and ")} on this listing.`;
@@ -138,11 +143,15 @@ export function compareListings(listings, message) {
 }
 
 export function summariseBookings(entries) {
-  return entries.map(({ booking, listing }) => ({
+  return entries.map(({ key, booking, listing }) => ({
+    key,
+    booking,
+    listing,
     id: booking.booking_id,
     title: listing.title,
     provider: listing.provider?.name ?? "Doorstep provider",
     when: formatSlot(booking.slot),
     price: priceLabel(listing),
+    description: booking.request?.description ?? null,
   }));
 }

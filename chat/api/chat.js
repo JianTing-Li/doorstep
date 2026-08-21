@@ -24,6 +24,7 @@ const INTENTS = [
   "list_bookings",
   "greeting",
   "help",
+  "unsupported_service",
   "job",
   "unclear",
   "off_topic",
@@ -63,8 +64,9 @@ ${NEIGHBORHOOD_NAMES.join(", ")}
 
 Rules:
 - intent "job": the message describes household work that maps to one or more service types above.
-- intent "off_topic": the message is not about a household job, or names a service outside the list
+- intent "unsupported_service": the message asks for a household service outside the available list
   (painting, roofing, childcare, pet care, pest control). Return an empty service_types.
+- intent "off_topic": the message is not about a household job. Return an empty service_types.
 - intent "unclear": it is a household job but too vague to pick confidently between plausible types.
   Still return every plausible service type so the customer can be asked about them.
 - intent "list_bookings": asking to see what THEY have already booked in this session.
@@ -103,7 +105,7 @@ Input: "My sink is a mess."
 Output: {"intent":"unclear","service_types":["cleaning_standard","plumbing"],"max_price":null,"neighborhood":null,"urgency":null}
 
 Input: "Can someone paint the exterior of my house?"
-Output: {"intent":"off_topic","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
+Output: {"intent":"unsupported_service","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}
 
 Input: "show me all bookings"
 Output: {"intent":"list_bookings","service_types":[],"max_price":null,"neighborhood":null,"urgency":null}

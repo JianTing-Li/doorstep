@@ -3,6 +3,7 @@ import listings from "../../../mock-data/listings.json" with { type: "json" };
 import meta from "../../../mock-data/_meta.json" with { type: "json" };
 import neighborhoods from "../../../mock-data/neighborhoods.json" with { type: "json" };
 import providers from "../../../mock-data/providers.json" with { type: "json" };
+import reviews from "../../../mock-data/reviews.json" with { type: "json" };
 import serviceTypes from "../../../mock-data/service-types.json" with { type: "json" };
 
 // Single access point for all mock-data JSON. Nothing else in this app
@@ -25,6 +26,10 @@ export function getNeighborhoods() {
 
 export function getProviders() {
   return providers;
+}
+
+export function getReviews() {
+  return reviews;
 }
 
 export function getServiceTypes() {

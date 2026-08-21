@@ -1,8 +1,8 @@
-import { getExampleQueries, getListings } from "../../data/loadData.js";
+import { getExampleQueries, getListings, getMeta, getNeighborhoods } from "../../data/loadData.js";
 import { activeListings } from "../../data/listings.js";
 import { parseJob } from "../parseJob.js";
 import { matchListings } from "../matchListings.js";
-import { applyBooking, cancelBookingByKey, findBundle, remainingCodes, rescheduleBooking } from "../booking.js";
+import { applyBooking, availabilityLabel, cancelBookingByKey, findBundle, priceLabel, remainingCodes, rescheduleBooking } from "../booking.js";
 import {
   INTENT_PRIORITY,
   compareListings,
@@ -11,6 +11,7 @@ import {
   detectLocalIntent,
   findBookingMatch,
   mergeFilters,
+  requestsAllBookings,
   summariseBookings,
 } from "../intents.js";
 
@@ -259,6 +260,8 @@ function check(label, condition, detail = "") {
     ambiguous.match === null && ambiguous.candidates.length === 2,
     "returns both candidates to name in the question",
   );
+  check("\"both of them\" selects every pending request", requestsAllBookings("both of them"));
+  check("a named single request does not select everything", !requestsAllBookings("the yard one"));
 
   // change_filters merges rather than replaces.
   const current = { service_types: ["handyman_general", "electrical"], max_price: null, neighborhood: "Sellwood", urgency: null };
@@ -317,6 +320,93 @@ function check(label, condition, detail = "") {
   check(
     "cancel wins when a message reads as both cancel and bookings",
     detectLocalIntent("cancel my bookings") === "cancel_booking",
+  );
+
+  check(
+    "an unavailable home service is distinct from off-topic conversation",
+    detectLocalIntent("I need the exterior painted") === "unsupported_service",
+  );
+
+  // ---- marketplace request and matching quality ----
+
+  const request = {
+    description: "Kitchen tap drips constantly and the shutoff valve underneath is seized.",
+    serviceTypes: ["plumbing"],
+    neighborhood: "Sellwood",
+    urgency: null,
+    maxPrice: null,
+  };
+  const faucet = listings.find((listing) => listing.listing_id === "lst_019");
+  const requested = applyBooking({}, "request:lst_019", faucet, faucet.availability[0], request);
+  check(
+    "the provider-ready request survives into booking state",
+    requested.booking.request?.description === request.description,
+    requested.booking.request?.description,
+  );
+
+  const minimumListing = listings.find((listing) => (listing.minimum_quantity ?? 1) > 1);
+  check(
+    "hourly pricing states the minimum time and spend",
+    priceLabel(minimumListing).includes(`${minimumListing.minimum_quantity}-hr min`) &&
+      priceLabel(minimumListing).includes(`$${minimumListing.price * minimumListing.minimum_quantity} minimum`),
+    priceLabel(minimumListing),
+  );
+
+  const availableToday = availabilityLabel({
+    ...minimumListing,
+    availability: [`${getMeta().reference_date}T14:00:00-07:00`],
+  });
+  check(
+    "collapsed-card availability calls out a same-day opening",
+    availableToday.startsWith("Available today"),
+    availableToday,
+  );
+
+  const matchOptions = {
+    referenceDate: getMeta().reference_date,
+    neighborhoods: getNeighborhoods(),
+  };
+  const urgent = matchListings(
+    { service_types: ["plumbing"], max_price: null, neighborhood: null, urgency: "today" },
+    listings,
+    matchOptions,
+  );
+  const unrestricted = matchListings(
+    { service_types: ["plumbing"], max_price: null, neighborhood: null, urgency: null },
+    listings,
+    matchOptions,
+  );
+  check(
+    "today changes matching rather than acting as a decorative chip",
+    urgent.length < unrestricted.length && urgent.every((listing) => listing.availability.some((slot) => slot.startsWith(getMeta().reference_date))),
+    `${urgent.length} today vs ${unrestricted.length} unrestricted`,
+  );
+
+  const serviceAreaMatches = matchListings(
+    { service_types: ["plumbing"], max_price: null, neighborhood: "Woodstock", urgency: null },
+    listings,
+    matchOptions,
+  );
+  check(
+    "job-area matching uses service radius rather than provider base equality",
+    serviceAreaMatches.length > 0 && serviceAreaMatches.some((listing) => listing.provider_location !== "Woodstock"),
+    `${serviceAreaMatches.length} plumbing listings serve Woodstock`,
+  );
+
+  const rankingOutcomes = queries
+    .filter((example) => example.expected_listing_ids.length > 0)
+    .map((example) => {
+      const top = matchListings(
+        { service_types: example.expected_codes, max_price: null, neighborhood: null, urgency: null },
+        listings,
+        { ...matchOptions, query: example.query },
+      )[0];
+      return example.expected_listing_ids.includes(top?.listing_id);
+    });
+  check(
+    "job wording ranks an expected listing first across the supported fixtures",
+    rankingOutcomes.every(Boolean),
+    `${rankingOutcomes.filter(Boolean).length}/${rankingOutcomes.length} expected top matches`,
   );
 }
 
@@ -463,3 +553,5 @@ console.log(
     : "",
 );
 console.log(`(active listings available for matching: ${activeListings().length})`);
+
+if (behaviourPassed !== behaviour.length) process.exitCode = 1;
