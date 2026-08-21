@@ -1,11 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { getNeighborhoods, getServiceTypes } from "../src/data/loadData.js";
 
-// The build spec named gemini-2.5-flash, but that model 404s for new API users
-// ("no longer available to new users"). This is the newest stable flash model
-// the key can reach. Pinned rather than using the `gemini-flash-latest` alias,
-// so extraction behaviour and the test pass rate stay reproducible.
-const MODEL = "gemini-3.7-flash";
+// The build spec named gemini-2.5-flash, but every 2.5-era model 404s for new
+// API users ("no longer available to new users") — flash and flash-lite alike.
+//
+// Of the models this key can reach, the flash-lite line reports zero thinking
+// tokens, while gemini-3.6-flash spent 129 of them on a two-token prompt.
+// Thinking is billed on top of output and buys nothing here: the schema is
+// enum-constrained and temperature is 0, so there is nothing to reason about.
+//
+// Pinned rather than using the `gemini-flash-lite-latest` alias, which would
+// change models underneath us and make the test pass rate unreproducible.
+const MODEL = "gemini-3.5-flash-lite";
 const URGENCY_VALUES = ["urgent", "today", "tomorrow", "this_week"];
 
 const SERVICE_CODES = getServiceTypes().map(({ code }) => code);

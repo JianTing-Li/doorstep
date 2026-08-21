@@ -21,13 +21,32 @@ function sanitize(payload) {
   };
 }
 
-function fallback(text) {
-  return { ...parseJob(text), intent: "job", source: "fallback" };
+// Measured against the 25 fixtures in example-queries.json: when parseJob lands
+// on exactly one service type it is right 17 times out of 18, but when it lands
+// on two or more it is right only 3 times out of 7, and an empty read tells us
+// nothing (it cannot tell "off topic" from "words I don't know").
+//
+// So only those two shapes are worth spending a request on. That keeps roughly
+// 72% of messages off the API, which is what makes the free tier's 20 requests
+// per day usable — a call on every message would cap the app at 20 messages.
+function needsExtraction(parsed) {
+  const count = parsed.service_types.length;
+  return count === 0 || count >= 2;
 }
 
 export async function getFilters(text) {
+  const parsed = parseJob(text);
+
+  // A confident single-code keyword read; no request needed.
+  if (!needsExtraction(parsed)) return { ...parsed, intent: "job", source: "keyword" };
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  // "fallback" means the model was worth asking but could not be reached, so
+  // the reply hedges. "keyword" above means we chose not to ask, and stands on
+  // its own.
+  const fallback = { ...parsed, intent: "job", source: "fallback" };
 
   try {
     const response = await fetch("/api/chat", {
@@ -37,12 +56,12 @@ export async function getFilters(text) {
       signal: controller.signal,
     });
 
-    if (!response.ok) return fallback(text);
+    if (!response.ok) return fallback;
 
     const sanitized = sanitize(await response.json());
-    return sanitized ? { ...sanitized, source: "llm" } : fallback(text);
+    return sanitized ? { ...sanitized, source: "llm" } : fallback;
   } catch {
-    return fallback(text);
+    return fallback;
   } finally {
     clearTimeout(timeout);
   }
