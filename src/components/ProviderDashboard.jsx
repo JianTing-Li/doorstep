@@ -44,13 +44,19 @@ export default function ProviderDashboard() {
   return (
     <div className="dashboard">
       <nav className="topbar" aria-label="Provider workspace">
-        <a className="brand" href="/" aria-label="TaskLocal provider dashboard">
+        <a className="brand" href="#dashboard" aria-label="Go to dashboard overview">
           <span className="brand-mark" aria-hidden="true">TL</span>
           <span>
             <strong>TaskLocal</strong>
             <small>Provider workspace</small>
           </span>
         </a>
+        <div className="dashboard-nav" aria-label="Dashboard sections">
+          <a href="#dashboard">Dashboard</a>
+          <a href="#create-listing">Create listing</a>
+          <a href="#my-listings">My listings</a>
+          <a href="#incoming-bookings">Bookings</a>
+        </div>
         <div className="provider-chip">
           <span className="provider-avatar" aria-hidden="true">
             {(provider?.name ?? "P").charAt(0)}
@@ -62,7 +68,7 @@ export default function ProviderDashboard() {
         </div>
       </nav>
 
-      <header className="dashboard-header">
+      <header className="dashboard-header" id="dashboard">
         <div className="welcome-copy">
           <p className="eyebrow">Your provider workspace</p>
           <h1>Welcome back, {(provider?.name ?? "Provider").split(" ")[0]}!</h1>
@@ -88,19 +94,19 @@ export default function ProviderDashboard() {
       </header>
 
       <section className="stats-grid" aria-label="Booking summary">
-        <StatCard icon="⏳" label="Pending" value={bookings_counts.pending} tone="orange" />
-        <StatCard icon="🤝" label="Confirmed" value={bookings_counts.confirmed} tone="blue" />
-        <StatCard icon="✓" label="Completed" value={bookings_counts.completed} tone="green" />
-        <StatCard icon="↩" label="Cancelled" value={bookings_counts.cancelled} tone="red" />
-        <StatCard icon="✦" label="Active Listings" value={activeCount} tone="purple" />
+        <StatCard icon="⏳" label="Pending" value={bookings_counts.pending} tone="orange" href="#incoming-bookings" />
+        <StatCard icon="🤝" label="Confirmed" value={bookings_counts.confirmed} tone="blue" href="#incoming-bookings" />
+        <StatCard icon="✓" label="Completed" value={bookings_counts.completed} tone="green" href="#past-bookings" />
+        <StatCard icon="↩" label="Cancelled" value={bookings_counts.cancelled} tone="red" href="#past-bookings" />
+        <StatCard icon="✦" label="Active Listings" value={activeCount} tone="purple" href="#my-listings" />
       </section>
 
       <div className="dashboard-grid">
-        <section className="panel form-panel">
+        <section className="panel form-panel" id="create-listing">
           <ListingForm onCreate={createListing} />
         </section>
 
-        <section className="panel listings-panel">
+        <section className="panel listings-panel" id="my-listings">
           <div className="section-heading">
             <div>
               <p className="eyebrow">What local customers can book</p>
@@ -155,7 +161,7 @@ export default function ProviderDashboard() {
         </section>
       </div>
 
-      <section className="panel bookings-section incoming-section">
+      <section className="panel bookings-section incoming-section" id="incoming-bookings">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Needs your attention</p>
@@ -178,7 +184,7 @@ export default function ProviderDashboard() {
         )}
       </section>
 
-      <section className="panel bookings-section past-section">
+      <section className="panel bookings-section past-section" id="past-bookings">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Your service history</p>
@@ -206,15 +212,20 @@ export default function ProviderDashboard() {
   );
 }
 
-/** Small stat tile used by the dashboard header. */
-function StatCard({ icon, label, value, tone }) {
+/** Small navigational stat tile used by the dashboard header. */
+function StatCard({ icon, label, value, tone, href }) {
   return (
-    <div className={`stat-card stat-${tone}`}>
+    <a
+      className={`stat-card stat-${tone}`}
+      href={href}
+      aria-label={`${label}: ${value}. Go to section.`}
+    >
       <span className="stat-icon" aria-hidden="true">{icon}</span>
       <span className="stat-content">
         <span className="stat-value">{value}</span>
         <span className="stat-label">{label}</span>
       </span>
-    </div>
+      <span className="stat-arrow" aria-hidden="true">→</span>
+    </a>
   );
 }
