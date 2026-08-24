@@ -160,55 +160,70 @@
             </button>
         </div>
 
-        <!-- Chatbot Modal -->
+        <!-- Chatbot Modal / Drawer (Product C Grounded Matching) -->
         <div id="chatbot-modal" class="hidden fixed md:absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center">
-            <div class="bg-white w-full h-[85%] rounded-t-3xl flex flex-col shadow-2xl slide-up overflow-hidden">
+            <div class="bg-white w-full h-[88%] rounded-t-3xl flex flex-col shadow-2xl slide-up overflow-hidden">
                 <!-- Chatbot Header -->
-                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex justify-between items-center z-10 shadow-md">
+                <div class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-blue-800/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-9 h-9 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-                            <i class="fa-solid fa-robot text-sm"></i>
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-md border border-white/20">
+                            <i class="fa-solid fa-wand-magic-sparkles text-yellow-300 text-sm"></i>
                         </div>
                         <div>
-                            <div class="font-bold text-sm leading-tight">Doorstep Concierge</div>
-                            <div class="text-[11px] text-blue-100 flex items-center">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 inline-block animate-pulse"></span> Grounded AI Matching
+                            <div class="font-bold text-sm leading-tight text-white flex items-center space-x-1.5">
+                                <span>Doorstep AI Concierge</span>
+                                <span class="bg-blue-500/30 text-blue-200 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border border-blue-400/20">Product C</span>
+                            </div>
+                            <div class="text-[11px] text-blue-200 flex items-center mt-0.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 inline-block animate-pulse"></span>
+                                <span>Grounded NLP Matching & Direct Booking</span>
                             </div>
                         </div>
                     </div>
-                    <button onclick="toggleChatbot()" class="text-white/80 hover:text-white p-1.5 rounded-full hover:bg-white/10 btn-pop">
-                        <i class="fa-solid fa-xmark text-lg"></i>
-                    </button>
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="clearChatbotHistory()" class="text-blue-200 hover:text-white p-2 rounded-xl hover:bg-white/10 text-xs transition flex items-center space-x-1 btn-pop" title="Clear chat history">
+                            <i class="fa-solid fa-rotate-left text-xs"></i>
+                            <span class="text-[10px] font-semibold hidden sm:inline">Reset</span>
+                        </button>
+                        <button onclick="toggleChatbot()" class="text-white/80 hover:text-white p-2 rounded-xl hover:bg-white/10 text-base btn-pop">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Filter Pills Bar -->
+                <div id="chat-filter-pills" class="hidden px-4 py-2 bg-blue-50/90 border-b border-blue-100 flex flex-wrap gap-1.5 items-center text-xs">
+                    <!-- Populated dynamically via JS -->
                 </div>
                 
                 <!-- Chat Suggestions Chips -->
-                <div class="px-4 py-2 bg-slate-100/90 border-b border-slate-200 flex space-x-2 overflow-x-auto text-xs py-2.5">
-                    <button onclick="sendQuickPrompt('Need someone to assemble IKEA furniture')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
-                        🪑 Assemble furniture
+                <div class="px-4 py-2.5 bg-slate-100 border-b border-slate-200 flex space-x-2 overflow-x-auto text-xs" id="chat-quick-chips">
+                    <button onclick="sendQuickPrompt('Looking for someone to come clean my one bedroom apartment')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-xs hover:border-blue-500 hover:text-blue-600 transition btn-pop">
+                        ✨ Apartment clean
                     </button>
-                    <button onclick="sendQuickPrompt('Deep clean 2-bedroom apartment')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
-                        ✨ Deep apartment clean
+                    <button onclick="sendQuickPrompt('Kitchen tap drips constantly and the shutoff valve underneath is seized')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-xs hover:border-blue-500 hover:text-blue-600 transition btn-pop">
+                        🔧 Leaking sink
                     </button>
-                    <button onclick="sendQuickPrompt('Fix leaking kitchen pipe')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
-                        🔧 Fix leaking sink
+                    <button onclick="sendQuickPrompt('Need two guys to help load a U-Haul truck on Sunday')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-xs hover:border-blue-500 hover:text-blue-600 transition btn-pop">
+                        📦 Moving help
                     </button>
-                    <button onclick="sendQuickPrompt('Help moving boxes with truck')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-blue-500 hover:text-blue-600 transition">
-                        📦 Movers + Truck
+                    <button onclick="sendQuickPrompt('Gutters are overflowing and there are leaves all over the lawn')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-xs hover:border-blue-500 hover:text-blue-600 transition btn-pop">
+                        🌿 Yard & gutters
+                    </button>
+                    <button onclick="sendQuickPrompt('Need a ceiling fan installed where an old light fixture is')" class="whitespace-nowrap bg-white text-slate-700 font-medium px-3 py-1.5 rounded-full border border-slate-200 shadow-xs hover:border-blue-500 hover:text-blue-600 transition btn-pop">
+                        💡 Fan install
                     </button>
                 </div>
 
                 <!-- Chat History Feed -->
-                <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col space-y-3.5 bg-slate-50/70">
-                    <div class="bg-white border border-slate-200/80 p-3.5 rounded-2xl rounded-tl-none self-start max-w-[85%] shadow-sm text-sm text-slate-700 leading-relaxed">
-                        <p class="font-semibold text-blue-600 mb-1">Hello! 👋</p>
-                        <p>I can instantly match you with verified Portland pros for cleaning, handyman tasks, moving, electrical, plumbing, or yard care.</p>
-                    </div>
+                <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col space-y-4 bg-slate-50/80">
+                    <!-- Populated dynamically via JS -->
                 </div>
 
                 <!-- Chat Input Box -->
-                <div class="p-3 bg-white border-t border-slate-200 flex items-center space-x-2">
-                    <input type="text" id="chat-input" placeholder="e.g. Need furniture assembly this weekend..." class="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm">
-                    <button onclick="sendChatMessage()" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md shadow-blue-500/20 btn-pop">
+                <div class="p-3.5 bg-white border-t border-slate-200 flex items-center space-x-2">
+                    <input type="text" id="chat-input" placeholder="Describe any household task in your own words..." class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-xs md:text-sm shadow-inner transition">
+                    <button onclick="sendChatMessage()" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/25 transition btn-pop">
                         <i class="fa-solid fa-paper-plane text-xs"></i>
                     </button>
                 </div>
@@ -520,13 +535,12 @@
         <!-- Toast Notification Box -->
         <div id="toast" class="hidden fixed md:absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center space-x-2 text-xs font-semibold slide-up">
             <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
-            <span id="toast-msg">Action completed!</span>
         </div>
-
     </div>
 
-    <!-- Data & App Logic -->
+    <!-- Data, Chatbot Engine & App Logic -->
     <script src="data.js"></script>
+    <script src="chatbot-engine.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

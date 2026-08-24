@@ -35,7 +35,19 @@ let state = {
         sortBy: 'recommended'
     },
     currentReviewBookingId: null,
-    reviewRating: 5
+    reviewRating: 5,
+    chatbot: {
+        isOpen: false,
+        messages: [],
+        activeFilters: {
+            service_types: [],
+            max_price: null,
+            neighborhood: null,
+            urgency: null
+        },
+        expandedListingId: null,
+        isTyping: false
+    }
 };
 
 const categoryMap = {
@@ -305,6 +317,27 @@ function getDashboardHTML() {
                 `}
             </div>
 
+            <!-- AI Concierge Matching Banner (JT Product C Integration) -->
+            <div onclick="toggleChatbot()" class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 rounded-2xl p-4 text-white shadow-xl shadow-blue-950/20 cursor-pointer card-hover border border-blue-800/40 flex items-center justify-between btn-pop relative overflow-hidden group">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition"></div>
+                <div class="flex items-center space-x-3.5 relative z-10">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-yellow-300 text-base shadow-md border border-white/20">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="font-extrabold text-[10px] uppercase tracking-wider text-blue-300">Doorstep AI Matcher</span>
+                            <span class="bg-emerald-400/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.2 rounded">Instant</span>
+                        </div>
+                        <div class="font-bold text-xs text-white leading-tight mt-0.5">Describe your task in plain English</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">"Leaking pipe under sink" • "Clean 2BR apartment"</div>
+                    </div>
+                </div>
+                <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white text-xs group-hover:bg-blue-600 transition shadow-xs relative z-10">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </div>
+
             <!-- Popular Categories Grid -->
             <div>
                 <div class="flex justify-between items-center mb-3">
@@ -389,7 +422,18 @@ function getDashboardHTML() {
 }
 
 function executeDashboardSearch(query) {
-    navigate('feed', { search: query, category: 'All' });
+    const trimmed = (query || '').trim();
+    if (!trimmed) return;
+
+    const words = trimmed.split(/\s+/);
+    const hasNLTerms = /\b(my|need|help|under|today|tomorrow|weekend|apartment|house|leaking|drips|broken|fix|assemble|mount|fan|install|clean|movers|truck)\b/i.test(trimmed);
+
+    if (words.length >= 3 || hasNLTerms) {
+        toggleChatbot(true);
+        sendQuickPrompt(trimmed);
+    } else {
+        navigate('feed', { search: trimmed, category: 'All' });
+    }
 }
 
 function clearSearchAndRefresh() {
@@ -1547,10 +1591,59 @@ function initMap() {
     }, 200);
 }
 
-// --- 15. GROUNDED AI ASSISTANT / CHATBOT LOGIC (Product C Simulation) ---
-function toggleChatbot() {
+// --- 15. GROUNDED AI ASSISTANT / CHATBOT CONTROLLER (JT Product C Integration) ---
+function toggleChatbot(forceOpen = null) {
     const modal = document.getElementById('chatbot-modal');
-    if (modal) modal.classList.toggle('hidden');
+    if (!modal) return;
+    
+    if (forceOpen === true) {
+        modal.classList.remove('hidden');
+    } else if (forceOpen === false) {
+        modal.classList.add('hidden');
+    } else {
+        modal.classList.toggle('hidden');
+    }
+
+    state.chatbot.isOpen = !modal.classList.contains('hidden');
+
+    if (state.chatbot.isOpen) {
+        if (state.chatbot.messages.length === 0) {
+            initChatbotGreeting();
+        }
+        renderChatbot();
+        setTimeout(() => {
+            const input = document.getElementById('chat-input');
+            if (input) input.focus();
+        }, 150);
+    }
+}
+
+function initChatbotGreeting() {
+    const customer = getCurrentCustomer();
+    const firstName = customer.name ? customer.name.split(' ')[0] : 'there';
+    
+    state.chatbot.messages = [
+        {
+            id: 'msg_welcome',
+            from: 'bot',
+            type: 'text',
+            text: `Hi ${firstName}! 👋 Describe any household task in plain English and I will interpret the job, match verified Portland pros, and help you reserve a slot on the spot.`
+        }
+    ];
+}
+
+function clearChatbotHistory() {
+    state.chatbot.messages = [];
+    state.chatbot.activeFilters = {
+        service_types: [],
+        max_price: null,
+        neighborhood: null,
+        urgency: null
+    };
+    state.chatbot.expandedListingId = null;
+    initChatbotGreeting();
+    renderChatbot();
+    showToast('Chat history reset', 'fa-rotate-left');
 }
 
 function sendQuickPrompt(promptText) {
@@ -1561,99 +1654,509 @@ function sendQuickPrompt(promptText) {
     }
 }
 
+function renderChatFilterPills() {
+    const pillsContainer = document.getElementById('chat-filter-pills');
+    if (!pillsContainer) return;
+
+    const filters = state.chatbot.activeFilters;
+    const chips = [];
+    const labelByCode = {
+        cleaning_standard: 'Standard Clean',
+        cleaning_deep: 'Deep Clean',
+        handyman_general: 'Handyman',
+        plumbing: 'Plumbing',
+        electrical: 'Electrical',
+        moving_help: 'Moving Help',
+        junk_removal: 'Junk Removal',
+        yard_outdoor: 'Yard & Outdoor'
+    };
+
+    (filters.service_types || []).forEach(code => {
+        chips.push({ key: 'service_types', value: code, label: labelByCode[code] || code, icon: 'fa-tag' });
+    });
+
+    if (filters.max_price != null) {
+        chips.push({ key: 'max_price', value: null, label: `Under $${filters.max_price}`, icon: 'fa-dollar-sign' });
+    }
+
+    if (filters.neighborhood) {
+        chips.push({ key: 'neighborhood', value: null, label: filters.neighborhood, icon: 'fa-location-dot' });
+    }
+
+    if (filters.urgency) {
+        const urgencyLabels = { urgent: 'Urgent (ASAP)', today: 'Today', tomorrow: 'Tomorrow', this_week: 'This Week' };
+        chips.push({ key: 'urgency', value: null, label: urgencyLabels[filters.urgency] || filters.urgency, icon: 'fa-clock' });
+    }
+
+    if (chips.length === 0) {
+        pillsContainer.classList.add('hidden');
+        pillsContainer.innerHTML = '';
+        return;
+    }
+
+    pillsContainer.classList.remove('hidden');
+    pillsContainer.innerHTML = `
+        <span class="text-[10px] font-bold uppercase text-blue-900 mr-1 flex items-center">
+            <i class="fa-solid fa-sliders text-blue-600 mr-1"></i> Active Filters:
+        </span>
+        ${chips.map(chip => `
+            <span class="inline-flex items-center space-x-1 bg-white border border-blue-200 text-blue-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs">
+                <i class="fa-solid ${chip.icon} text-[9px] text-blue-500"></i>
+                <span>${chip.label}</span>
+                <button onclick="removeChatFilter('${chip.key}', '${chip.value || ''}')" class="text-blue-400 hover:text-blue-700 ml-1 text-xs font-extrabold focus:outline-none" title="Remove filter">
+                    &times;
+                </button>
+            </span>
+        `).join('')}
+        <button onclick="applyChatFiltersToFeed()" class="ml-auto text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-white border border-blue-300 px-2 py-0.5 rounded-lg shadow-xs hover:bg-blue-50 transition">
+            View in Search & Map &rarr;
+        </button>
+    `;
+}
+
+function removeChatFilter(key, value) {
+    if (key === 'service_types') {
+        state.chatbot.activeFilters.service_types = (state.chatbot.activeFilters.service_types || []).filter(c => c !== value);
+    } else {
+        state.chatbot.activeFilters[key] = null;
+    }
+
+    // Re-run matching with updated filters
+    const activeListings = ChatbotEngine.getActiveListings();
+    const ranked = ChatbotEngine.matchListings(state.chatbot.activeFilters, activeListings, { query: '' });
+    const enriched = ChatbotEngine.enrichResults(ranked, state.chatbot.activeFilters, '');
+
+    state.chatbot.messages.push({
+        id: `msg_${Date.now()}`,
+        from: 'bot',
+        type: 'results',
+        text: `Updated filters. Found ${ranked.length} match${ranked.length === 1 ? '' : 'es'}:`,
+        results: enriched
+    });
+
+    renderChatbot();
+}
+
+function renderChatbot() {
+    renderChatFilterPills();
+    const history = document.getElementById('chat-history');
+    if (!history) return;
+
+    const labelByCode = {
+        cleaning_standard: 'Home Cleaning',
+        cleaning_deep: 'Deep Cleaning',
+        handyman_general: 'Handyman & Assembly',
+        plumbing: 'Plumbing Repairs',
+        electrical: 'Electrical & Fixtures',
+        moving_help: 'Moving & Heavy Lifting',
+        junk_removal: 'Junk Removal',
+        yard_outdoor: 'Yard & Outdoor Cleanup'
+    };
+
+    let html = '';
+
+    state.chatbot.messages.forEach(msg => {
+        if (msg.from === 'user') {
+            html += `
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 rounded-2xl rounded-tr-none self-end max-w-[85%] shadow-md text-xs leading-relaxed">
+                    <p class="font-medium">${msg.text}</p>
+                </div>
+            `;
+        } else if (msg.from === 'bot') {
+            if (msg.type === 'text') {
+                html += `
+                    <div class="bg-white border border-slate-200/80 p-3.5 rounded-2xl rounded-tl-none self-start max-w-[88%] shadow-sm text-xs text-slate-800 leading-relaxed">
+                        <p>${msg.text}</p>
+                    </div>
+                `;
+            } else if (msg.type === 'request_summary') {
+                const req = msg.request || {};
+                const serviceLabels = (req.service_types || []).map(c => labelByCode[c] || c).join(' + ') || 'General Service';
+                const urgencyLabels = { urgent: 'Urgent (Today / Tomorrow)', today: 'Today', tomorrow: 'Tomorrow', this_week: 'This Week' };
+
+                html += `
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50/70 border border-blue-200/80 p-3.5 rounded-2xl rounded-tl-none self-start max-w-[92%] shadow-sm text-xs text-slate-800">
+                        <div class="flex items-center space-x-1.5 text-blue-700 font-extrabold uppercase text-[10px] tracking-wider mb-1">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            <span>Interpreted Service Request</span>
+                        </div>
+                        <p class="font-semibold text-slate-900 italic text-xs mb-2">“${req.rawQuery}”</p>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-[11px] bg-white/80 p-2.5 rounded-xl border border-blue-100">
+                            <div>
+                                <span class="text-slate-400 font-medium block text-[9px] uppercase">Service Type</span>
+                                <span class="font-bold text-slate-800">${serviceLabels}</span>
+                            </div>
+                            ${req.neighborhood ? `
+                                <div>
+                                    <span class="text-slate-400 font-medium block text-[9px] uppercase">Location Area</span>
+                                    <span class="font-bold text-slate-800">${req.neighborhood}</span>
+                                </div>
+                            ` : ''}
+                            ${req.urgency ? `
+                                <div>
+                                    <span class="text-slate-400 font-medium block text-[9px] uppercase">Timing / Urgency</span>
+                                    <span class="font-bold text-slate-800">${urgencyLabels[req.urgency] || req.urgency}</span>
+                                </div>
+                            ` : ''}
+                            ${req.max_price ? `
+                                <div>
+                                    <span class="text-slate-400 font-medium block text-[9px] uppercase">Target Budget</span>
+                                    <span class="font-bold text-emerald-600">Under $${req.max_price}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (msg.type === 'results') {
+                const results = msg.results || [];
+                html += `
+                    <div class="self-start max-w-[95%] space-y-2.5 w-full">
+                        <div class="bg-white border border-slate-200/80 p-3 rounded-2xl rounded-tl-none shadow-sm text-xs text-slate-800 font-medium">
+                            ${msg.text}
+                        </div>
+                        
+                        <div class="space-y-2.5">
+                            ${results.map(l => {
+                                const isExpanded = state.chatbot.expandedListingId === l.listing_id;
+                                const provider = l.provider || {};
+                                const rating = l.rating ? l.rating.toFixed(1) : '5.0';
+                                const priceUnit = l.price_unit === 'hourly' ? '/hr' : ' flat';
+                                const availLabel = ChatbotEngine.availabilityLabel(l);
+                                const slots = (l.availability || []).filter(s => s.slice(0, 10) >= ChatbotEngine.MOCK_META.reference_date).slice(0, 4);
+
+                                return `
+                                    <div class="bg-white border ${isExpanded ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200/90'} rounded-2xl p-3.5 shadow-sm transition card-hover">
+                                        <div class="flex justify-between items-start cursor-pointer" onclick="toggleChatListingDetails('${l.listing_id}')">
+                                            <div class="flex-1 pr-2">
+                                                <div class="flex items-center space-x-1.5">
+                                                    <span class="font-extrabold text-slate-900 text-xs">${provider.name || 'Doorstep Pro'}</span>
+                                                    <i class="fa-solid fa-circle-check text-blue-500 text-[10px]"></i>
+                                                </div>
+                                                <div class="text-[11px] font-bold text-blue-600 mt-0.5 line-clamp-1">${l.title}</div>
+                                                <div class="text-[10px] text-slate-500 mt-1 flex items-center space-x-2">
+                                                    <span class="text-amber-500 font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${rating} (${l.review_count || 0})</span>
+                                                    <span>•</span>
+                                                    <span class="text-emerald-600 font-bold">${availLabel}</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">$${l.price}${priceUnit}</span>
+                                                <div class="text-[10px] text-slate-400 mt-1">
+                                                    <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Match Reason Tag -->
+                                        <div class="mt-2 text-[10px] bg-slate-100/80 text-slate-600 px-2.5 py-1 rounded-lg flex items-center space-x-1">
+                                            <i class="fa-solid fa-circle-nodes text-blue-500 text-[9px]"></i>
+                                            <span class="font-medium">${l.reason || 'Matches your request'}</span>
+                                        </div>
+
+                                        <!-- Expanded Details & Slot Picker -->
+                                        ${isExpanded ? `
+                                            <div class="mt-3 pt-3 border-t border-slate-100 space-y-3 slide-up">
+                                                <p class="text-[11px] text-slate-600 leading-relaxed">${l.listing_description}</p>
+                                                
+                                                <div class="bg-blue-50/60 p-2.5 rounded-xl text-[10px] text-slate-700 flex justify-between items-center">
+                                                    <span>Base: <strong>${l.provider_location}</strong></span>
+                                                    <span>Radius: <strong>${l.service_radius_miles} mi</strong></span>
+                                                    <span>Duration: <strong>~${l.duration_estimate_minutes || 60}m</strong></span>
+                                                </div>
+
+                                                <!-- Slot Selector -->
+                                                <div>
+                                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mb-1.5">
+                                                        Select Preferred Appointment Slot:
+                                                    </label>
+                                                    <div class="grid grid-cols-2 gap-1.5">
+                                                        ${slots.length > 0 ? slots.map(slotStr => {
+                                                            const { day, time } = ChatbotEngine.formatSlotParts(slotStr);
+                                                            return `
+                                                                <button onclick="bookChatSlot('${l.listing_id}', '${slotStr}', ${l.price})" class="p-2 rounded-xl border border-blue-200 bg-white hover:bg-blue-600 hover:text-white text-slate-800 text-left transition group shadow-xs btn-pop">
+                                                                    <div class="text-[10px] font-bold group-hover:text-white">${day}</div>
+                                                                    <div class="text-[9px] text-blue-600 group-hover:text-blue-100 font-semibold">${time}</div>
+                                                                </button>
+                                                            `;
+                                                        }).join('') : `
+                                                            <div class="col-span-2 text-[10px] text-slate-400 italic">No instant slots open. Contact provider directly.</div>
+                                                        `}
+                                                    </div>
+                                                </div>
+
+                                                <!-- Action Buttons -->
+                                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                                    <button onclick="toggleChatbot(false); navigate('profile', {id: '${l.listing_id}'})" class="bg-white border border-slate-200 hover:border-blue-500 text-slate-700 font-bold py-2 rounded-xl text-center transition text-xs btn-pop">
+                                                        <i class="fa-solid fa-user-tie mr-1"></i> Full Profile
+                                                    </button>
+                                                    <button onclick="toggleChatbot(false); navigate('schedule', {id: '${l.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-center transition text-xs shadow-md shadow-blue-500/20 btn-pop">
+                                                        <i class="fa-solid fa-calendar-check mr-1"></i> Escrow Book
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (msg.type === 'booking_confirmation') {
+                const bkg = msg.booking || {};
+                html += `
+                    <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-2xl rounded-tl-none self-start max-w-[92%] shadow-lg text-xs slide-up">
+                        <div class="flex items-center space-x-1.5 font-extrabold text-[11px] uppercase tracking-wider text-emerald-100 mb-1">
+                            <i class="fa-solid fa-circle-check text-white"></i>
+                            <span>Appointment Reserved!</span>
+                        </div>
+                        <div class="font-extrabold text-sm text-white">${bkg.title}</div>
+                        <div class="text-xs text-emerald-100 font-semibold">With ${bkg.provider_name}</div>
+                        
+                        <div class="bg-white/15 backdrop-blur-md rounded-xl p-2.5 my-2.5 space-y-1 text-[11px] text-white">
+                            <div>🗓️ <strong>${ChatbotEngine.formatSlot(bkg.timeSlot)}</strong></div>
+                            <div>📍 ${bkg.address}</div>
+                            <div>💳 <strong>$${bkg.total.toFixed(2)}</strong> (Held safely in Doorstep Escrow)</div>
+                        </div>
+
+                        <div class="flex space-x-2 pt-1">
+                            <button onclick="toggleChatbot(false); navigate('my-bookings')" class="flex-1 bg-white text-emerald-800 hover:bg-emerald-50 font-bold py-1.5 rounded-lg text-center transition text-xs shadow-xs">
+                                View in Bookings
+                            </button>
+                            <button onclick="cancelChatBooking('${bkg.id}')" class="text-emerald-100 hover:text-white px-2 py-1.5 text-[10px] font-semibold underline">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    });
+
+    if (state.chatbot.isTyping) {
+        html += `
+            <div class="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none self-start shadow-sm flex items-center space-x-1 text-slate-400">
+                <span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
+                <span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            </div>
+        `;
+    }
+
+    history.innerHTML = html;
+    history.scrollTop = history.scrollHeight;
+}
+
+function toggleChatListingDetails(listingId) {
+    state.chatbot.expandedListingId = (state.chatbot.expandedListingId === listingId) ? null : listingId;
+    renderChatbot();
+}
+
+function bookChatSlot(listingId, slotStr, price) {
+    const listing = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).find(l => l.listing_id === listingId);
+    if (!listing) return;
+    const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === listing.provider_id) || {};
+    const customer = getCurrentCustomer();
+
+    const bookingId = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
+    const newBooking = {
+        id: bookingId,
+        listing_id: listing.listing_id,
+        provider_id: listing.provider_id,
+        title: listing.title,
+        provider_name: provider.name || 'Doorstep Pro',
+        timeSlot: slotStr,
+        address: customer.address || '1420 NW Lovejoy St, Portland, OR',
+        total: price || listing.price,
+        status: 'upcoming',
+        escrowStatus: 'held',
+        rating: null,
+        review: null
+    };
+
+    state.bookingsList.unshift(newBooking);
+    saveBookingsToStorage();
+    updateNavBadge();
+
+    state.chatbot.messages.push({
+        id: `msg_bkg_${Date.now()}`,
+        from: 'bot',
+        type: 'booking_confirmation',
+        booking: newBooking
+    });
+
+    state.chatbot.expandedListingId = null;
+    renderChatbot();
+    showToast(`Booked with ${provider.name}! Escrow active.`, 'fa-circle-check');
+}
+
+function cancelChatBooking(bookingId) {
+    const b = state.bookingsList.find(item => item.id === bookingId);
+    if (b) {
+        b.status = 'cancelled';
+        b.escrowStatus = 'refunded';
+        saveBookingsToStorage();
+        updateNavBadge();
+    }
+
+    state.chatbot.messages.push({
+        id: `msg_cancel_${Date.now()}`,
+        from: 'bot',
+        type: 'text',
+        text: `Booking ${bookingId} has been cancelled and any held funds have been released back to your payment method.`
+    });
+
+    renderChatbot();
+    showToast(`Booking ${bookingId} cancelled`, 'fa-rotate-left');
+}
+
+function applyChatFiltersToFeed() {
+    const activeFilters = state.chatbot.activeFilters;
+    state.filters.searchQuery = '';
+    
+    if (activeFilters.service_types && activeFilters.service_types.length > 0) {
+        const code = activeFilters.service_types[0];
+        for (const [catName, codes] of Object.entries(categoryMap)) {
+            if (codes.includes(code)) {
+                state.filters.category = catName;
+                break;
+            }
+        }
+    } else {
+        state.filters.category = 'All';
+    }
+
+    if (activeFilters.max_price) {
+        state.filters.maxPrice = activeFilters.max_price;
+    }
+
+    toggleChatbot(false);
+    navigate('feed', { category: state.filters.category });
+    showToast('Marketplace search synced with AI filters!', 'fa-sliders');
+}
+
 function sendChatMessage() {
     const input = document.getElementById('chat-input');
     const msg = (input ? input.value : '').trim();
     if (!msg) return;
 
-    const history = document.getElementById('chat-history');
-    if (!history) return;
-    
-    // User message bubble
-    history.innerHTML += `
-        <div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none self-end max-w-[85%] shadow-sm text-xs leading-relaxed">
-            <p>${msg}</p>
-        </div>
-    `;
+    state.chatbot.messages.push({
+        id: `msg_user_${Date.now()}`,
+        from: 'user',
+        type: 'text',
+        text: msg
+    });
+
     input.value = '';
-    history.scrollTop = history.scrollHeight;
+    state.chatbot.isTyping = true;
+    renderChatbot();
 
-    // Grounded Matching Engine
     setTimeout(() => {
-        const lowerMsg = msg.toLowerCase();
-        let match = null;
-        
-        const activeListings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
-        const keywords = lowerMsg.split(/\s+/).filter(w => w.length > 2);
+        state.chatbot.isTyping = false;
+        const localIntent = ChatbotEngine.detectLocalIntent(msg);
 
-        // 1. Dynamic Search Scan
-        match = activeListings.find(l => {
-            const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === l.provider_id);
-            const titleLower = (l.title || '').toLowerCase();
-            const descLower = (l.listing_description || '').toLowerCase();
-            const bioLower = provider ? (provider.bio || '').toLowerCase() : '';
-            return keywords.some(k => titleLower.includes(k) || descLower.includes(k) || bioLower.includes(k));
+        if (localIntent === 'greeting') {
+            state.chatbot.messages.push({
+                id: `msg_${Date.now()}`,
+                from: 'bot',
+                type: 'text',
+                text: "Hello! What kind of home service or repair can I match for you today?"
+            });
+            renderChatbot();
+            return;
+        }
+
+        if (localIntent === 'help') {
+            state.chatbot.messages.push({
+                id: `msg_${Date.now()}`,
+                from: 'bot',
+                type: 'text',
+                text: "Tell me what needs fixing, cleaning, or moving around the house. I'll identify the required trades, check distance from your neighborhood, verify budget limits, and find open schedule slots."
+            });
+            renderChatbot();
+            return;
+        }
+
+        if (localIntent === 'list_bookings') {
+            const activeBookings = state.bookingsList.filter(b => b.status === 'upcoming');
+            if (activeBookings.length === 0) {
+                state.chatbot.messages.push({
+                    id: `msg_${Date.now()}`,
+                    from: 'bot',
+                    type: 'text',
+                    text: "You don't have any upcoming bookings right now. Tell me what job you need done to find a pro!"
+                });
+            } else {
+                const summary = activeBookings.map(b => `• ${b.title} (${b.provider_name}) on ${ChatbotEngine.formatSlot(b.timeSlot)}`).join('\n');
+                state.chatbot.messages.push({
+                    id: `msg_${Date.now()}`,
+                    from: 'bot',
+                    type: 'text',
+                    text: `You have ${activeBookings.length} upcoming booking${activeBookings.length === 1 ? '' : 's'}:\n${summary}`
+                });
+            }
+            renderChatbot();
+            return;
+        }
+
+        if (localIntent === 'unsupported_service') {
+            state.chatbot.messages.push({
+                id: `msg_${Date.now()}`,
+                from: 'bot',
+                type: 'text',
+                text: "Doorstep focuses on home cleaning, handyman tasks, plumbing, electrical, moving help, junk removal, and yard maintenance. We don't currently support roofing or pest control."
+            });
+            renderChatbot();
+            return;
+        }
+
+        // Job query intake
+        const parsed = ChatbotEngine.parseJob(msg);
+        parsed.rawQuery = msg;
+
+        // Merge filters
+        const mergedFilters = {
+            service_types: parsed.service_types.length > 0 ? parsed.service_types : state.chatbot.activeFilters.service_types,
+            max_price: parsed.max_price != null ? parsed.max_price : state.chatbot.activeFilters.max_price,
+            neighborhood: parsed.neighborhood != null ? parsed.neighborhood : state.chatbot.activeFilters.neighborhood,
+            urgency: parsed.urgency != null ? parsed.urgency : state.chatbot.activeFilters.urgency,
+        };
+        state.chatbot.activeFilters = mergedFilters;
+
+        // Request Summary
+        state.chatbot.messages.push({
+            id: `msg_summary_${Date.now()}`,
+            from: 'bot',
+            type: 'request_summary',
+            request: { ...mergedFilters, rawQuery: msg }
         });
 
-        // 2. Fallback category matching
-        if (!match) {
-            if (lowerMsg.includes('clean') || lowerMsg.includes('maid') || lowerMsg.includes('wash') || lowerMsg.includes('dust')) {
-                match = activeListings.find(l => l.service_type.some(c => categoryMap['Cleaning'].includes(c)));
-            } else if (lowerMsg.includes('plumb') || lowerMsg.includes('sink') || lowerMsg.includes('pipe') || lowerMsg.includes('faucet') || lowerMsg.includes('drain')) {
-                match = activeListings.find(l => l.service_type.includes('plumbing'));
-            } else if (lowerMsg.includes('electric') || lowerMsg.includes('fan') || lowerMsg.includes('light') || lowerMsg.includes('outlet')) {
-                match = activeListings.find(l => l.service_type.includes('electrical'));
-            } else if (lowerMsg.includes('assemble') || lowerMsg.includes('ikea') || lowerMsg.includes('mount') || lowerMsg.includes('handyman') || lowerMsg.includes('furniture')) {
-                match = activeListings.find(l => l.service_type.includes('handyman_general'));
-            } else if (lowerMsg.includes('move') || lowerMsg.includes('truck') || lowerMsg.includes('haul') || lowerMsg.includes('junk') || lowerMsg.includes('box')) {
-                match = activeListings.find(l => l.service_type.some(c => categoryMap['Moving'].includes(c)));
-            } else if (lowerMsg.includes('yard') || lowerMsg.includes('lawn') || lowerMsg.includes('mow') || lowerMsg.includes('leaf') || lowerMsg.includes('garden')) {
-                match = activeListings.find(l => l.service_type.includes('yard_outdoor'));
-            }
-        }
+        // Match & Rank Listings
+        const activeListings = ChatbotEngine.getActiveListings();
+        const ranked = ChatbotEngine.matchListings(mergedFilters, activeListings, { query: msg });
+        const enriched = ChatbotEngine.enrichResults(ranked, mergedFilters, msg);
 
-        if (match) {
-            const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(prv => prv.provider_id === match.provider_id) || {};
-            const rating = match.rating ? match.rating.toFixed(1) : '5.0';
-            const priceUnit = match.price_unit === 'hourly' ? '/hr' : ' flat';
-
-            history.innerHTML += `
-                <div class="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none self-start max-w-[90%] shadow-sm text-xs text-slate-800">
-                    <p class="mb-2 text-slate-600">I found a top verified provider who specializes in this:</p>
-                    <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-extrabold text-slate-900 text-xs">${provider.name}</div>
-                                <div class="text-[11px] text-blue-600 font-medium">${match.title}</div>
-                            </div>
-                            <span class="text-xs font-bold text-emerald-600">$${match.price}${priceUnit}</span>
-                        </div>
-                        <div class="flex items-center text-[10px] text-slate-500 space-x-2">
-                            <span class="text-amber-500 font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${rating}</span>
-                            <span>•</span>
-                            <span>${match.provider_location}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 pt-1">
-                            <button onclick="toggleChatbot(); navigate('profile', {id: '${match.listing_id}'})" class="bg-white border border-slate-200 hover:border-blue-500 text-slate-700 font-bold py-1.5 px-2 rounded-lg text-center transition">
-                                Profile
-                            </button>
-                            <button onclick="toggleChatbot(); navigate('schedule', {id: '${match.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-center transition shadow-sm">
-                                Quick Book
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
+        if (enriched.length === 0) {
+            state.chatbot.messages.push({
+                id: `msg_results_${Date.now()}`,
+                from: 'bot',
+                type: 'text',
+                text: mergedFilters.neighborhood
+                    ? `No providers currently serve ${mergedFilters.neighborhood} under those constraints. Try clearing the neighborhood filter above.`
+                    : "No exact matches found. Try broadening your budget or describing the job with a few more details."
+            });
         } else {
-            history.innerHTML += `
-                <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-tl-none self-start max-w-[85%] shadow-sm text-xs text-slate-700 leading-relaxed">
-                    <p class="font-semibold text-slate-800 mb-1">I couldn't find an exact match</p>
-                    <p>Try searching for cleaning, IKEA furniture assembly, plumbing repairs, moving help, electrical installations, or yard maintenance.</p>
-                </div>
-            `;
+            state.chatbot.messages.push({
+                id: `msg_results_${Date.now()}`,
+                from: 'bot',
+                type: 'results',
+                text: `Found ${ranked.length} match${ranked.length === 1 ? '' : 'es'}. Here are the top providers ranked for your job:`,
+                results: enriched
+            });
         }
-        history.scrollTop = history.scrollHeight;
-    }, 700);
+
+        renderChatbot();
+    }, 450);
 }
 
 // --- 16. TOAST NOTIFICATION HELPER ---
