@@ -1103,6 +1103,7 @@ let DB_LISTINGS = [
     ],
     "listing_status": "paused"
   }
+<<<<<<< HEAD
 ];
 let DB_PROVIDERS = [
   {
