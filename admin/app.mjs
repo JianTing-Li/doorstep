@@ -352,7 +352,7 @@ function recordDecision(action) {
     action,
     risk_level: report.risk_level,
     reason,
-    created_at: new Date().toISOString(),
+    created_at: `${state.data.meta.reference_date}T23:59:00-04:00`,
   };
 
   state.local.actions.push(entry);

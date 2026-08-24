@@ -12,6 +12,8 @@ This folder contains Ibtisam Hossain's Product D build for Doorstep. It is inten
 
 The GitHub JSON files remain read-only. New demo decisions are stored in browser-local state so the source fixtures are never overwritten.
 
+The interface uses Doorstep's shared blue product color and the same listing and moderation terminology as the Provider, Customer, and Chat products. Demo audit timestamps are anchored to the shared `_meta.reference_date` rather than the viewer's system clock.
+
 ## Run locally
 
 From the repository root:
@@ -20,13 +22,13 @@ From the repository root:
 python3 -m http.server 4173
 ```
 
-Then open `http://localhost:4173/product-d/`.
+Then open `http://localhost:4173/admin/`.
 
 ## Verify
 
 ```bash
 python3 mock-data/validate.py
-node product-d/test.mjs
+node admin/test.mjs
 ```
 
 No external API, invented fixture, or teammate product branch is used by Product D.
