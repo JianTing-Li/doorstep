@@ -362,27 +362,13 @@ function getDashboardHTML() {
                     }).join('')}
                 </div>
             </div>
-            
-            <!-- Live Interactive Map -->
-            <div>
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <h2 class="font-extrabold text-lg text-slate-900 tracking-tight">Portland Provider Network Map</h2>
-                    </div>
-                    <span class="text-xs text-slate-400 font-medium">Portland, OR Metro • Real-Time Coordinates</span>
-                </div>
-                <div class="rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
-                    <div id="map" class="h-64 sm:h-80 w-full z-0"></div>
-                </div>
-            </div>
 
             <!-- Featured Providers Grid -->
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h2 class="font-extrabold text-lg text-slate-900 tracking-tight">Top-Rated Local Providers</h2>
-                        <p class="text-xs text-slate-500">Highest rated background-checked pros in Portland</p>
+                        <p class="text-xs text-slate-500">Highest rated background-checked pros in Portland • Tap location for Google Maps</p>
                     </div>
                     <span onclick="navigate('feed', {category: 'All'})" class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer bg-blue-50 px-3 py-1.5 rounded-xl transition hover:bg-blue-100">See Complete Feed</span>
                 </div>
@@ -392,7 +378,7 @@ function getDashboardHTML() {
                         const rating = listing.rating ? listing.rating.toFixed(1) : '5.0';
                         const priceUnit = listing.price_unit === 'hourly' ? '/hr' : ' flat';
                         return `
-                            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between card-hover cursor-pointer" onclick="navigate('profile', {id: '${listing.listing_id}'})">
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between card-hover cursor-pointer" onclick="navigate('profile', {id: '${listing.listing_id}'})">
                                 <div>
                                     <div class="flex items-start justify-between mb-3">
                                         <div class="flex items-center space-x-3">
@@ -404,9 +390,11 @@ function getDashboardHTML() {
                                                     <span>${provider.name}</span>
                                                     <i class="fa-solid fa-circle-check text-blue-500 text-xs"></i>
                                                 </h4>
-                                                <div class="text-[11px] text-slate-400 flex items-center space-x-1">
+                                                <button onclick="event.stopPropagation(); openGoogleMapsDirections('${customer.default_neighborhood}', '${listing.provider_location}')" class="text-[11px] text-slate-500 hover:text-blue-600 font-semibold flex items-center space-x-1 transition group" title="Open in Google Maps">
+                                                    <i class="fa-solid fa-location-dot text-red-500 text-[10px] group-hover:scale-110 transition"></i>
                                                     <span>${listing.provider_location}</span>
-                                                </div>
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[8px] text-slate-400"></i>
+                                                </button>
                                             </div>
                                         </div>
                                         <div class="text-right">
@@ -428,7 +416,7 @@ function getDashboardHTML() {
                                         <button onclick="event.stopPropagation(); openProviderChat('${provider.provider_id}', '${listing.listing_id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Chat with provider">
                                             <i class="fa-solid fa-message text-xs"></i>
                                         </button>
-                                        <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-xl transition text-xs shadow-sm btn-pop">
+                                        <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-1.5 rounded-xl transition text-xs shadow-sm btn-pop">
                                             Book
                                         </button>
                                     </div>
@@ -442,6 +430,20 @@ function getDashboardHTML() {
             <div class="h-10"></div>
         </div>
     `;
+}
+
+// --- GOOGLE MAPS NAVIGATION HELPERS ---
+function openGoogleMapsDirections(origin, destination) {
+    const from = origin || (getCurrentCustomer() ? getCurrentCustomer().default_neighborhood : 'Portland, OR');
+    const to = destination || 'Portland, OR';
+    const url = 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(from + ', Portland, OR') + '&destination=' + encodeURIComponent(to + ', Portland, OR');
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function openGoogleMapsSearch(location) {
+    const loc = location || 'Portland, OR';
+    const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(loc + ', Portland, OR');
+    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function executeDashboardSearch(query) {
@@ -544,10 +546,14 @@ function getFeedHTML() {
                                         <span>${provider.name || 'Local Pro'}</span>
                                         <i class="fa-solid fa-circle-check text-blue-500 text-xs"></i>
                                     </h4>
-                                    <div class="flex items-center space-x-1.5 text-xs text-slate-500 mt-0.5">
+                                    <div class="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
                                         <span class="text-amber-500 font-bold flex items-center"><i class="fa-solid fa-star text-[10px] mr-1"></i>${rating}</span>
                                         <span>•</span>
-                                        <span>${l.provider_location}</span>
+                                        <button onclick="event.stopPropagation(); openGoogleMapsDirections('${getCurrentCustomer()?.default_neighborhood || 'Alberta Arts'}', '${l.provider_location}')" class="text-slate-500 hover:text-blue-600 font-semibold flex items-center space-x-1 transition group" title="View on Google Maps">
+                                            <i class="fa-solid fa-location-dot text-red-500 text-[10px]"></i>
+                                            <span>${l.provider_location}</span>
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-[8px] text-slate-400"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -725,9 +731,12 @@ function getProfileHTML(listingId) {
                     <span class="text-amber-500 font-extrabold block"><i class="fa-solid fa-star text-[10px]"></i> ${rating}</span>
                     <span class="text-[10px] text-slate-400">${p.review_count || 0} reviews</span>
                 </div>
-                <div class="border-x border-slate-200">
-                    <span class="font-extrabold text-slate-700 block">${p.provider_location}</span>
-                    <span class="text-[10px] text-slate-400">Portland Area</span>
+                <div onclick="openGoogleMapsDirections('${getCurrentCustomer()?.default_neighborhood || 'Alberta Arts'}', '${p.provider_location}')" class="border-x border-slate-200 cursor-pointer hover:bg-blue-50/70 transition rounded-xl p-1 group" title="Open Google Maps Route">
+                    <span class="font-extrabold text-blue-600 group-hover:text-blue-700 block flex items-center justify-center space-x-1">
+                        <span>${p.provider_location}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </span>
+                    <span class="text-[10px] text-slate-400 group-hover:text-blue-600">Google Maps Route</span>
                 </div>
                 <div>
                     <span class="text-blue-600 font-extrabold block"><i class="fa-solid fa-shield-halved text-[10px]"></i> Escrow</span>
@@ -1912,8 +1921,12 @@ function renderChatbot() {
                                             <div class="mt-3 pt-3 border-t border-slate-100 space-y-3 slide-up">
                                                 <p class="text-[11px] text-slate-600 leading-relaxed">${l.listing_description}</p>
                                                 
-                                                <div class="bg-blue-50/60 p-2.5 rounded-xl text-[10px] text-slate-700 flex justify-between items-center">
-                                                    <span>Base: <strong>${l.provider_location}</strong></span>
+                                                <div class="bg-blue-50/70 p-2.5 rounded-xl text-[10px] text-slate-700 flex justify-between items-center">
+                                                    <button onclick="openGoogleMapsDirections('${getCurrentCustomer()?.default_neighborhood || 'Alberta Arts'}', '${l.provider_location}')" class="text-blue-700 hover:text-blue-900 font-bold flex items-center space-x-1 transition group" title="Open Google Maps Route">
+                                                        <i class="fa-solid fa-location-dot text-red-500 text-[10px] group-hover:scale-110 transition"></i>
+                                                        <span>${l.provider_location}</span>
+                                                        <i class="fa-solid fa-arrow-up-right-from-square text-[8px] text-blue-500"></i>
+                                                    </button>
                                                     <span>Radius: <strong>${l.service_radius_miles} mi</strong></span>
                                                     <span>Duration: <strong>~${l.duration_estimate_minutes || 60}m</strong></span>
                                                 </div>
