@@ -8,8 +8,34 @@
       content="Doorstep provider workspace for creating clear home-service listings and managing local bookings."
     />
     <title>Doorstep — Provider App</title>
+    <!-- Doorstep shared shell (Phase 2). Injected via an inline script rather
+         than plain <link>/<script src> tags: Vite's HTML asset pipeline tries
+         to resolve and bundle any src/href it finds, and /shared/ is a
+         sibling deploy folder outside this app's own build — Rollup fails
+         to resolve it (or, marked external, silently drops the tag). An
+         inline script isn't part of that asset graph, so it survives the
+         build untouched. -->
+    <script>
+      (function () {
+        var tokens = document.createElement("link");
+        tokens.rel = "stylesheet";
+        tokens.href = "/shared/tokens.css";
+        document.head.appendChild(tokens);
+
+        var switcherCss = document.createElement("link");
+        switcherCss.rel = "stylesheet";
+        switcherCss.href = "/shared/switcher.css";
+        document.head.appendChild(switcherCss);
+
+        var switcherJs = document.createElement("script");
+        switcherJs.type = "module";
+        switcherJs.src = "/shared/switcher.js";
+        document.head.appendChild(switcherJs);
+      })();
+    </script>
   </head>
   <body>
+    <div id="doorstep-switcher"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

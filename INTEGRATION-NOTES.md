@@ -472,3 +472,185 @@ credit each product to its builder.
 - `index.html`, `vercel.json` — modified (three-door landing page, `build.sh` wired in)
 - `admin/`, `customer/`, `provider/` — populated (`.gitkeep` removed from each, real product files added)
 - `build.sh` — new
+
+---
+
+## Phase 2 — Shared shell
+
+### `shared/tokens.css`
+
+Lifted verbatim from `chat/src/styles.css`'s `:root` and `:root[data-theme="light"]` blocks — every color,
+the two font stacks, the three radii, and the motion vocabulary are Product C's own values, unchanged. Chat
+itself now `@import`s this file instead of declaring those values locally (`chat/src/styles.css:1`), so
+nothing outside `shared/tokens.css` defines them, including in the product they were lifted from. Verified
+pixel-identical before/after in both themes (screenshots below) and confirmed via the built CSS output that
+both `--color-accent` values (`#87c7bc` dark, `#6fb3a8` light) bundle correctly.
+
+Added on top of what Chat already had, since the brief asks for these categories and Chat's own UI never
+needed them:
+- **Semantic color** (success/warning/danger) — Chat has no error or destructive-confirmation UI, so there
+  was nothing to lift. Picked values consistent with the existing muted-glass palette rather than
+  saturated/candy colors, following the same "text-on-fill drops to a darker shade in light mode" pattern the
+  accent already uses. Not measured against a contrast checker — flagging that as a follow-up, not a blocker,
+  since nothing consumes these yet.
+- **Spacing ramp** — an 4px-based `--space-1` (4px) through `--space-10` (64px). Chat's own CSS uses ad hoc
+  px/rem paddings throughout rather than a scale; there was no existing ramp to lift, so this is new.
+- **Type scale** — `--text-2xs` through `--text-2xl` plus `--text-display` (a `clamp()` for hero headlines).
+  Sized by surveying the actual font-size values already in use across Chat, Admin, and Provider (Admin
+  ranges 0.65rem–2.35rem, Provider uses `clamp(30px, 5vw, 48px)` for its hero) and snapping the cluster to
+  clean steps, rather than inventing a scale from nothing.
+- **`--radius-sm` (10px)** — Chat's own scale only had md/lg/full; Admin's most common radius (10px, 4
+  occurrences) and Provider's dense controls needed a smaller step the existing scale didn't cover.
+- **Weights** — kept to three (`--weight-regular` 400, `--weight-medium` 500, `--weight-semibold` 600), the
+  dominant values across Chat's own CSS. 700 appears twice in Chat's stylesheet and wasn't promoted to a
+  token — per the brief's "two or three weights actually in use," not every weight that appears once.
+- **Focus ring** — `--focus-ring` / `--focus-ring-offset`, generalizing the `outline: 2px solid
+  var(--color-accent)` pattern Chat already uses in two places (`.listing-card-tappable:focus-visible`,
+  `.chat-input-bar input:focus`) into one token pair.
+- **`prefers-reduced-motion`** — moved here verbatim from Chat's own stylesheet; it's global infrastructure,
+  not Chat-specific, and the brief explicitly asks for it as a Color/Motion-adjacent token concern.
+
+### Icon set
+
+**Decision: Product C's own hand-drawn inline SVG convention** — 24×24 viewBox, `stroke="currentColor"`,
+`stroke-width="1.7"`, round caps/joins, no fill. Not a library dependency; each icon is copied inline as
+markup, the same way `chat/src/components/HeaderActions.jsx` already does its sun/moon/trash icons. This
+avoids the "don't add a dependency without asking" question entirely — there's nothing to add, and every
+product (React 18, React 19, and vanilla JS) can embed the same SVG markup with zero tooling. Proved out
+immediately in `shared/switcher.js`, which uses the same convention for its chevron/check/sun/moon icons. The
+Ask tab's sparkle icon (Phase 6) will follow the same convention when it's built.
+
+### `shared/switcher.js` + `shared/switcher.css`
+
+Plain DOM, framework-agnostic, exactly as specified. Mounts into `<div id="doorstep-switcher"></div>` in
+`admin/index.html`, `provider/index.html`, and `customer/index.html`. Not added to `chat/` — Gate 2 asks for
+the switcher to work "from all three products" (Customer/Provider/Admin), and Chat isn't one of the three
+roles the switcher toggles between; it gets folded into Customer as the Ask tab in Phase 6, at which point it
+inherits the switcher naturally rather than needing its own copy now.
+
+**Persisted state**: `localStorage['doorstep:persona']` (`"customer" | "provider" | "admin"`) and
+`localStorage['doorstep:theme']` (`"light" | "dark"`). Verified surviving a hard page reload, not just
+in-session navigation.
+
+**Hardcoded personas**, from real mock-data records so every product opens populated:
+- Customer → `cst_001`, Hannah Breece (the brief's own example ID format, `cus_00X`, doesn't match the actual
+  schema — real customer IDs are `cst_0XX`; corrected without asking, since the brief's own example was
+  clearly illustrative, not literal)
+- Provider → `prv_001`, Marisol Vega — already the hardcoded provider in `useProviderData.js`, so this
+  matches what Provider already shows
+- Admin → "Desmond Achebe," no formal ID. `moderation-actions.json` has no per-staff identity system — it's a
+  free-text `admin_name` field, not a stable ID like `customer_id`/`provider_id`. Desmond Achebe is simply the
+  most active name in that file (4 of 9 actions). Admin's own dashboard doesn't filter by staff identity, so
+  there's nothing for this persona choice to actually change on the page — it exists for the switcher's own
+  display purposes only.
+
+**A theme toggle lives in the switcher's menu.** Not explicitly specified as switcher content in the brief
+(items 4–6 describe the menu as persona-only) — added because nothing else in Provider or Admin offers any
+way to change theme today, and item 7 ties persona and theme persistence together in the same sentence.
+Without a toggle somewhere, "dark mode survives navigation" would be untestable in the three products that
+actually need Phase 2's switcher. Chat's own theme toggle (`HeaderActions.jsx`) is untouched and separate —
+reconciling the two is Phase 6 territory, when Chat and Customer become one app. Also worth noting: Chat's
+`theme.js` currently doesn't persist to `localStorage` at all ("an explicit choice... overrides it for the
+session only," by its own comment) — so there's no key collision risk with the switcher's `doorstep:theme`,
+but also no existing convention to reconcile against yet.
+
+**No Reset option yet.** Reset is specified under Phase 3 (`shared/demo-store.js`), not Phase 2. The switcher
+will gain a "Reset demo data" menu item when that store exists to reset.
+
+### A real bug worth recording: stacking-context trap from `backdrop-filter`
+
+The switcher menu initially rendered *underneath* Provider's own dashboard hero banner — confirmed visually,
+not assumed (screenshots in scratch). Root cause: `.ds-switcher-bar` uses `backdrop-filter` for the glass
+effect, and `backdrop-filter` creates a stacking context. Without an explicit `z-index` on the *outer* mount
+point (`#doorstep-switcher`), the whole bar — including the menu's own internal `z-index: 1000` — only
+competed against Provider's content by DOM order at the "auto" stacking tier, and lost, because Provider's
+`.dashboard-header` (which also happens to use `isolation: isolate`) sits later in the document. Cranking the
+menu's own z-index to 999999 didn't help — the trap was one level up, not a magnitude problem. Confirmed by
+elimination: forcing `isolation: auto` on Provider's header didn't fix it either, which is what pointed at
+`.ds-switcher-bar`'s own `backdrop-filter` instead. Fixed by giving `#doorstep-switcher` itself `position:
+relative; z-index: 1000;`, so the whole switcher gets a real, explicit stacking position at the body level
+rather than an implicit one. Verified fixed via the same click-target test that first caught it, and via a
+forced-red-background stacking test that made the wrong paint order directly visible before the fix.
+
+### Mounting strategy: an in-flow bar, not an overlay
+
+Positioned as a normal (non-fixed, non-sticky) full-width bar, inserted as early as possible in each
+product's `<body>` — after Admin's skip-link (so the skip-link stays the first tabbable element), before
+Provider's `#root`, and as the first element in Customer's `<body>`. Two things ruled out a simpler-looking
+overlay approach:
+- **A fixed/absolute overlay would cover real content in every product** — Admin's own "Reset demo decisions"
+  button and status pill sit top-right; Provider's provider-identity chip sits top-right; Customer's *own*
+  persona dropdown and order-history icon sit top-right (see below). There's no empty corner across all three
+  without touching each product's own header.
+- **Sticky was ruled out specifically for Admin** — `admin/styles.css`'s own `.topbar` is already `position:
+  sticky; top: 0`. Two `top: 0` sticky elements don't stack automatically; without editing Admin's own CSS
+  (not allowed this phase), a sticky switcher bar would fight Admin's sticky topbar during scroll rather than
+  sitting above it. A plain in-flow bar sidesteps this entirely — it scrolls away with the page, and Admin's
+  own sticky header takes over the top position normally once the switcher bar scrolls past.
+
+**One real exception, confined to one file:** Customer's `<body>` is `h-screen flex items-center justify-center
+overflow-hidden` (a fixed-height, centered, non-scrolling frame — the mobile-app-in-a-box pattern flagged at
+Gate 0). Inserting an unaccounted-for sibling there would silently *clip* the bottom of his existing UI rather
+than push it down, since nothing scrolls. Added one rule, directly in `customer/index.html`'s own `<style>`
+block (not in the shared file — this is specific to his page's own layout, not a general concern):
+`body { padding-top: 56px !important; }`. The `!important` is necessary and deliberately scoped — his own
+`p-0 md:p-4` Tailwind utility would otherwise win on specificity for that same property. Verified via computed
+style (`56px`, exactly matching the bar's own `min-height`) and a full-page screenshot showing zero clipping.
+This is the one CSS touch to a product's own file this phase; every other product needed none.
+
+**Provider needed one more real fix, not anticipated going in.** `<script type="module" src="/shared/...">`
+and `<link href="/shared/...">` tags in `provider/index.html` don't survive a Vite build as written — Vite's
+HTML asset pipeline tries to resolve and bundle any `src`/`href` it finds as part of the app's own module
+graph, fails to resolve a sibling deploy folder, and (even when marked `external` in Rollup config) silently
+drops the tag from the output rather than leaving it as a literal URL. Fixed by loading the shared shell via
+a small inline bootstrap `<script>` (no `src` attribute) that creates the `<link>`/`<script>` elements at
+runtime — inline scripts aren't part of Vite's asset-resolution graph, so this survives the build untouched.
+Confirmed by inspecting the actual built `provider/dist/index.html`. Also added a dev-only middleware to
+`provider/vite.config.js` (mirroring the pattern `chat/vite.config.js` already uses for its landing-page
+plugin) so `npm run dev` resolves `/shared/*` locally too, not just the production build.
+
+`chat/vite.config.js` also picked up a small addition: `server.fs.allow` extended to the repo root, since
+`styles.css` now does `@import "../../shared/tokens.css"` and Chat's dev server otherwise can't read outside
+its own project root.
+
+### `shared/patterns.css`
+
+Created but **not yet consumed by any product** — Gate 2's own success criteria (switcher, tokens, icon set)
+don't require it to be live anywhere yet, and no product's screens change this phase. Holds the reusable
+classes for what the brief asks to be "defined once": a skeleton loading block, an empty-state shell, an
+error-state shell, a bottom-anchored toast, inline field-validation styling, and the destructive-confirm
+pattern — generalizing Chat's own existing "Clear chat?" inline two-button swap
+(`HeaderActions.jsx`) into a shared class rather than a Chat-specific one. Phase 4 (A, D primitives) and
+Phase 5 (the B port) are where these actually get adopted into real screens.
+
+### `build.sh`
+
+One addition: `cp -R shared dist/shared`, alongside the existing `mock-data` copy — same reasoning, the
+three products reference it by absolute path (`/shared/...`), which only resolves once it's a sibling of
+`dist/admin/`, `dist/provider/`, and `dist/customer/`.
+
+### Verification
+
+- **Stacking/click test**: the exact scenario that first caught the z-index bug (open menu → click
+  theme-toggle) now correctly hits the button, confirmed via `elementFromPoint` at the button's real
+  coordinates, not just a screenshot.
+- **Cross-product persistence, verified end-to-end**, not just per-product in isolation: toggled theme in
+  Provider → switched to Admin (theme still applied, persona correctly "admin") → switched to Customer (theme
+  still applied, persona correctly "customer," body padding confirmed exactly 56px, full-page screenshot
+  shows zero clipping) → hard-reloaded Customer (theme and persona both survived the reload, confirming real
+  `localStorage` persistence, not in-memory state that a fresh test happened not to catch).
+- **Chat**: rebuilt after the `@import` refactor, bundled CSS spot-checked for both theme values, and
+  screenshotted in both dark and light — pixel-identical to the Phase 0/1 baselines in both.
+- **Admin, Provider**: full-page screenshots after the switcher lands — both match their Phase 0/1 baselines
+  exactly below the new switcher bar; nothing else moved.
+- **Tests**: `mock-data/validate.py` — all 104 checks pass. `admin/test.mjs` — passes. Chat's matching suite —
+  **49/49 booking, 20/25 parseJob**, unchanged from every prior gate.
+- **Routes**: all five (`/`, `/customer`, `/provider`, `/admin`, `/chat`) still resolve from a full `bash
+  build.sh` run.
+
+### Left alone, as instructed
+
+- No product's screen composition, IA, or copy changed.
+- `shared/patterns.css` exists but isn't wired into anything yet.
+- Chat did not get the switcher (see above — deliberate, not an oversight).
+- Reset was not added to the switcher (Phase 3 territory).

@@ -1,0 +1,208 @@
+/* Doorstep shared design tokens — lifted from Product C (chat), Phase 2.
+ *
+ * Nothing outside this file defines these values. Every product imports it
+ * and consumes the custom properties below; nobody re-declares a color, a
+ * type size, a spacing value, or a radius locally.
+ *
+ * Dark is the default palette (:root). Light is an explicit opt-in via
+ * `<html data-theme="light">`, toggled by shared/switcher.js and persisted
+ * to localStorage under "doorstep:theme".
+ */
+
+/* A gradient lives in background-image, which cannot transition. Registering
+   its stops as typed custom properties makes them animatable, so the ground
+   cross-fades on a theme swap instead of snapping. (Verbatim from Product C.) */
+@property --color-page {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0c1626;
+}
+@property --color-page-deep {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #091220;
+}
+
+:root {
+  transition:
+    --color-page var(--duration-theme) var(--ease),
+    --color-page-deep var(--duration-theme) var(--ease);
+}
+
+:root {
+  /* ---- Color: surfaces & ground (dark, default) ---- */
+  /* Ground: deep, desaturated navy. Muted on purpose — the surfaces above it
+     are what carry lightness and saturation. */
+  --color-page: #0c1626;
+  --color-page-deep: #091220;
+
+  /* Surfaces: a lighter, more saturated blue at 75% over the blur, so cards
+     visibly lift off the ground. This lightness gap is the whole theme. */
+  --glass-fill: rgba(46, 78, 124, 0.75);
+  --glass-fill-strong: rgba(52, 86, 134, 0.80);
+  /* Emphasis fill for a selected/active state on the same glass family. */
+  --glass-fill-user: rgba(79, 121, 184, 0.85);
+  --glass-blur: blur(20px) saturate(120%);
+
+  /* Hairlines are pale blue-white so edges survive against the dark ground.
+     Shadows are darker and deeper than a light theme needs to read as depth. */
+  --hairline: rgba(186, 212, 245, 0.18);
+  --shadow-soft: 0 10px 30px rgba(2, 8, 18, 0.45);
+  --shadow-lift: 0 18px 48px rgba(2, 8, 18, 0.55);
+
+  /* ---- Color: text roles ---- */
+  /* Never pure white: a warm off-white primary, dimmer blue-grey secondary. */
+  --color-ink: #eef2f7;
+  --color-ink-soft: #b3c4dc;
+
+  /* ---- Color: the one accent ---- */
+  /* Soft teal. Actions only — primary buttons, active chip, selected slot,
+     focus rings. Never a background, card fill, or body text. Text on a teal
+     fill takes the darkest shade of the same family rather than black or
+     white. */
+  --color-accent: #87c7bc;
+  --color-accent-strong: #9dd6cc;
+  --color-accent-text: #87c7bc;
+  --color-on-accent: #123028;
+
+  /* ---- Color: semantic ---- */
+  /* Same treatment as the accent — a fill/strong/on-fill triad per role, kept
+     as muted as the rest of the glass system rather than candy-saturated. */
+  --color-success: #7fd9a8;
+  --color-success-strong: #93e0b6;
+  --color-on-success: #0f3320;
+  --color-warning: #f0b860;
+  --color-warning-strong: #f4c67c;
+  --color-on-warning: #3a2506;
+  --color-danger: #f2867c;
+  --color-danger-strong: #f5a099;
+  --color-on-danger: #3d0f0a;
+
+  /* ---- Type ---- */
+  --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* One scale, shared by all four products' own density choices — D and
+     Provider pick smaller steps more often, Customer and Chat pick larger
+     ones more often. Same ramp either way. */
+  --text-2xs: 0.6875rem;   /* 11px — fine print, timestamps */
+  --text-xs: 0.75rem;      /* 12px — eyebrows, meta labels */
+  --text-sm: 0.875rem;     /* 14px — secondary body, buttons */
+  --text-base: 1rem;       /* 16px — body */
+  --text-md: 1.125rem;     /* 18px — card titles, subheadings */
+  --text-lg: 1.375rem;     /* 22px — section headers */
+  --text-xl: 1.75rem;      /* 28px — page headers */
+  --text-2xl: 2.25rem;     /* 36px — dashboard hero numbers */
+  --text-display: clamp(2rem, 5vw, 3rem); /* hero headlines, responsive */
+
+  /* ---- Spacing ---- */
+  /* A conventional 4px ramp. Consuming code picks the step it needs; the
+     ramp itself is the only shared thing. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  /* ---- Elevation ---- */
+  /* The glass/blur treatment, expressed as tokens rather than re-derived per
+     product. Surfaces that can't blur (see the @supports fallback further
+     down) fall back to an opaque fill instead of a washed-out panel. */
+  --elevation-blur: var(--glass-blur);
+  --elevation-shadow-soft: var(--shadow-soft);
+  --elevation-shadow-lift: var(--shadow-lift);
+  --elevation-fallback-fill: #2c4a75;
+
+  /* ---- Motion ---- */
+  /* One motion vocabulary: short, eased, fade plus a small shift. */
+  --duration-enter: 180ms;
+  --duration-collapse: 220ms;
+  --duration-hover: 150ms;
+  --duration-theme: 200ms;
+  --ease: cubic-bezier(0.32, 0.72, 0.35, 1);
+
+  /* ---- Focus ---- */
+  /* One visible ring, used everywhere. Products vary the offset slightly for
+     dense vs. spacious targets, but never the color or width. */
+  --focus-ring: 2px solid var(--color-accent);
+  --focus-ring-offset: 2px;
+}
+
+/* ---- Light theme: bright sky, near-white glass ---- */
+:root[data-theme="light"] {
+  --color-page: #cfe6fb;
+  --color-page-deep: #a9d0f2;
+
+  --glass-fill: rgba(255, 255, 255, 0.74);
+  --glass-fill-strong: rgba(255, 255, 255, 0.82);
+  --glass-fill-user: rgba(255, 255, 255, 0.92);
+
+  --hairline: rgba(26, 58, 92, 0.18);
+  --shadow-soft: 0 8px 24px rgba(31, 68, 112, 0.10);
+  --shadow-lift: 0 14px 38px rgba(31, 68, 112, 0.14);
+
+  --color-ink: #16304d;
+  /* Darkened until secondary text clears AA on the sky ground as well as on
+     glass — the pastel first pass failed at 2.77:1 there. */
+  --color-ink-soft: #35506b;
+
+  --color-accent: #6fb3a8;
+  --color-accent-strong: #7cbcb1;
+  /* The fill teal is only 2.32:1 as text on near-white glass, so accent text
+     drops to a deeper shade of the same family. */
+  --color-accent-text: #3b7568;
+  --color-on-accent: #1c3d37;
+
+  /* Semantic roles follow the same "darken for text-on-light" pattern as the
+     accent above — the dark-theme fills are too pale to clear AA as text on
+     a light ground. */
+  --color-success: #2f9e5c;
+  --color-success-strong: #3ab06a;
+  --color-on-success: #ffffff;
+  --color-warning: #a8690f;
+  --color-warning-strong: #bd7a17;
+  --color-on-warning: #ffffff;
+  --color-danger: #c94a3f;
+  --color-danger-strong: #d75f54;
+  --color-on-danger: #ffffff;
+
+  --elevation-fallback-fill: #ffffff;
+}
+
+/* Where the browser cannot blur, fall back to an opaque fill rather than a
+   washed-out translucent panel. Consuming code applies var(--elevation-blur)
+   to backdrop-filter and pairs it with this fallback under the same guard. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-glass] {
+    background: var(--elevation-fallback-fill);
+  }
+}
+
+/* Every animation and transition anywhere becomes an instant state change.
+   The blanket selector is deliberate — anything added later in any product
+   is covered by default rather than needing to be remembered here. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -4,7 +4,10 @@
 # chat/ and provider/ are real Vite apps and get built. admin/ and customer/
 # are vanilla (no build step) and are copied through as-is. mock-data/ is
 # copied into dist/ so the runtime-fetching products (admin/, customer/)
-# resolve their relative ../mock-data path once deployed.
+# resolve their relative ../mock-data path once deployed. shared/ (tokens,
+# switcher) is copied the same way — admin/, provider/, and customer/ all
+# reference it by the absolute path /shared/, which only resolves once it
+# sits at the site root alongside them.
 set -euo pipefail
 
 rm -rf dist
@@ -31,6 +34,9 @@ echo "== customer/ (static, no build) =="
 mkdir -p dist/customer
 cp -R customer/. dist/customer/
 rm -f dist/customer/.gitignore
+
+echo "== shared/ =="
+cp -R shared dist/shared
 
 echo "== mock-data/ =="
 cp -R mock-data dist/mock-data

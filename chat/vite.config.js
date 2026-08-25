@@ -89,4 +89,11 @@ export default defineConfig({
   // and then fails to fetch its own JS and CSS.
   base: "/chat/",
   plugins: [react(), landingPage(), devApi()],
+  server: {
+    // styles.css now does `@import "../../shared/tokens.css"` (Phase 2) —
+    // that file lives outside this app's root, so the dev server needs
+    // permission to read it. Build mode is unaffected; this only matters
+    // for `npm run dev`.
+    fs: { allow: [fileURLToPath(new URL("..", import.meta.url))] },
+  },
 });
