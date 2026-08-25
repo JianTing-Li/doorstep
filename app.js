@@ -284,78 +284,78 @@ function updateNavBadge() {
 // --- 3. DASHBOARD VIEW ---
 function getDashboardHTML() {
     const activeListings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
-    const featuredListings = activeListings.slice(0, 3);
+    const featuredListings = activeListings.slice(0, 6);
     const customer = getCurrentCustomer();
 
     return `
-        <div class="p-5 space-y-6">
+        <div class="p-4 sm:p-8 space-y-8 max-w-5xl mx-auto w-full">
             <!-- Hero Greeting -->
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full inline-block">Verified Local Pros</span>
-                    <span class="text-[11px] text-slate-400 font-medium">Hello, <strong class="text-slate-700">${customer.name.split(' ')[0]}</strong></span>
+            <div class="bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+                <div class="relative z-10 space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-blue-300 bg-blue-800/60 px-3 py-1 rounded-full border border-blue-400/20 inline-block">Verified Local Pros</span>
+                        <span class="text-xs text-slate-300">Welcome, <strong class="text-white">${customer.name.split(' ')[0]}</strong></span>
+                    </div>
+                    <h1 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight">Find trusted help for your home in Portland</h1>
+                    <p class="text-xs sm:text-sm text-slate-300 max-w-xl">Book background-checked independent neighbors in Portland, OR with secure escrow protection.</p>
+                    
+                    <!-- Search Bar -->
+                    <div class="relative shadow-md max-w-2xl pt-2">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-5 text-slate-400 text-sm"></i>
+                        <input type="text" id="dashboard-search" placeholder="Search e.g. apartment clean, IKEA assembly, leaking faucet, movers..." 
+                            class="w-full pl-11 pr-24 py-3.5 bg-white text-slate-900 rounded-2xl text-sm focus:ring-4 focus:ring-blue-400/30 outline-none shadow-sm transition"
+                            onkeydown="if(event.key==='Enter') executeDashboardSearch(this.value)"
+                            value="${state.filters.searchQuery}">
+                        <button onclick="executeDashboardSearch(document.getElementById('dashboard-search').value)" class="absolute right-2.5 top-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition btn-pop shadow-md">
+                            <span>Search</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
                 </div>
-                <h1 class="text-2xl font-extrabold text-slate-900 leading-tight">Find trusted help for your home</h1>
-                <p class="text-xs text-slate-500 mt-1">Book background-checked independent neighbors in Portland, OR.</p>
-            </div>
-            
-            <!-- Real-Time Search Bar -->
-            <div class="relative shadow-sm">
-                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
-                <input type="text" id="dashboard-search" placeholder="Search e.g. clean, IKEA assembly, plumbing..." 
-                    class="w-full pl-11 pr-10 py-3 bg-white rounded-2xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm transition"
-                    onkeydown="if(event.key==='Enter') executeDashboardSearch(this.value)"
-                    value="${state.filters.searchQuery}">
-                ${state.filters.searchQuery ? `
-                    <button onclick="clearSearchAndRefresh()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
-                        <i class="fa-solid fa-circle-xmark"></i>
-                    </button>
-                ` : `
-                    <button onclick="executeDashboardSearch(document.getElementById('dashboard-search').value)" class="absolute right-2.5 top-2 bg-blue-600 text-white w-7 h-7 rounded-xl flex items-center justify-center hover:bg-blue-700 transition btn-pop">
-                        <i class="fa-solid fa-arrow-right text-xs"></i>
-                    </button>
-                `}
             </div>
 
             <!-- AI Concierge Matching Banner (JT Product C Integration) -->
-            <div onclick="toggleChatbot()" class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 rounded-2xl p-4 text-white shadow-xl shadow-blue-950/20 cursor-pointer card-hover border border-blue-800/40 flex items-center justify-between btn-pop relative overflow-hidden group">
-                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition"></div>
-                <div class="flex items-center space-x-3.5 relative z-10">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-yellow-300 text-base shadow-md border border-white/20">
+            <div onclick="toggleChatbot()" class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-950 rounded-2xl p-5 text-white shadow-lg cursor-pointer card-hover border border-blue-800/40 flex items-center justify-between btn-pop relative overflow-hidden group">
+                <div class="flex items-center space-x-4 relative z-10">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-yellow-300 text-lg shadow-md border border-white/20">
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                     </div>
                     <div>
-                        <div class="flex items-center space-x-1.5">
-                            <span class="font-extrabold text-[10px] uppercase tracking-wider text-blue-300">Doorstep AI Matcher</span>
-                            <span class="bg-emerald-400/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.2 rounded">Instant</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-extrabold text-[11px] uppercase tracking-wider text-blue-300">Doorstep AI Matcher</span>
+                            <span class="bg-emerald-400/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30">Instant Match</span>
                         </div>
-                        <div class="font-bold text-xs text-white leading-tight mt-0.5">Describe your task in plain English</div>
-                        <div class="text-[10px] text-slate-300 mt-0.5">"Leaking pipe under sink" • "Clean 2BR apartment"</div>
+                        <div class="font-bold text-sm sm:text-base text-white leading-tight mt-1">Describe your task in plain English</div>
+                        <div class="text-xs text-slate-300 mt-0.5">"Kitchen faucet dripping" • "Need 2 movers for U-Haul" • "Apartment deep clean"</div>
                     </div>
                 </div>
-                <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white text-xs group-hover:bg-blue-600 transition shadow-xs relative z-10">
+                <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white text-sm group-hover:bg-blue-600 transition shadow-xs relative z-10">
                     <i class="fa-solid fa-chevron-right"></i>
                 </div>
             </div>
 
             <!-- Popular Categories Grid -->
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-sm text-slate-900 tracking-tight">Popular Categories</h2>
-                    <span onclick="navigate('feed', {category: 'All', search: ''})" class="text-xs font-bold text-blue-600 cursor-pointer hover:underline">View All (${activeListings.length})</span>
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="font-extrabold text-lg text-slate-900 tracking-tight">Popular Categories</h2>
+                        <p class="text-xs text-slate-500">Explore vetted independent specialists</p>
+                    </div>
+                    <span onclick="navigate('feed', {category: 'All', search: ''})" class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer bg-blue-50 px-3 py-1.5 rounded-xl transition hover:bg-blue-100">View All (${activeListings.length} Pros)</span>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
                     ${Object.entries(categoryMap).map(([cat, codes]) => {
                         const style = categoryIcons[cat] || { icon: 'fa-wrench', color: 'bg-blue-500', light: 'bg-blue-50' };
                         const count = activeListings.filter(l => l.service_type.some(c => codes.includes(c))).length;
                         return `
-                            <div onclick="navigate('feed', {category: '${cat}', search: ''})" class="glass-card p-4 rounded-2xl cursor-pointer card-hover border border-slate-200/80 btn-pop flex items-center space-x-3">
-                                <div class="w-11 h-11 ${style.color} text-white rounded-xl flex items-center justify-center shadow-md text-base">
+                            <div onclick="navigate('feed', {category: '${cat}', search: ''})" class="glass-card p-4 sm:p-5 rounded-2xl cursor-pointer card-hover border border-slate-200/80 btn-pop flex items-center space-x-3.5">
+                                <div class="w-12 h-12 ${style.color} text-white rounded-2xl flex items-center justify-center shadow-md text-lg">
                                     <i class="fa-solid ${style.icon}"></i>
                                 </div>
                                 <div>
-                                    <div class="font-bold text-slate-800 text-sm">${cat}</div>
-                                    <div class="text-[11px] text-slate-400 font-medium">${count} Pros Available</div>
+                                    <div class="font-bold text-slate-900 text-sm sm:text-base">${cat}</div>
+                                    <div class="text-xs text-slate-500 font-medium">${count} Pros Available</div>
                                 </div>
                             </div>
                         `;
@@ -365,50 +365,73 @@ function getDashboardHTML() {
             
             <!-- Live Interactive Map -->
             <div>
-                <div class="flex justify-between items-center mb-2.5">
+                <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center space-x-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <h2 class="font-bold text-sm text-slate-900 tracking-tight">Nearby Service Map</h2>
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <h2 class="font-extrabold text-lg text-slate-900 tracking-tight">Portland Provider Network Map</h2>
                     </div>
-                    <span class="text-[11px] text-slate-400">Portland, OR Metro</span>
+                    <span class="text-xs text-slate-400 font-medium">Portland, OR Metro • Real-Time Coordinates</span>
                 </div>
-                <div class="rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
-                    <div id="map" class="h-56 w-full z-0"></div>
+                <div class="rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
+                    <div id="map" class="h-64 sm:h-80 w-full z-0"></div>
                 </div>
             </div>
 
-            <!-- Featured Providers -->
+            <!-- Featured Providers Grid -->
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-sm text-slate-900 tracking-tight">Top-Rated Providers</h2>
-                    <span onclick="navigate('feed', {category: 'All'})" class="text-xs font-bold text-blue-600 cursor-pointer hover:underline">See Feed</span>
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="font-extrabold text-lg text-slate-900 tracking-tight">Top-Rated Local Providers</h2>
+                        <p class="text-xs text-slate-500">Highest rated background-checked pros in Portland</p>
+                    </div>
+                    <span onclick="navigate('feed', {category: 'All'})" class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer bg-blue-50 px-3 py-1.5 rounded-xl transition hover:bg-blue-100">See Complete Feed</span>
                 </div>
-                <div class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     ${featuredListings.map(listing => {
                         const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === listing.provider_id) || {};
                         const rating = listing.rating ? listing.rating.toFixed(1) : '5.0';
                         const priceUnit = listing.price_unit === 'hourly' ? '/hr' : ' flat';
                         return `
-                            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between card-hover cursor-pointer" onclick="navigate('profile', {id: '${listing.listing_id}'})">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-sm shadow-inner">
-                                        ${provider.name ? provider.name.charAt(0) : 'P'}
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-slate-800 text-xs">${provider.name}</h4>
-                                        <p class="text-[11px] text-slate-500 line-clamp-1">${listing.title}</p>
-                                        <div class="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5">
-                                            <span class="text-amber-500 font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${rating}</span>
-                                            <span>•</span>
-                                            <span>${listing.provider_location}</span>
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between card-hover cursor-pointer" onclick="navigate('profile', {id: '${listing.listing_id}'})">
+                                <div>
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-md">
+                                                ${provider.name ? provider.name.charAt(0) : 'P'}
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-slate-900 text-sm hover:text-blue-600 transition flex items-center space-x-1">
+                                                    <span>${provider.name}</span>
+                                                    <i class="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+                                                </h4>
+                                                <div class="text-[11px] text-slate-400 flex items-center space-x-1">
+                                                    <span>${listing.provider_location}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-sm font-extrabold text-emerald-600">$${listing.price}</span>
+                                            <span class="text-[11px] text-slate-400 font-normal">${priceUnit}</span>
                                         </div>
                                     </div>
+                                    <h5 class="font-bold text-slate-800 text-xs line-clamp-1 mb-1">${listing.title}</h5>
+                                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">${listing.listing_description}</p>
                                 </div>
-                                <div class="text-right flex flex-col items-end space-y-1">
-                                    <span class="text-xs font-extrabold text-emerald-600">$${listing.price}${priceUnit}</span>
-                                    <button onclick="event.stopPropagation(); openProviderChat('${provider.provider_id}', '${listing.listing_id}')" class="text-[11px] text-blue-600 hover:text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-lg" title="Chat with provider">
-                                        <i class="fa-solid fa-message mr-1"></i>Chat
-                                    </button>
+                                <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                                    <div class="flex items-center space-x-2 text-slate-500">
+                                        <span class="text-amber-500 font-bold flex items-center">
+                                            <i class="fa-solid fa-star text-[10px] mr-1"></i> ${rating}
+                                            <span class="text-slate-400 font-normal ml-1">(${listing.review_count || 1})</span>
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="event.stopPropagation(); openProviderChat('${provider.provider_id}', '${listing.listing_id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Chat with provider">
+                                            <i class="fa-solid fa-message text-xs"></i>
+                                        </button>
+                                        <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-xl transition text-xs shadow-sm btn-pop">
+                                            Book
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `;
