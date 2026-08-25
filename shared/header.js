@@ -30,7 +30,11 @@ const MARK = `
  * @param {HTMLElement} mountEl  container, normally <div id="doorstep-header">
  * @param {object}   options
  * @param {string}   options.label    the product's own subtitle, e.g. "Provider workspace"
- * @param {string}  [options.href]    where the wordmark links (default "/")
+ * @param {string}  [options.href]    where the wordmark links. Defaults to
+ *   "/" — the root landing page — and should stay that way: these are four
+ *   separate builds with full page loads between them, so the wordmark is
+ *   the way back out to the doors. Pointing it at a product's own root makes
+ *   it reload the current page, which reads as "the logo does nothing".
  */
 export function mountHeader(mountEl, { label = "", href = "/" } = {}) {
   if (!mountEl) return;

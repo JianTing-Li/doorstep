@@ -10,13 +10,10 @@ import {
 import {
   loadDoorstepData,
   readLocalState,
-  resetSharedDemoData,
   writeLocalState,
 } from "./data.mjs";
 
 const elements = {
-  dataStatus: document.querySelector("#data-status"),
-  resetDemo: document.querySelector("#reset-demo"),
   metricOpen: document.querySelector("#metric-open"),
   metricHigh: document.querySelector("#metric-high"),
   metricHidden: document.querySelector("#metric-hidden"),
@@ -379,13 +376,6 @@ function bindEvents() {
     const button = event.target.closest("[data-action]");
     if (button) recordDecision(button.dataset.action);
   });
-  elements.resetDemo.addEventListener("click", () => {
-    resetSharedDemoData();
-    // Reload rather than re-render: loadDoorstepData() bakes the overlay into
-    // state.data at load time, so clearing it in place would leave the old
-    // merged values on screen.
-    window.location.reload();
-  });
 }
 
 async function initialize() {
@@ -401,11 +391,8 @@ async function initialize() {
     state.reportCounts = countReportsByListing(state.data.reports);
     bindEvents();
     renderAll();
-    elements.dataStatus.classList.add("ready");
-    elements.dataStatus.lastChild.textContent = ` ${state.data.meta.version} mock data connected`;
   } catch (error) {
     console.error(error);
-    elements.dataStatus.textContent = "Mock data failed to load";
     elements.queueList.innerHTML = '<p class="queue-empty">Serve the repository over HTTP so the dashboard can read <code>mock-data/</code>.</p>';
   }
 }

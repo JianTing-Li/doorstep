@@ -9,8 +9,13 @@
  * Everything else — accent,
  * text, semantic colors, type, radii, focus ring, motion — comes from
  * shared/tokens.css. */
-@import "../shared/tokens.css";
-@import "../shared/patterns.css";
+/* Tokens and patterns are linked absolutely from index.html (/shared/...),
+   matching provider/ and customer/. They are deliberately NOT @import-ed
+   here: a parent-relative "../shared/..." breaks the moment this folder is
+   served as its own root, and because every rule below is written in var(),
+   a failed import silently strips all colour and falls the whole page back
+   to browser-default serif — which looks like "the stylesheet didn't load"
+   rather than "one import 404'd". */
 
 :root {
   color-scheme: dark light;
@@ -109,8 +114,6 @@ a {
 }
 
 .brand-lockup,
-.header-actions,
-.data-status,
 .visibility-rule,
 .card-title-row,
 .case-header,
@@ -159,30 +162,6 @@ a {
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.header-actions {
-  gap: 0.9rem;
-}
-
-.data-status {
-  gap: 0.5rem;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  font-weight: 650;
-}
-
-.status-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--color-warning);
-  box-shadow: 0 0 0 4px var(--amber-soft);
-}
-
-.data-status.ready .status-dot {
-  background: var(--color-success);
-  box-shadow: 0 0 0 4px var(--success-soft);
 }
 
 .button {
@@ -879,8 +858,7 @@ textarea {
 }
 
 @media (max-width: 800px) {
-  .topbar,
-  .header-actions {
+  .topbar {
     align-items: flex-start;
   }
 
@@ -891,10 +869,6 @@ textarea {
 
   .topbar {
     gap: 0.7rem;
-  }
-
-  .header-actions {
-    flex-wrap: wrap;
   }
 
   .hero {
@@ -933,11 +907,6 @@ textarea {
 }
 
 @media (max-width: 520px) {
-  .button-quiet,
-  .data-status {
-    font-size: var(--text-2xs);
-  }
-
   .metrics,
   .record-grid,
   .detail-list {

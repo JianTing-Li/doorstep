@@ -1520,3 +1520,108 @@ exactly as they were; only the presentation changed.
 - Landing verified at 1440 desktop (light + dark) and 390 mobile — no overflow, font loading confirmed.
 - Tests unchanged: `mock-data/validate.py` 104/104, `admin/test.mjs` passes, matching **49/49 booking,
   20/25 parseJob**.
+
+---
+
+## Bug fixes — admin styling, wordmark link
+
+### Wordmark did not link home — confirmed, mine, fixed
+
+`shared/header.js` already rendered a real `<a href>`, and provider/ and admin/ correctly used its `/`
+default. But `customer/index.html` passed `data-href="/customer/"`, so clicking the wordmark reloaded the
+page you were already on — which reads exactly as "does nothing". Introduced in the shared-header change.
+
+Removed the override so all three use the `/` default, and documented the intent in `header.js` so it can't
+regress quietly: these are four separate builds with full page loads between them, so the wordmark is the way
+back out to the doors.
+
+Verified from all three: wordmark `href="/"`, click lands on `/`.
+
+### Admin unstyled + "0 cases" — reproduced, root-caused, fixed
+
+**Not reproducible in either normal serving shape.** With `dist/` served at root (the deployed shape) and
+with the repo root served, admin loaded fully styled with 4 queue cases, zero 404s — both before and after
+this change.
+
+**Reproduced exactly** when `shared/` is not reachable from the site root: `font: "Times"`, transparent
+background, `queueCount: "0 cases"` — every symptom in the report, including the queue detail.
+
+**Mechanism.** `admin/styles.css` itself loaded fine (200); its `@import "../shared/tokens.css"` was what
+404'd. Because every rule in that file is written in `var()`, a failed token import silently invalidates all
+of them — colours vanish and `font-family: var(--font-body)` falls back to browser-default serif. That
+presents as "the stylesheet didn't load" when in fact only one import did. The same parent-relative pattern
+in `admin/data.mjs` (`../shared/demo-store.js`, `../mock-data`) is what left the queue genuinely empty. **One
+root cause, both symptoms.**
+
+**Fix — the real inconsistency.** Admin was the *only* product reaching shared assets by a parent-relative
+path; provider/ and customer/ both use absolute `/shared/...`. Admin now matches:
+- `admin/styles.css` no longer `@import`s tokens/patterns; `admin/index.html` links them absolutely, before
+  `styles.css`, so a failure is a visible 404 rather than a silent total destyle.
+- `admin/data.mjs` uses `/shared/demo-store.js` and `/mock-data`.
+
+`build.sh` was already copying everything correctly — `dist/admin/styles.css` and `dist/shared/*` were both
+present throughout. This was never a build-copy problem.
+
+### Adjacent issue worth knowing
+
+Serving the **repo root** (rather than `dist/`) leaves **customer/ and provider/ unstyled — `font: "Times"`,
+the same symptom** — because their CSS is bundled by Vite and the repo root serves them unbuilt. Only admin/
+(vanilla) works that way. Earlier in this project I suggested repo-root serving as a way to see the switcher;
+that advice holds for admin but not for the two React apps. Use `bash build.sh` + serve `dist/`, or each
+app's own `npm run dev`.
+
+### Verification
+
+Landed on `/`, clicked into each of the three doors, and clicked the wordmark back out, in the deployment
+shape: all three fully styled (`Inter`, tokens resolving), admin queue **4 cases**, wordmark returns to `/`
+from every one, **zero 404s, zero page errors**. Tests unchanged: 104/104, `admin/test.mjs`, 49/49 + 20/25.
+
+---
+
+## Redundant reset controls in Admin — resolved as true duplication
+
+**Path taken: removed Product D's local button.** The switcher's "Reset demo data" is now the single reset
+control app-wide, matching the one-shared-control pattern already used for the header and the tokens.
+
+### Why — this is duplication in the strongest sense, not a subset
+
+The brief anticipated two cases: D's button resetting a *subset* of the shared reset (duplication), or
+resetting something *genuinely separate* (a real distinction worth keeping). It turned out to be neither of
+those exactly — it was **literally the same call**:
+
+- `admin/app.mjs`'s handler called `resetSharedDemoData()`.
+- `admin/data.mjs`'s `resetSharedDemoData()` was a one-line pass-through to `resetDemoData()`.
+- `shared/switcher.js`'s reset calls `resetDemoData()`.
+
+Same function, and both followed it with `window.location.reload()`. Byte-for-byte identical behaviour.
+
+There is also **no Product-D-local state left for a separate control to own**. Phase 3's D-3 decision
+migrated D's private `doorstep-product-d-demo-v1` key into the shared store; a grep confirms `admin/` no
+longer touches `localStorage` at all. So the "real distinction" branch had nothing to attach to.
+
+### Two further reasons it had to be the one removed
+
+1. **The label had become wrong.** "Reset demo decisions" implied a scope limited to moderation, but the
+   underlying call clears the whole shared overlay — Customer's bookings and Provider's booking-status
+   changes included. It read as narrow and acted broad.
+2. **It was the more dangerous of the two.** The switcher's reset has an inline two-step confirm; D's button
+   was a single click straight to a full app-wide wipe, no confirmation. Keeping the unconfirmed one and
+   removing the confirmed one would have been the wrong way round.
+
+### What changed
+
+Three files, scoped to Product D — no layout or feature restructuring:
+- `admin/index.html` — button markup removed.
+- `admin/app.mjs` — the `#reset-demo` element lookup, its click handler, and the now-unused import removed.
+- `admin/data.mjs` — the `resetSharedDemoData` pass-through and its now-unused import removed.
+
+D's header keeps its "mock data connected" status indicator, which now sits on its own on the right.
+
+### Verified
+
+- Exactly one reset control remains: `#reset-demo` in the page body → **0**, switcher reset action → **1**.
+- **The switcher's reset still fully clears D's decisions**, which was the thing that must not regress:
+  recorded a suspend decision in Admin (metrics 4/9/3 → 3/10/4), reset from the switcher, metrics returned to
+  4/9/3 with the overlay `null`. No Product D state survives a full reset.
+- Zero console/page errors. Tests unchanged: `admin/test.mjs` passes, `mock-data/validate.py` 104/104,
+  matching 49/49 booking + 20/25 parseJob.

@@ -14,8 +14,10 @@
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <!-- styles.css imports shared/tokens.css itself (Phase 4), so it isn't
-         linked separately here. -->
+    <!-- Shared tokens first: styles.css is written entirely in var(), so it
+         must resolve these or the page loses all colour and type. -->
+    <link rel="stylesheet" href="/shared/tokens.css" />
+    <link rel="stylesheet" href="/shared/patterns.css" />
     <link rel="stylesheet" href="./styles.css" />
     <!-- Doorstep shared shell (Phase 2) -->
     <link rel="stylesheet" href="/shared/switcher.css" />
@@ -34,13 +36,6 @@
         <p class="eyebrow">Trust &amp; Safety · Product D</p>
       </div>
 
-      <div class="header-actions">
-        <div class="data-status" id="data-status" role="status">
-          <span class="status-dot" aria-hidden="true"></span>
-          Loading shared mock data
-        </div>
-        <button class="button button-quiet" id="reset-demo" type="button">Reset demo decisions</button>
-      </div>
     </header>
 
     <main>

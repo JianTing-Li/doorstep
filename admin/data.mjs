@@ -2,10 +2,9 @@ import {
   getCreated,
   getPatches,
   mergeCollection,
-  resetDemoData,
   setCreated,
   setPatches,
-} from "../shared/demo-store.js";
+} from "/shared/demo-store.js";
 
 // Product D's single access point for mock-data (Phase 3).
 //
@@ -21,7 +20,10 @@ import {
 // written to Product D's private key, so its existing effectiveListing() /
 // effectiveReport() helpers and its Reset button keep working untouched.
 
-const DATA_ROOT = "../mock-data";
+// Absolute, like every other cross-folder reference in the app: a
+// parent-relative path breaks the moment admin/ is served as its own root,
+// and silently leaves the queue at "0 cases" rather than erroring visibly.
+const DATA_ROOT = "/mock-data";
 
 const dataFiles = {
   meta: "_meta.json",
@@ -76,10 +78,6 @@ export function writeLocalState(local) {
   setCreated("moderation-actions", local.actions ?? []);
   setPatches("reports", patchesOf(local.reportStatuses, "status"));
   setPatches("listings", patchesOf(local.listingStatuses, "listing_status"));
-}
-
-export function resetSharedDemoData() {
-  resetDemoData();
 }
 
 function mapOf(patched, field) {
