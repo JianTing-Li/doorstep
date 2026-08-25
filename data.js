@@ -3986,18 +3986,18 @@ async function initData() {
         const fetchJson = async (file) => {
             // Try relative path from mock-data/ first (works on Vercel and local static servers)
             try {
-                const res = await fetch(./mock-data/);
+                const res = await fetch('./mock-data/' + file);
                 if (res.ok) return await res.json();
             } catch (e) {}
 
             try {
-                const res = await fetch(../mock-data/);
+                const res = await fetch('../mock-data/' + file);
                 if (res.ok) return await res.json();
             } catch (e) {}
 
             // Fallback to GitHub raw main branch
             try {
-                const url = https://raw.githubusercontent.com/JianTing-Li/doorstep/main/mock-data/;
+                const url = 'https://raw.githubusercontent.com/JianTing-Li/doorstep/main/mock-data/' + file;
                 const res = await fetch(url);
                 if (res.ok) return await res.json();
             } catch (e) {}

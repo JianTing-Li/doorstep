@@ -1570,48 +1570,61 @@ function initMap() {
     if (!mapElement) return;
 
     if (mapInstance) {
-        mapInstance.remove();
+        try { mapInstance.remove(); } catch (e) {}
         mapInstance = null;
     }
 
-    // Centered over Portland Metro Area
-    mapInstance = L.map('map', { zoomControl: false }).setView([45.5250, -122.6650], 11);
+    // Centered cleanly over Portland Metro Area
+    mapInstance = L.map('map', { zoomControl: true }).setView([45.5200, -122.6650], 12);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 18
     }).addTo(mapInstance);
 
     const activeListings = (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS : []).filter(l => l.listing_status === 'active');
+    const markers = [];
 
     activeListings.forEach(listing => {
         const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(prv => prv.provider_id === listing.provider_id);
-        if (!provider || !provider.latitude || !provider.longitude) return;
+        const lat = listing.latitude || provider?.latitude;
+        const lng = listing.longitude || provider?.longitude;
+        if (!lat || !lng) return;
 
         const rating = listing.rating ? listing.rating.toFixed(1) : '5.0';
         const priceUnit = listing.price_unit === 'hourly' ? '/hr' : ' flat';
+        const pName = provider?.name || 'Local Provider';
 
         const popupHTML = `
-            <div class="p-1 font-sans text-xs" style="min-width: 150px;">
-                <div class="font-extrabold text-slate-900 text-xs">${provider.name}</div>
-                <div class="text-[11px] text-blue-600 font-semibold mb-1 line-clamp-1">${listing.title}</div>
-                <div class="flex justify-between items-center mb-2 text-[11px]">
-                    <span class="text-amber-500 font-bold"><i class="fa-solid fa-star"></i> ${rating}</span>
-                    <span class="text-emerald-600 font-extrabold">$${listing.price}${priceUnit}</span>
+            <div class="p-1 font-sans text-xs" style="min-width: 170px;">
+                <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="font-extrabold text-slate-900 text-xs">${pName}</span>
+                    <span class="text-[10px] text-amber-500 font-bold">★ ${rating}</span>
                 </div>
-                <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-xl transition text-[11px]">
-                    View Profile
+                <div class="text-[11px] text-blue-600 font-semibold mb-1 line-clamp-1">${listing.title}</div>
+                <div class="text-xs text-slate-500 mb-2">${listing.provider_location} · <strong class="text-emerald-600 font-bold">$${listing.price}${priceUnit}</strong></div>
+                <button onclick="navigate('profile', {id: '${listing.listing_id}'})" class="w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-xl transition text-[11px] shadow-sm">
+                    View & Book Profile
                 </button>
             </div>
         `;
 
-        L.marker([provider.latitude, provider.longitude])
+        const marker = L.marker([lat, lng])
             .addTo(mapInstance)
             .bindPopup(popupHTML);
+        
+        markers.push(marker);
     });
 
     setTimeout(() => {
-        if (mapInstance) mapInstance.invalidateSize();
-    }, 200);
+        if (mapInstance) {
+            mapInstance.invalidateSize();
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                mapInstance.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+    }, 250);
 }
 
 // --- 15. GROUNDED AI ASSISTANT / CHATBOT CONTROLLER (JT Product C Integration) ---
