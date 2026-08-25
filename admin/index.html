@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Doorstep Product D: a trust and safety operations dashboard backed by the shared GitHub mock dataset."
+    />
+    <title>Doorstep Safety Operations</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#case-review">Skip to case review</a>
+
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">D</div>
+        <div>
+          <p class="eyebrow">Doorstep · Product D</p>
+          <h1>Safety Operations</h1>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="data-status" id="data-status" role="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          Loading shared mock data
+        </div>
+        <button class="button button-quiet" id="reset-demo" type="button">Reset demo decisions</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <p class="eyebrow">Human decisions, traceable outcomes</p>
+          <h2 id="hero-title">Review the highest-risk reports before customers see harm.</h2>
+          <p class="hero-copy">
+            Safety signals are prioritized automatically. A teammate reviews the linked evidence and makes every enforcement decision.
+          </p>
+        </div>
+        <div class="visibility-rule">
+          <span class="rule-icon" aria-hidden="true">✓</span>
+          <div>
+            <strong>Marketplace visibility rule</strong>
+            <span>Products B and C may show only listings whose status is <code>active</code>.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Safety queue summary">
+        <article class="metric-card">
+          <span class="metric-label">Needs review</span>
+          <strong class="metric-value" id="metric-open">—</strong>
+          <span class="metric-note">Open or under review</span>
+        </article>
+        <article class="metric-card metric-alert">
+          <span class="metric-label">High priority</span>
+          <strong class="metric-value" id="metric-high">—</strong>
+          <span class="metric-note">Critical or high risk</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Hidden listings</span>
+          <strong class="metric-value" id="metric-hidden">—</strong>
+          <span class="metric-note">Suspended by safety</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Audit entries</span>
+          <strong class="metric-value" id="metric-actions">—</strong>
+          <span class="metric-note">Original + demo decisions</span>
+        </article>
+      </section>
+
+      <section class="workspace" aria-label="Moderation workspace">
+        <aside class="queue-panel" aria-labelledby="queue-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Step 1</p>
+              <h2 id="queue-title">Prioritized queue</h2>
+            </div>
+            <span class="count-pill" id="queue-count">0 cases</span>
+          </div>
+
+          <div class="filters" aria-label="Queue filters">
+            <label class="search-field">
+              <span class="sr-only">Search reports</span>
+              <input id="search-input" type="search" placeholder="Search report, listing, provider…" />
+            </label>
+            <div class="filter-row">
+              <label>
+                <span>Risk</span>
+                <select id="risk-filter">
+                  <option value="all">All risk</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+              <label>
+                <span>Status</span>
+                <select id="status-filter">
+                  <option value="unresolved">Needs review</option>
+                  <option value="all">All cases</option>
+                  <option value="open">Open</option>
+                  <option value="under_review">Under review</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="dismissed">Dismissed</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="queue-list" id="queue-list" role="listbox" aria-label="Moderation cases"></div>
+        </aside>
+
+        <section class="review-panel" id="case-review" aria-labelledby="review-title" tabindex="-1">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-icon" aria-hidden="true">✓</div>
+            <h2>No case selected</h2>
+            <p>Select a report from the queue to inspect its connected evidence.</p>
+          </div>
+
+          <div id="case-content" hidden>
+            <div class="case-header">
+              <div>
+                <p class="eyebrow">Step 2 · Human review</p>
+                <h2 id="review-title">Case <span id="case-id"></span></h2>
+                <p class="case-subtitle" id="case-subtitle"></p>
+              </div>
+              <div class="badge-group" id="case-badges"></div>
+            </div>
+
+            <div class="case-grid">
+              <div class="case-main">
+                <article class="detail-card evidence-card">
+                  <div class="card-title-row">
+                    <h3>Reported concern</h3>
+                    <a id="evidence-link" class="evidence-link" target="_blank" rel="noreferrer">Open evidence</a>
+                  </div>
+                  <blockquote id="report-description"></blockquote>
+                  <dl class="detail-list" id="report-facts"></dl>
+                </article>
+
+                <article class="detail-card">
+                  <div class="card-title-row">
+                    <h3>Connected marketplace records</h3>
+                    <span class="source-chip">GitHub mock data</span>
+                  </div>
+                  <div class="record-grid" id="linked-records"></div>
+                </article>
+
+                <article class="detail-card">
+                  <h3>Related customer feedback</h3>
+                  <div class="review-list" id="related-reviews"></div>
+                </article>
+              </div>
+
+              <aside class="case-side">
+                <article class="detail-card pattern-card">
+                  <p class="eyebrow">Pattern signal</p>
+                  <strong id="pattern-count">—</strong>
+                  <span id="pattern-copy"></span>
+                </article>
+
+                <article class="detail-card action-card">
+                  <p class="eyebrow">Step 3 · Action + audit</p>
+                  <h3>Record a decision</h3>
+                  <p class="action-help">The risk score prioritizes this case. You make the final call and document why.</p>
+                  <label for="action-reason">Decision reason</label>
+                  <textarea
+                    id="action-reason"
+                    rows="4"
+                    minlength="10"
+                    placeholder="Describe the evidence and why this action is appropriate…"
+                  ></textarea>
+                  <p class="field-hint">At least 10 characters. Saved only as local demo state.</p>
+                  <div class="action-buttons" id="action-buttons">
+                    <button class="decision-button" data-action="dismiss" type="button">Dismiss</button>
+                    <button class="decision-button" data-action="warn" type="button">Warn</button>
+                    <button class="decision-button button-danger" data-action="suspend" type="button">Suspend listing</button>
+                    <button class="decision-button" data-action="resolve" type="button">Resolve</button>
+                  </div>
+                  <div class="decision-status" id="decision-status" role="status" aria-live="polite"></div>
+                </article>
+
+                <article class="detail-card">
+                  <h3>Audit history</h3>
+                  <ol class="timeline" id="audit-timeline"></ol>
+                </article>
+              </aside>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="queue-item-template">
+      <button class="queue-item" type="button" role="option">
+        <span class="queue-item-top">
+          <span class="risk-badge"></span>
+          <span class="report-time"></span>
+        </span>
+        <strong class="queue-title"></strong>
+        <span class="queue-provider"></span>
+        <span class="queue-item-bottom">
+          <span class="status-badge"></span>
+          <span class="pattern-mini"></span>
+        </span>
+      </button>
+    </template>
+
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>
