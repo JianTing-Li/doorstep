@@ -553,6 +553,10 @@
 
     <!-- Data, Chatbot Engine & App Logic -->
     <script src="data.js"></script>
+    <!-- Doorstep shared data layer (Phase 3). A module, so it runs after the
+         classic scripts below but before DOMContentLoaded — i.e. after data.js
+         defines the DB_* globals, and before app.js first reads them. -->
+    <script type="module" src="./src/data/loadData.js"></script>
     <script src="chatbot-engine.js"></script>
     <script src="app.js"></script>
 </body>

@@ -7,21 +7,12 @@ import {
   matchesStatusFilter,
   prioritizeReports,
 } from "./logic.mjs";
-
-const DATA_ROOT = "../mock-data";
-const STORAGE_KEY = "doorstep-product-d-demo-v1";
-
-const dataFiles = {
-  meta: "_meta.json",
-  reports: "reports.json",
-  actions: "moderation-actions.json",
-  listings: "listings.json",
-  providers: "providers.json",
-  bookings: "bookings.json",
-  customers: "customers.json",
-  reviews: "reviews.json",
-  serviceTypes: "service-types.json",
-};
+import {
+  loadDoorstepData,
+  readLocalState,
+  resetSharedDemoData,
+  writeLocalState,
+} from "./data.mjs";
 
 const elements = {
   dataStatus: document.querySelector("#data-status"),
@@ -62,19 +53,11 @@ const state = {
 };
 
 function loadLocalState() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {
-      actions: [],
-      reportStatuses: {},
-      listingStatuses: {},
-    };
-  } catch {
-    return { actions: [], reportStatuses: {}, listingStatuses: {} };
-  }
+  return readLocalState();
 }
 
 function saveLocalState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.local));
+  writeLocalState(state.local);
 }
 
 function formatLabel(value) {
@@ -397,28 +380,17 @@ function bindEvents() {
     if (button) recordDecision(button.dataset.action);
   });
   elements.resetDemo.addEventListener("click", () => {
-    localStorage.removeItem(STORAGE_KEY);
-    state.local = { actions: [], reportStatuses: {}, listingStatuses: {} };
-    state.selectedReportId = null;
-    elements.decisionStatus.textContent = "Demo decisions reset. GitHub mock data was not changed.";
-    renderAll();
+    resetSharedDemoData();
+    // Reload rather than re-render: loadDoorstepData() bakes the overlay into
+    // state.data at load time, so clearing it in place would leave the old
+    // merged values on screen.
+    window.location.reload();
   });
-}
-
-async function loadData() {
-  const entries = await Promise.all(
-    Object.entries(dataFiles).map(async ([key, file]) => {
-      const response = await fetch(`${DATA_ROOT}/${file}`);
-      if (!response.ok) throw new Error(`Could not load ${file}`);
-      return [key, await response.json()];
-    }),
-  );
-  return Object.fromEntries(entries);
 }
 
 async function initialize() {
   try {
-    state.data = await loadData();
+    state.data = await loadDoorstepData();
     state.maps = {
       listings: recordMap(state.data.listings, "listing_id"),
       providers: recordMap(state.data.providers, "provider_id"),

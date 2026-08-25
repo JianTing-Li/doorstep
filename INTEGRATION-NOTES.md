@@ -654,3 +654,145 @@ three products reference it by absolute path (`/shared/...`), which only resolve
 - `shared/patterns.css` exists but isn't wired into anything yet.
 - Chat did not get the switcher (see above — deliberate, not an oversight).
 - Reset was not added to the switcher (Phase 3 territory).
+
+---
+
+## Phase 3 — Shared data layer
+
+### `shared/demo-store.js`
+
+A write **overlay** over read-only mock-data, not a data source: it never loads mock-data itself. Each
+product's data module supplies the pristine array (however that product gets it) and the store merges the
+overlay over it. That is what lets one store serve four products with four different loading strategies —
+build-time JSON imports (chat, provider), a runtime fetch (admin), and a generated `data.js` snapshot
+(customer).
+
+Overlay shape, one flat store under `localStorage["doorstep:demo:v1"]`:
+
+```
+{ [collection]: { created: [ …whole records… ], patched: { [id]: { …changed fields… } } } }
+```
+
+`mergeCollection(name, pristine)` shallow-merges patches in place (so a record keeps its field order and every
+untouched field) and appends created records. `{ newestFirst: true }` prepends instead — used only by
+provider, because Product A's own pre-Phase-3 behaviour put a freshly created draft at the top of the list.
+
+Details worth knowing:
+- **Collections are whitelisted** (`ID_FIELDS`). A typo'd collection name throws rather than silently writing
+  an overlay nothing will ever read back.
+- **Patching a record created in this session edits it in place** rather than adding a `patched` entry, so a
+  record can't end up with two competing representations.
+- **`localStorage` is accessed through a guarded accessor** with an in-memory fallback. This is not defensive
+  padding: `chat/`'s test suite runs in Node, where `localStorage` doesn't exist. The fallback is why
+  `matching.test.js` still reports 49/49 and 20/25 without the tests being touched — in Node the store is
+  always empty, so tests see pristine data, which is what they assert against.
+- **Cross-tab sync is deliberately not implemented.** Navigation between products is a full page load, so
+  every product re-reads the overlay on mount anyway. `subscribe()` exists for same-document re-reads.
+
+Unit-tested directly (16 assertions: merge, patch, create ordering, `newestFirst`, in-place edit of created
+records, bulk replace, unknown-collection throw, reset). Not committed as a product test file — it lives in
+scratch, since the brief says not to add test files without asking. Happy to add it under `shared/` if you want
+it permanent.
+
+### Per-product wiring
+
+| Product | Data module | Diff to the product's own code |
+|---|---|---|
+| chat | `chat/src/data/loadData.js` (already existed) | file rewritten in place; nothing else in `chat/` touched |
+| provider | `provider/src/data/loadData.js` (new) | **`useProviderData.js` only** — +22 / −20 |
+| admin | `admin/data.mjs` (new) | **`app.mjs` only** — +14 / −42 |
+| customer | `customer/src/data/loadData.js` (new) | **`app.js` — 2 added lines**, `index.html` — 1 script tag |
+
+**Provider.** The seven JSON imports moved out of `useProviderData.js` into the new data module unchanged;
+the hook now imports named getters instead. Its two write functions changed from React-state updates to
+store writes followed by a re-read (`addListing(...)` then `setListings(getListings())`), which preserves the
+existing re-render behaviour exactly. No component, no layout, no copy touched.
+
+**Admin.** Kept Product D's own `state.local` shape — `{ actions, reportStatuses, listingStatuses }` —
+byte-for-byte, and projected it on and off the shared store instead. That is why the diff is net **−28 lines**:
+`loadLocalState()`/`saveLocalState()` became one-line delegations, and D's own `effectiveListing()`,
+`effectiveReport()`, `prioritizeReports(...)` and every render function are completely untouched. Per the D-3
+decision, its writes and its existing "Reset demo decisions" button now go through the shared store.
+
+Two deliberate notes on Admin:
+- `moderation-actions` is intentionally **not** merged into `state.data.actions`. D already concatenates
+  `[...state.data.actions, ...state.local.actions]` in three places; merging as well would double-count every
+  demo decision in the "Audit entries" metric. The created actions arrive via `state.local.actions`, which is
+  now store-backed — one path, no double count. Verified: the metric goes 9 → 10 on one decision, not 9 → 11.
+- D's Reset button now **reloads** instead of re-rendering in place. It has to: `loadDoorstepData()` bakes the
+  merged overlay into `state.data` at load time, so clearing the overlay without reloading would leave the
+  old merged values on screen. This is a small behaviour change to D (it previously re-rendered and showed a
+  status message) and is called out here rather than buried.
+
+**Customer.** B is still the vanilla build until Phase 5, so its data arrives as `DB_*` globals from the
+generated `data.js`. The new module is a bridge, loaded as `<script type="module">` — which runs *after* the
+classic `data.js`/`app.js` scripts but *before* `DOMContentLoaded`, i.e. after the globals are defined and
+before `app.js` first reads them. It rewrites each mutable `DB_*` global through `mergeCollection`.
+
+For writes, B's booking objects use its own display shape (`BK-#####`, `status: "upcoming"`, `escrowStatus`),
+not the mock-data booking schema. Rather than restructure state in a build that Phase 5 replaces wholesale,
+each new booking is **also** written to the store in canonical form (`booking_id`, `scheduled_slot`,
+`price_paid`, `commission_amount`, `source: "customer_app"`, …), with B's extra fields riding along. B keeps
+rendering from its own list; the other three products read the canonical record. Two call sites, two added
+lines, both `window.Doorstep?.recordBooking?.(newBooking)` — optional-chained so a failure can never block
+B's own booking flow. **Flagged for Phase 5 to collapse into a single representation.**
+
+### Reset
+
+Added to the switcher menu as specified: inline two-step confirm (matching Product C's "Clear chat?" pattern
+and `shared/patterns.css`), then `resetDemoData()` and a reload. The row is disabled and reads "No demo
+changes yet" until something has actually been written, so the destructive action isn't live when it would
+be a no-op. Reset also clears the **pre-Phase-3 keys** — D's old `doorstep-product-d-demo-v1` and B's
+per-customer `doorstep_bookings_*` / `doorstep_messages_*` / `doorstep_reports_*` — otherwise a reset would
+leave stale state behind in exactly the two products that had their own layer before this store existed.
+
+### Gate 3 demonstration (measured, one browser context throughout)
+
+| | provider incoming | admin needs-review / hidden / audit | chat active listings |
+|---|---|---|---|
+| pristine | 3 | 4 / 3 / 9 | 32 |
+| after customer books (real UI, checkout → authorize) | **4** | 4 / 3 / 9 | 32 |
+| after admin suspends a listing | 4 | **3 / 4 / 10** | **31** |
+| after Reset via the switcher | **3** | **4 / 3 / 9** | **32** |
+
+Zero page errors throughout. The customer's booking renders in Provider inside Kamal's own `BookingCard`,
+with the customer name correctly resolved (`cst_001` → Hannah Breece) — screenshot in scratch.
+
+### One real bug found and fixed: unreadable overlay
+
+The switcher menu used `--glass-fill-strong` (translucent). Over Provider's high-contrast dashboard the page
+content bled through and collided with the menu text — legible in isolation, genuinely unreadable in place.
+Fixed by adding a **`--surface-overlay`** token (opaque; `#2c4a75` dark / `#f6fafe` light — the values the
+glass already resolves to over each theme's own ground, so it looks the same, just legible) and using it for
+the menu. Floating overlays get an opaque surface; inline cards keep the glass. Verified in both themes.
+
+Also replaced the reset icon's path — the first arc I wrote rendered as a blob rather than a refresh arrow.
+
+### Verification
+
+- **No layout drift**, measured rather than eyeballed: pixel-diffed every product against the Phase 2
+  screenshots. Landing and Provider are byte-identical. **Admin: 0 pixels differ** (the md5 mismatch was PNG
+  encoding nondeterminism, not a visual change). Customer: 52 px (0.016%) inside an 8×8 box in the Leaflet
+  map corner — map-tile nondeterminism, not layout.
+- **Tests**: `mock-data/validate.py` 104/104; `admin/test.mjs` passes; chat **49/49 booking, 20/25 parseJob** —
+  identical to every prior gate. No test file was modified.
+- **No stray reads**: grepped the whole tree. The four data modules are the only files that reference
+  `mock-data`; every other hit is a comment or user-facing error copy. D's private storage key is gone from
+  `admin/app.mjs`.
+
+### Left alone, as instructed
+
+- **Chat's booking functions are untouched.** `chat/src/lib/booking.js` is pure and carries 49 of the suite's
+  assertions; its bookings stay in conversation state, exactly as `chat/README.md` documents. Phase 6 is where
+  the brief calls for "one bookings list… both written through `shared/demo-store.js`" — doing it now would
+  mean changing a tested module for a flow that phase rebuilds anyway.
+- No screen composition, IA, or copy changed in any product.
+- `shared/patterns.css` still isn't consumed by any product (Phase 4/5 adopt it).
+
+## Suggestions — not applied (additions)
+
+- **B**: `state.currentCustomerId` defaults to `"cust_00001"`, which matches **no record** in `DB_CUSTOMERS`
+  (real ids are `cst_001`…`cst_020`) — so `getCurrentCustomer()` always falls through to a hardcoded "Maya
+  Lin" object, while B's own persona modal lists the real customers. A pre-existing bug, not introduced here.
+  Worked around rather than fixed: the canonical booking attributes to B's active persona when it resolves to
+  a real customer, else `cst_001` (the switcher's Customer persona). Worth fixing properly in Phase 5.

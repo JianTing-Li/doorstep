@@ -86,10 +86,10 @@
   padding: var(--space-2);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
-  background: var(--glass-fill-strong);
+  /* Opaque, not glass: this floats over whatever the product renders, and
+     translucency made the menu text collide with the page behind it. */
+  background: var(--surface-overlay);
   box-shadow: var(--elevation-shadow-lift);
-  -webkit-backdrop-filter: var(--elevation-blur);
-  backdrop-filter: var(--elevation-blur);
   z-index: 1000;
 }
 
@@ -159,4 +159,57 @@
   height: 1px;
   margin: var(--space-2) var(--space-1);
   background: var(--hairline);
+}
+
+/* Reset demo data — destructive, so it uses the inline two-step confirm
+   convention rather than a native dialog. */
+.ds-switcher-theme[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ds-switcher-reset-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.ds-switcher-reset-label {
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.ds-switcher-reset-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.ds-switcher-reset-yes,
+.ds-switcher-reset-no {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.ds-switcher-reset-yes {
+  background: var(--color-danger);
+  color: var(--color-on-danger);
+}
+
+.ds-switcher-reset-no {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--color-ink);
+}
+
+.ds-switcher-reset-yes:focus-visible,
+.ds-switcher-reset-no:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
 }

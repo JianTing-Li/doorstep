@@ -17,13 +17,17 @@
 
 import { useMemo, useState } from "react";
 
-import providersData from "../../../mock-data/providers.json";
-import listingsData from "../../../mock-data/listings.json";
-import bookingsData from "../../../mock-data/bookings.json";
-import customersData from "../../../mock-data/customers.json";
-import serviceTypesData from "../../../mock-data/service-types.json";
-import reviewsData from "../../../mock-data/reviews.json";
-import metaData from "../../../mock-data/_meta.json";
+import {
+  addListing,
+  getBookings,
+  getCustomers,
+  getListings,
+  getMeta,
+  getProviders,
+  getReviews,
+  getServiceTypes,
+  setBookingStatus,
+} from "../data/loadData";
 
 import { nextId } from "../constants";
 import {
@@ -36,16 +40,16 @@ import {
 const ACTIVE_PROVIDER_ID = "prv_001";
 
 export default function useProviderData() {
-  const [listings, setListings] = useState(() => listingsData);
-  const [bookings, setBookings] = useState(() => bookingsData);
+  const [listings, setListings] = useState(() => getListings());
+  const [bookings, setBookings] = useState(() => getBookings());
 
   const provider = useMemo(
-    () => providersData.find((p) => p.provider_id === ACTIVE_PROVIDER_ID) ?? null,
+    () => getProviders().find((p) => p.provider_id === ACTIVE_PROVIDER_ID) ?? null,
     []
   );
 
   const serviceTypeLabelByCode = useMemo(
-    () => Object.fromEntries(serviceTypesData.map((s) => [s.code, s.label])),
+    () => Object.fromEntries(getServiceTypes().map((s) => [s.code, s.label])),
     []
   );
 
@@ -79,7 +83,7 @@ export default function useProviderData() {
     () =>
       providerBookings.map((booking) => {
         const listing = listings.find((l) => l.listing_id === booking.listing_id);
-        const customer = customersData.find(
+        const customer = getCustomers().find(
           (c) => c.customer_id === booking.customer_id
         );
         return toBookingView(booking, listing, customer);
@@ -137,7 +141,8 @@ export default function useProviderData() {
       availability: [],
       listing_status: "draft",
     };
-    setListings((prev) => [newListing, ...prev]);
+    addListing(newListing);
+    setListings(getListings());
     return newListing;
   }
 
@@ -145,16 +150,13 @@ export default function useProviderData() {
   function updateBookingStatus(bookingId, nextStatus) {
     const allowed = ["pending", "confirmed", "completed", "cancelled"];
     if (!allowed.includes(nextStatus)) return;
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.booking_id === bookingId ? { ...b, status: nextStatus } : b
-      )
-    );
+    setBookingStatus(bookingId, nextStatus);
+    setBookings(getBookings());
   }
 
   return {
     provider,
-    reference_date: metaData.reference_date,
+    reference_date: getMeta().reference_date,
     provider_listings: listingViews,
     provider_listings_summary: listingsSummary,
     upcoming_bookings: upcomingBookingViews,
@@ -162,6 +164,6 @@ export default function useProviderData() {
     bookings_counts: counts,
     createListing,
     updateBookingStatus,
-    reviews_count: reviewsData.length,
+    reviews_count: getReviews().length,
   };
 }

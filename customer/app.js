@@ -972,6 +972,7 @@ function processPayment() {
         };
 
         state.bookingsList.unshift(newBooking);
+        window.Doorstep?.recordBooking?.(newBooking);
         saveCurrentCustomerState();
         navigate('confirmation');
         showToast('Escrow Payment Authorized!', 'fa-shield-halved');
@@ -1975,6 +1976,7 @@ function bookChatSlot(listingId, slotStr, price) {
     };
 
     state.bookingsList.unshift(newBooking);
+    window.Doorstep?.recordBooking?.(newBooking);
     saveBookingsToStorage();
     updateNavBadge();
 

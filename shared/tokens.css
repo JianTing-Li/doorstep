@@ -127,6 +127,12 @@
   --elevation-shadow-soft: var(--shadow-soft);
   --elevation-shadow-lift: var(--shadow-lift);
   --elevation-fallback-fill: #2c4a75;
+  /* Floating overlays (popovers, menus) sit above arbitrary product content,
+     so they take an OPAQUE surface rather than the translucent glass used for
+     inline cards — a menu rendered over a high-contrast dashboard is unreadable
+     otherwise. These values match what the glass resolves to over each theme's
+     own ground, so an overlay looks identical, just legible. */
+  --surface-overlay: #2c4a75;
 
   /* ---- Motion ---- */
   /* One motion vocabulary: short, eased, fade plus a small shift. */
@@ -182,6 +188,7 @@
   --color-on-danger: #ffffff;
 
   --elevation-fallback-fill: #ffffff;
+  --surface-overlay: #f6fafe;
 }
 
 /* Where the browser cannot blur, fall back to an opaque fill rather than a

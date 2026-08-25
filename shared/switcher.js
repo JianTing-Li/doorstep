@@ -12,6 +12,8 @@
 // Navigates via window.location. Full page loads between products are
 // expected and fine — there is no shared client-side router.
 
+import { hasDemoChanges, resetDemoData } from "./demo-store.js";
+
 const PERSONA_KEY = "doorstep:persona";
 const THEME_KEY = "doorstep:theme";
 
@@ -33,6 +35,7 @@ function icon(name) {
     check: '<path d="M5 12.5l4.5 4.5L19 7" />',
     sun: '<circle cx="12" cy="12" r="4.2" /><path d="M12 2.6v2.2M12 19.2v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" />',
     moon: '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.4 6.4 0 0 0 9.5 9.5Z" />',
+    reset: '<path d="M3 4v6h6" /><path d="M3.5 10a9 9 0 1 1 1.4 7" />',
   };
   return (
     '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
@@ -69,6 +72,7 @@ export function mountSwitcher(mountEl) {
   let persona = readPersona();
   let theme = readTheme();
   let open = false;
+  let confirmingReset = false;
 
   applyTheme(theme);
   // Persist even if it was only just inferred from the URL, so a product
@@ -105,6 +109,7 @@ export function mountSwitcher(mountEl) {
           icon(theme === "dark" ? "sun" : "moon") +
           "<span>" + (theme === "dark" ? "Light theme" : "Dark theme") + "</span>" +
           "</button>" +
+          resetRow() +
           "</div>"
         : "") +
       "</div>" +
@@ -112,9 +117,35 @@ export function mountSwitcher(mountEl) {
     wire();
   }
 
+  // Destructive, and there is no undo — so it asks first, inline, rather than
+  // via a native confirm() dialog. Same treatment Product C uses for "Clear
+  // chat?" and the one shared/patterns.css encodes as the house style.
+  function resetRow() {
+    if (confirmingReset) {
+      return (
+        '<div class="ds-switcher-reset-confirm">' +
+        '<span class="ds-switcher-reset-label">Reset all demo data?</span>' +
+        '<div class="ds-switcher-reset-actions">' +
+        '<button type="button" class="ds-switcher-reset-yes" data-action="reset-confirm">Reset</button>' +
+        '<button type="button" class="ds-switcher-reset-no" data-action="reset-cancel">Cancel</button>' +
+        "</div></div>"
+      );
+    }
+    const dirty = hasDemoChanges();
+    return (
+      '<button type="button" class="ds-switcher-theme" data-action="reset-demo"' +
+      (dirty ? "" : " disabled") +
+      ">" +
+      icon("reset") +
+      "<span>" + (dirty ? "Reset demo data" : "No demo changes yet") + "</span>" +
+      "</button>"
+    );
+  }
+
   function closeMenu() {
     if (!open) return;
     open = false;
+    confirmingReset = false;
     render();
   }
 
@@ -138,6 +169,32 @@ export function mountSwitcher(mountEl) {
         window.location.href = PERSONAS[key].path;
       });
     });
+
+    const resetBtn = mountEl.querySelector('[data-action="reset-demo"]');
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        confirmingReset = true;
+        render();
+      });
+    }
+
+    const resetCancel = mountEl.querySelector('[data-action="reset-cancel"]');
+    if (resetCancel) {
+      resetCancel.addEventListener("click", () => {
+        confirmingReset = false;
+        render();
+      });
+    }
+
+    const resetConfirm = mountEl.querySelector('[data-action="reset-confirm"]');
+    if (resetConfirm) {
+      resetConfirm.addEventListener("click", () => {
+        resetDemoData();
+        // Reload so the reset is visible immediately: every product bakes the
+        // merged data into its own state at load time.
+        window.location.reload();
+      });
+    }
 
     const themeBtn = mountEl.querySelector('[data-action="toggle-theme"]');
     if (themeBtn) {
