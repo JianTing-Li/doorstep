@@ -132,22 +132,18 @@
             </div>
 
             <!-- Top Actions -->
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2.5">
                 <a href="./admin/" class="flex items-center space-x-1.5 bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-xl shadow-xs transition btn-pop text-xs font-bold border border-slate-700" title="Open Product D: Trust & Safety Operations Dashboard">
                     <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
                     <span class="hidden sm:inline">Product D (Safety Admin)</span>
                     <span class="sm:hidden">Safety Ops</span>
                 </a>
-                <button onclick="openPersonaModal()" class="flex items-center space-x-1.5 bg-white/90 hover:bg-white border border-slate-200 px-2.5 py-1.5 rounded-xl shadow-xs transition btn-pop text-xs" title="Switch Demo Customer Persona">
-                    <div id="nav-persona-avatar" class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-[10px]">
-                        M
+                <button onclick="navigate('my-bookings')" class="flex items-center space-x-2 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs transition btn-pop text-xs font-bold text-slate-800" title="My Account & Bookings">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-[10px] shadow-xs">
+                        <i class="fa-solid fa-user"></i>
                     </div>
-                    <span id="nav-persona-name" class="font-bold text-slate-800 text-[11px]">Maya</span>
-                    <i class="fa-solid fa-chevron-down text-[8px] text-slate-400"></i>
-                </button>
-                <button onclick="navigate('my-bookings')" class="relative p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50/80 transition btn-pop" title="My Bookings">
-                    <i class="fa-solid fa-receipt text-lg"></i>
-                    <span id="nav-booking-badge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white"></span>
+                    <span class="text-xs text-slate-800 font-bold hidden sm:inline">My Account</span>
+                    <span id="nav-booking-badge" class="hidden w-2 h-2 bg-blue-600 rounded-full"></span>
                 </button>
             </div>
         </header>
