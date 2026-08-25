@@ -796,3 +796,127 @@ Also replaced the reset icon's path — the first arc I wrote rendered as a blob
   Lin" object, while B's own persona modal lists the real customers. A pre-existing bug, not introduced here.
   Worked around rather than fixed: the canonical booking attributes to B's active persona when it resolves to
   a real customer, else `cst_001` (the switcher's Customer persona). Worth fixing properly in Phase 5.
+
+---
+
+## Phase 4 — Conform A and D
+
+Token adoption only, as specified. No screen composition, IA, or copy changed in either product — verified
+below, not just claimed.
+
+### Scope decisions made before touching either file
+
+Two judgment calls, made once and applied consistently to both products, documented here rather than left
+implicit:
+
+1. **Each product's page background (canvas) stays its own, not the shared `--color-page`.** Shared tokens'
+   light-theme page is a saturated sky blue, tuned for Chat's consumer aesthetic. D's neutral gray canvas and
+   A's warm cream canvas are core to their own identity — an admin tool and a provider workspace reading as
+   neutral/warm rather than "branded blue" is the "different composition" the brief already calls for D, and
+   I extended the same reasoning to A. Both got **new, hand-authored dark-mode canvas values** (neither had a
+   dark mode before) rather than deriving them from the shared page tokens, for the same reason.
+2. **A's 8-color decorative category system (coral/sage/lavender/sky, used for the guided-builder service-need
+   icons and avatar gradients) is left untouched.** These aren't semantic (danger/warning/success) — they're
+   wayfinding color Kamal chose so eight categories stay visually distinct at a glance. Collapsing them into
+   the one shared accent would be a functional regression, not a reskin. What **did** change: A's *primary*
+   color (`--forest`, the hero banner, primary buttons, brand mark — previously a distinct dark green) now
+   draws from the shared accent, and A's genuinely semantic states (booking status, focus rings) draw from
+   the shared semantic tokens. Both are recorded as separate line items below since they're different in
+   kind, not degree.
+
+### Product D — `admin/styles.css`
+
+Smaller job than A, as expected: D already centralized nearly everything through its own named custom
+properties (`--ink`, `--green`, `--red`, …), so retokenizing was mostly redefining ~15 root variables rather
+than touching all 936 lines individually.
+
+- `--ink`/`--muted`/`--line` → shared `--color-ink`/`--color-ink-soft`/`--hairline`.
+- `--green` (D's primary/brand color — a blue, `#2563eb`, despite the name) → shared `--color-accent` (teal).
+  This is D's brand color now, replacing blue.
+- **New: `--success`/`--success-soft`, split out from `--green`.** D's original file reused its brand blue
+  for both "primary action" *and* "positive outcome" (`risk-low`, `status-resolved`, `status-dismissed`, the
+  empty-state checkmark all shared one hue with the brand mark). That conflation is gone — brand and "this
+  went well" are now two different tokens, which is more correct, not just recolored.
+- `--amber`/`--red`/`--blue` (medium risk / critical-high risk / open-under_review) → shared
+  `--color-warning`/`--color-danger`/`--color-accent` respectively. "Open/under review" reusing the accent
+  (rather than getting its own hue) was a judgment call — shared/tokens.css has no dedicated "info" role, and
+  "still needs attention, not yet resolved" reads as the same family as "primary action" more than as a
+  fourth semantic category.
+- Fonts: body → `--font-body`; the 4 Georgia headline declarations → `--font-display` (Fraunces, now actually
+  loaded via a Google Fonts link added to `admin/index.html` — Georgia was always just the fallback, nothing
+  had loaded the real face before).
+- Type scale: every `font-size` snapped to the shared scale (some fine gradations legitimately collapsed —
+  e.g. six close-but-different `0.65–0.71rem` values are now all `--text-2xs`; this is the intended effect of
+  "one scale," not a bug).
+- Radii: D's 10/13/14/16/22px values snapped to the shared 10/14/20px steps (the asymmetric brand-mark shape
+  and the tiny `<code>` radius were deliberately left as literals — one-off decorative shapes, not scale
+  values).
+- Focus states: form-field focus now uses the shared ring pattern instead of a bespoke box-shadow glow.
+- The `Reset` icon in the switcher menu was also fixed this phase — the arc I drew in Phase 3 rendered as a
+  blob rather than a refresh arrow (visible once I was looking closely at icons across the site); replaced
+  with a correct counter-clockwise arrow path.
+
+Verified: `admin/test.mjs` passes (unchanged — this phase never touches `logic.mjs` or `app.mjs`). Zero
+console errors in either theme.
+
+### Product A — `provider/src/index.css` (Kamal Mohamed)
+
+The larger job, as flagged before starting: 1,633 lines, its own 8-color palette (vs. D's single accent +
+3 semantic), and far less consistent use of its own custom properties (only 60 unique hex literals outside
+the root block, but scattered across ~46 individual declarations rather than concentrated).
+
+- `--forest`/`--forest-light` (primary/hero/brand) → shared `--color-accent`/`--color-accent-strong`. This is
+  the one big, very visible change — the hero banner goes from dark forest green to teal. Deliberate, per the
+  scope decision above.
+- **New: booking-status stat tiles split from the brand color.** `.stat-green` ("Completed") previously used
+  `--forest-light` directly — now uses shared `--color-success`, same reasoning as D. `.stat-orange`
+  (Pending) → `--color-warning`, `.stat-blue` (Confirmed) → `--color-accent-text`, `.stat-red` (Cancelled) →
+  shared danger. `.stat-purple` (Active Listings — not a booking status at all) intentionally kept as A's own
+  lavender; there's no 5th shared semantic slot for it and there doesn't need to be.
+- `--text`/`--muted`/`--border` → shared ink/ink-soft/hairline, same as D.
+- Radii: A had its own 10/18/28px scale; now aliased to the shared 10/14/20px scale. This is a real, visible
+  reduction in corner roundness (18→14, 28→20) — flagged specifically because, unlike color, this wasn't
+  forced by a "which token category" question; A's own scale could have stayed. I adopted the shared one
+  because the brief names "one radius set" as an explicit goal and A's own `--radius-sm` already coincidentally
+  matched the shared value exactly.
+- Font: A's own stack ("Inter, ui-rounded, SF Pro Rounded…") → `var(--font-body)`. **No serif/display font was
+  introduced** — A never had one, headings stay in the same rounded-sans family. Forcing Fraunces onto a
+  product that never used a display face would be adding a new typeface to Kamal's design, not reskinning an
+  existing one.
+- ~11 literal `rgba(23, 63, 53, …)` / `rgba(36, 93, 77, …)` instances (the forest colors written as raw RGB
+  channels, since a plain `rgba()` can't take a `var()` color) converted to `color-mix(in srgb, var(--forest)
+  X%, transparent)` — same visual effect, now actually tied to the token.
+- Every `outline: 3px solid rgba(36, 93, 77, X%)` focus ring → the shared focus-ring pattern.
+- **Text-on-fill contrast, checked explicitly, not assumed.** Several elements had literal `color: white` on
+  what is now an accent or danger fill. White-on-`--color-accent-strong` in dark mode (a light mint,
+  `#9dd6cc`) would have been low-contrast — caught and fixed to `var(--color-on-accent)`/
+  `var(--color-on-danger)` at 5 sites. The 3 remaining `color: white` instances are all on the *unchanged*
+  coral background and were correctly left alone.
+
+One real bug caught before it shipped: two of A's own radius/text custom properties (`--radius-sm`,
+`--radius-lg`) happen to share their *names* with shared tokens of the same name. Writing
+`--radius-sm: var(--radius-sm);` inside the same cascade is a **self-reference** — CSS treats a custom
+property that references itself as invalid, not as "inherit the previous value." Caught by checking the
+built output rather than assuming the alias worked; fixed by writing the literal pixel values instead
+(`10px`/`20px` — the shared scale's own numbers).
+
+Verified: builds clean (`vite build`, 48 modules), zero console errors in either theme, zero page errors.
+
+### Verification
+
+- **No layout drift in the three untouched products**: Landing and Chat are **byte-identical** to their
+  Phase 3 screenshots. Customer differs by the same 52 pixels (0.016%, an 8×8 box in the Leaflet map corner)
+  already identified in Phase 3 as map-tile rendering nondeterminism — confirmed it's the *same* diff, not a
+  new one, and nothing in this phase touches `customer/`.
+- **Tests**: `admin/test.mjs` passes, `mock-data/validate.py` 104/104, chat **49/49 booking, 20/25 parseJob**
+  — identical to every prior gate.
+- **Before/after screenshots**, both themes, saved to `docs/baseline/product-a/phase4-after/` and
+  `docs/baseline/product-d/phase4-after/`, alongside the Phase 0 baselines for direct comparison.
+
+### Left alone, as instructed
+
+- No composition change in either product — every card, section, and interaction stays exactly where Kamal
+  and Ibtisam put it.
+- A's decorative 8-color category system.
+- D's own `test.mjs`, `logic.mjs`, `app.mjs` — nothing in this phase touches D's behavior, only its
+  stylesheet.
