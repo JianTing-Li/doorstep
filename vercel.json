@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "npm --prefix chat install && npm --prefix chat run build && rm -rf dist && mkdir -p dist/chat && cp -R chat/dist/. dist/chat/ && cp index.html dist/index.html",
+  "buildCommand": "bash build.sh",
   "outputDirectory": "dist"
 }

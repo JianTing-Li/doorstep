@@ -46,12 +46,12 @@
 
       main {
         width: 100%;
-        max-width: 560px;
+        max-width: 900px;
       }
 
       h1 {
         font-family: var(--font-display);
-        font-size: clamp(2.5rem, 9vw, 3.5rem);
+        font-size: clamp(2.5rem, 7vw, 3.5rem);
         font-weight: 600;
         margin: 0;
         line-height: 1.05;
@@ -67,58 +67,90 @@
         font-style: italic;
         font-size: 1.2rem;
         color: var(--color-ink-soft);
-        margin: 10px 0 32px;
+        margin: 10px 0 8px;
         line-height: 1.4;
       }
 
-      .card {
+      .demo-note {
+        font-size: 0.88rem;
+        color: var(--color-ink-soft);
+        margin: 0 0 32px;
+        max-width: 60ch;
+      }
+
+      .doors {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 16px;
+      }
+
+      .door {
         background: var(--color-surface);
         border: 1px solid var(--color-line);
         border-radius: 20px;
         padding: 24px;
-      }
-
-      .card h2 {
-        font-family: var(--font-display);
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0 0 6px;
-      }
-
-      .card p {
-        margin: 0 0 20px;
-        color: var(--color-ink-soft);
-        line-height: 1.5;
-        font-size: 0.95rem;
-      }
-
-      .button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        min-height: 48px;
-        padding: 0 24px;
-        border-radius: 999px;
-        background: var(--grad-primary);
-        color: #ffffff;
-        font-weight: 600;
-        font-size: 1rem;
+        display: flex;
+        flex-direction: column;
         text-decoration: none;
+        color: inherit;
+        transition: transform 150ms ease, box-shadow 150ms ease;
       }
 
-      .button:hover {
-        background: var(--grad-primary-strong);
+      .door:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(15, 39, 68, 0.1);
       }
 
-      .button:focus-visible {
+      .door:focus-visible {
         outline: 2px solid #1d4ed8;
         outline-offset: 3px;
       }
 
-      .soon {
-        margin: 20px 0 0;
-        font-size: 0.85rem;
+      .door-eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #1d4ed8;
+        margin: 0 0 6px;
+      }
+
+      .door h2 {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+
+      .door p {
+        margin: 0 0 20px;
+        color: var(--color-ink-soft);
+        line-height: 1.5;
+        font-size: 0.92rem;
+        flex: 1;
+      }
+
+      .door-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 999px;
+        background: var(--grad-primary);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+
+      .door:hover .door-cta {
+        background: var(--grad-primary-strong);
+      }
+
+      .door-credit {
+        margin: 14px 0 0;
+        font-size: 0.78rem;
         color: var(--color-ink-soft);
       }
 
@@ -134,17 +166,36 @@
     <main>
       <h1>Doorstep</h1>
       <p class="tagline">Portland home services, matched to the job you describe.</p>
+      <p class="demo-note">
+        This is a concept demo running on mock data — no real bookings, payments, or accounts.
+        Pick the door that matches who you are.
+      </p>
 
-      <div class="card">
-        <h2>Matching Chatbot</h2>
-        <p>
-          Describe a household job in plain language and get ranked local providers, with
-          prices, ratings, and open slots.
-        </p>
-        <a class="button" href="/chat/">Open the chatbot</a>
+      <div class="doors">
+        <a class="door" href="/customer">
+          <p class="door-eyebrow">I need something done</p>
+          <h2>Customer</h2>
+          <p>Browse local providers, describe a job in plain language, and book help around the house.</p>
+          <span class="door-cta">Enter as Customer</span>
+          <p class="door-credit">Built by Abheeshu Dhungana</p>
+        </a>
+
+        <a class="door" href="/provider">
+          <p class="door-eyebrow">I offer a service</p>
+          <h2>Provider</h2>
+          <p>Create listings for cleaning, repairs, or moving help, and manage the bookings that come in.</p>
+          <span class="door-cta">Enter as Provider</span>
+          <p class="door-credit">Built by Kamal Mohamed</p>
+        </a>
+
+        <a class="door" href="/admin">
+          <p class="door-eyebrow">I keep the marketplace safe</p>
+          <h2>Admin</h2>
+          <p>Review reports, prioritize risky cases, and record trust &amp; safety decisions with an audit trail.</p>
+          <span class="door-cta">Enter as Admin</span>
+          <p class="door-credit">Built by Ibtisam Hossain</p>
+        </a>
       </div>
-
-      <p class="soon">Provider, Customer, and Trust &amp; Safety apps are in progress.</p>
     </main>
   </body>
 </html>

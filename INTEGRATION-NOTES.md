@@ -362,3 +362,113 @@ are byte-identical, confirmed via `md5` on `app.js`, `data.js`, `chatbot-engine.
 
 All mobile shots at 390×844 @2x except the two desktop captures. `-AS-LEFT` suffix marks the two things Phase
 5 is explicitly changing (the FAB, the fixed-width layout) so the before-state stays on record.
+
+---
+
+## Phase 1 — Scaffold
+
+Structural only, as required. No CSS/layout touched in any of the four products. Verified against Phase 0
+baselines by screenshot diff after the build (see below) — everything matches except the one deliberate
+rename in Product A.
+
+### What moved where
+
+- **`admin/`** ← Product D, copied straight in from `codex/product-d-trust-safety-dashboard`. Already had the
+  right shape and the right `.gitignore` (byte-identical to the placeholder already in the tree). No file
+  changes. `../mock-data` from `admin/app.mjs` already resolves correctly once `build.sh` copies `mock-data/`
+  into `dist/mock-data/` — verified by running `admin/test.mjs` against local data (passes) and by loading
+  `dist/admin/` in a browser (queue, metrics, and case detail all populated from real data).
+- **`provider/`** ← Product A, copied in as a self-contained package. Purged the 2,240 committed
+  `node_modules` files and the committed `dist/` — neither was copied over in the first place, since I copied
+  only `src/`, `index.html`, `vite.config.js`, `package.json`, `package-lock.json`, `README.md` individually
+  rather than the whole tree. `provider/.gitignore` (the placeholder already in the tree) covers
+  `node_modules`/`dist`/`.env.local`/`.DS_Store`. Discarded A's own `mock-data/` copy — never brought over.
+  - `vite.config.js`: added `base: "/provider/"`.
+  - `src/hooks/useProviderData.js`: all 7 mock-data imports changed from `../../mock-data/` to
+    `../../../mock-data/` — one more directory level now that A sits under `provider/` instead of at repo
+    root. Verified by building (`vite build` succeeds, 46 modules) and loading the built output — listings,
+    bookings, and provider profile all populate correctly.
+- **`customer/`** ← Product B, but not the stale `product-b` branch: **the real, current product** (the
+  folder you downloaded, confirmed byte-identical to the live deploy — see the Gate 0 addendum above). Copied
+  everything except `mock-data/`, which was discarded per the non-negotiable rule. That includes his own
+  `data/tasklocal-connected-dataset.json` (dead, unused, superseded schema — nothing loads it, see Suggestions
+  below), `build_data.js`, `fix.py`, `test_integration.py`, and his own `vercel.json` (inert now that the root
+  `vercel.json` governs the whole deploy; left in place, not deleted, per preservation).
+  - **No data repoint was needed.** The Phase 1 brief assumed B's `data.js` did a runtime `fetch` to a dead
+    GitHub branch — that was true of the old stale branch, not this real product. This `data.js` is a static
+    file already generated from local `mock-data` (confirmed byte-identical at Gate 0) and has no network
+    dependency on it at all. The only external network call in the whole product is the OpenStreetMap tile
+    layer for the Leaflet map — grepped for it specifically, nothing else. So "bring B in as-is" needed
+    literally zero code changes to make it work.
+- **Root `index.html`** rebuilt as three doors — Customer, Provider, Admin — each with a one-line "who you
+  are" description, a concept-demo/mock-data note, and a "Built by [name]" credit. No fourth door for Chat:
+  the brief specifies three doors, and `/chat` still resolves as a route (Gate 1 requires it), it's just not
+  advertised from the landing page. That's intentional — Chat isn't a persona the way Customer/Provider/Admin
+  are; Phase 6 is what actually gives it a permanent home inside Customer.
+- **`build.sh`** replaces the one-line `buildCommand`. Builds `chat/` and `provider/` (`npm install` + `vite
+  build` each), copies `admin/` and `customer/` through as static files (stripping their `.gitignore` and, for
+  admin, `test.mjs` — no reason to ship a Node test file to the browser), copies `mock-data/` into
+  `dist/mock-data/`, copies the root landing page. `vercel.json`'s `buildCommand` is now `bash build.sh`;
+  `outputDirectory` unchanged.
+
+### Branding — Doorstep, per your decision
+
+Only Product A needed a real change; B, C, and D already said "Doorstep" everywhere visible. Grepped all of
+A's source for "TaskLocal" and found more instances than the Gate 0 scan caught (that scan only checked
+`ProviderDashboard.jsx`; the guided-listing-builder copy is actually in `ListingForm.jsx`). Renamed every
+**visible** instance:
+
+- `index.html` — title and meta description
+- `ProviderDashboard.jsx` — topbar wordmark, and the "TL" monogram → "DS" (kept the two-letter format, avoided
+  "D" since Admin already uses a bare "D" for "Product D" — Phase 2's icon unification will replace ad hoc
+  letter marks like this entirely; this is a placeholder, not a final treatment)
+- `ListingForm.jsx` — four separate strings: the guided-builder intro copy, the "not supported yet" message,
+  the "matched your service" kicker, and the footnote about not inventing listings
+
+Left three **code comments** unchanged (`index.css:1`, `selectors.js:4`, `ListingForm.jsx:5`) — they mention
+"TaskLocal" but aren't visible to anyone using the product, and the decision was about the app's name/branding
+as presented, not a sweep of internal comments.
+
+Added an author byline to `provider/README.md` and `customer/README.md`, matching the phrasing D's own README
+already uses ("This folder contains [name]'s Product [X] build for Doorstep."), per the preservation rule to
+credit each product to its builder.
+
+### Verification
+
+- **Build**: `bash build.sh` completes clean — chat (46 modules), provider (46 modules), admin and customer
+  copied through, mock-data copied, landing page copied.
+- **Routes**: served `dist/` locally, all five resolve — `/`, `/customer`, `/provider`, `/admin`, `/chat` (200
+  directly with trailing slash; 301→200 without, standard static-host redirect behavior, matches how the
+  landing page's own links are written).
+- **Visual**: screenshotted all five from the built `dist/` output and compared against the Phase 0 baselines
+  in `docs/baseline/`. Provider, Admin, Customer, and Chat are visually identical to their baselines except
+  the intended Doorstep rename in Provider. Landing page is new (there was no three-door baseline to compare
+  against).
+- **Tests**: `mock-data/validate.py` — **ALL 104 CHECKS PASSED** (run for the first time; Gate 0 only noted it
+  hadn't been run yet). `admin/test.mjs` — passes. `chat/src/lib/__tests__/matching.test.js` — **booking
+  49/49, parseJob 20/25**, identical to the Phase 0 baseline, no regression.
+- **Secrets**: `chat/.env.local` remains untracked (confirmed via `git status`, not just assumption). No
+  secret-shaped string anywhere in the new files (`grep` for API-key patterns across `provider/`, `customer/`,
+  `admin/`, root). Nothing in `git status --short` touches `dist/`, `node_modules/`, or `doorstep-productb/` —
+  all three stay properly ignored.
+
+### Left alone, as instructed
+
+- `doorstep-productb/` at repo root — the folder you dropped in. Its content is now safely inside `customer/`
+  (tracked in git), so it's redundant, but it's your file and it's gitignored either way. Not deleting it
+  without you saying so — say the word and I'll remove it.
+- Every screen composition, interaction flow, and piece of copy in all four products, except the Doorstep
+  rename explicitly decided at Gate 0.
+
+## Suggestions — not applied (additions)
+
+- **B**: `customer/README.md` still points to `data/tasklocal-connected-dataset.json` as "Project data" and
+  links the old TaskLocal spreadsheet as "source of truth" — both stale now that nothing in the app reads
+  that file. Not correcting his copy without asking, same as the D `test.mjs` era.
+
+## Reset from `git status`, in case it matters at Gate 1
+
+- `.gitignore` — modified (added `.env*.local`, flagged as missing at Gate 0)
+- `index.html`, `vercel.json` — modified (three-door landing page, `build.sh` wired in)
+- `admin/`, `customer/`, `provider/` — populated (`.gitkeep` removed from each, real product files added)
+- `build.sh` — new
