@@ -1,11 +1,12 @@
 /* Doorstep shared tokens (Phase 4). D keeps its own semantic variable names
  * (--ink, --green, --red, ...) so the ~900 lines below that already consume
  * them via var() needed no further changes — only these definitions moved
- * to draw from the shared system. --canvas/--surface/--queue-bg stay D's own
- * neutral grays rather than the shared --color-page (a saturated sky blue
- * tuned for Chat's consumer aesthetic) — an admin tool's background staying
- * neutral so data is the visual focus is exactly the "different composition"
- * the brief calls for, not a gap in adoption. Everything else — accent,
+ * to draw from the shared system. --canvas/--surface/--queue-bg now draw from
+ * the shared page tokens too: Phase 4 kept neutral grays because the shared
+ * page was a saturated sky blue tuned for Chat, but the settled app-wide
+ * palette is the landing page's pale blues, which work as a data-dense
+ * workspace ground. Density stays D's own; the colour family is now shared.
+ * Everything else — accent,
  * text, semantic colors, type, radii, focus ring, motion — comes from
  * shared/tokens.css. */
 @import "../shared/tokens.css";
@@ -16,9 +17,9 @@
   --ink: var(--color-ink);
   --muted: var(--color-ink-soft);
   --line: var(--hairline);
-  --canvas: #14171a;
-  --surface: #1c2023;
-  --queue-bg: #181b1e;
+  --canvas: var(--color-page);
+  --surface: var(--surface-overlay);
+  --queue-bg: color-mix(in srgb, var(--surface-overlay) 60%, var(--color-page));
   /* D's brand/primary action color. Originally a blue named "--green"; now
      the shared accent (teal), which is what every product's primary action
      color is. */
@@ -42,9 +43,9 @@
 }
 
 :root[data-theme="light"] {
-  --canvas: #f4f7f5;
+  --canvas: var(--color-page);
   --surface: #ffffff;
-  --queue-bg: #fbfcfb;
+  --queue-bg: color-mix(in srgb, var(--color-page) 55%, #ffffff);
 }
 
 * {

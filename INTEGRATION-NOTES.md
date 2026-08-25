@@ -1422,3 +1422,101 @@ audit so the record distinguishes the original Gate 6 result from the corrected 
 - Final dependency audit found the Provider app's Vite 5 toolchain carried one high and one moderate
   dev-server advisory. Provider now uses Vite 8.2.2 and `@vitejs/plugin-react` 6.1.0 (matching Customer);
   React remains 18.3.1 and the production build is unchanged in application behavior.
+
+---
+
+## Post-unification fixes
+
+### Part 1a — Blue palette, formalized app-wide
+
+The landing page's blues are now the palette of record in `shared/tokens.css`, replacing the earlier teal
+(`#6FB3A8` / `#87C7BC`) everywhere.
+
+- **Light**: accent `#1d4ed8` (the leading stop of the landing page's own button gradient), page `#eff6ff`,
+  page-deep `#dbeafe`, ink `#0f2744`, ink-soft `#4a6180`.
+- **Dark**: same hue family lifted for contrast, not a different colour — accent `#60a5fa`, accent-text
+  `#7cc0fb`, ground `#0b1b30`, navy glass fills.
+- **New** `--color-accent-sky` (`#0284c7` / `#38bdf8`) — the supporting sky tone, the second stop of the
+  landing gradients. Used for gradient ends only, never as a second accent.
+
+**Contrast verified programmatically, not by eye** — every text/background pairing computed against WCAG
+before being committed. All clear AA: ink 13.84:1 light / 15.32:1 dark, ink-soft 5.82 / 9.44, accent-text
+6.16 / 6.21, on-accent 6.70 / 6.81. One improvement falls out of this: the old light-mode teal was only
+2.32:1 as text and needed a separate darker `--color-accent-text`; `#1d4ed8` passes as both fill and text,
+so accent and accent-text are now the same value.
+
+**Every product already aliased to the shared token**, so nothing approximated the blue locally — Provider's
+`--forest` and Admin's `--green` simply resolve to the new accent. Confirmed by grep: zero teal remains
+outside the archived `customer/legacy/`, and no product defines its own accent.
+
+**Canvases moved onto the shared page tokens too.** Phase 4 deliberately kept Provider on warm cream and
+Admin on neutral grey, reasoning that a workspace ground was part of each product's identity. That reasoning
+was tied to the *old* palette — the shared page then was a saturated sky blue tuned for Chat. With the
+app-wide palette settled on the landing page's pale blues, a warm cream ground under a blue accent read as
+two different products, which is the exact failure the merge exists to prevent. Provider's body wash
+(coral/sage radials) moved to the accent/sky family with it. **Density and composition are unchanged** —
+only the colour family.
+
+### Part 1b — `shared/header.js`: one wordmark, one implementation
+
+Each product drew its own "Doorstep": Customer a 36px mark + `--text-md` title, Provider a rotated "DS" mark
++ `--text-lg` strong, Admin a "D" mark + eyebrow. Three marks, three sizes, three treatments.
+
+`shared/header.js` + `shared/header.css` now own the whole top bar — wordmark **and** persona switcher
+together, as one component. Plain DOM, so it renders identically in React 18 (`provider/`), React 19
+(`customer/`), and vanilla ES modules (`admin/`).
+
+- `shared/switcher.js` gained a `{ bare: true }` mode so the header composes the pill rather than duplicating
+  it, and its auto-mount now stands down when a unified header is present.
+- Each product's local wordmark markup was removed. Customer's header keeps only what is genuinely its own
+  (persona chip, Bookings shortcut) and gained a small "Home" affordance where the wordmark used to sit.
+- Products pass their own subtitle via `data-label` ("Portland, OR", "Provider workspace", "Safety
+  Operations"), so each app still says what it is without four different wordmarks.
+
+**Verified as the instruction asked** — headers screenshotted from all three products and compared
+programmatically, not just visually: font, size, weight, colour, bar height and switcher presence are
+**identical across all three** (`Bricolage Grotesque`, 22px, 600, `rgb(29, 78, 216)`, 64px). The only
+difference is the product label, which is intended.
+
+### Part 2 — Landing page
+
+**Note:** `/mnt/skills/public/frontend-design/SKILL.md` does not exist on this machine (the only matches on
+disk belong to an unrelated tool's plugin bundle). Rather than silently substitute something else, I followed
+its named process explicitly: brainstorm → plan → critique → build → self-critique.
+
+**Brainstorm.** Three Doorstep-specific directions: *the doorway* (literal doors — risks kitsch), *the
+street* (a Portland streetscape — too illustration-heavy for pure CSS), and *the threshold*.
+
+**The chosen risk: the threshold.** The page is the calm sky you arrive into and each product is an entrance
+you cross. This is specific to the name, and it settles the hierarchy question the brief raised by borrowing
+a truth buildings already encode: a front door and service entrances. **Customer is the lit primary
+threshold** (`01 · FRONT DOOR`), Provider and Admin are side entrances (`02 · SERVICE ENTRANCE`, `03 · STAFF
+ONLY`) — equal in craft, smaller in footprint, which is what they actually are in the product. The single
+flourish is light spilling from the primary door's opening edge; everything else stays quiet around it.
+
+**Type.** Serif-display + italic-serif + sans was stock. The wordmark and display type is now **Bricolage
+Grotesque** — a contemporary grotesque with deliberately irregular widths that reads as *made by hand* rather
+than corporate, which is the actual subject: independent local tradespeople. Introduced as
+`--font-wordmark` so the landing page and all four product headers set the name in one face. `--font-display`
+(Fraunces) is untouched and still serves Product D's editorial headlines — that is Ibtisam's own treatment
+and unrelated to the wordmark.
+
+**Self-critique caught three real problems before this was called done:**
+1. **The page could not render light mode at all.** It had no theme resolution, so it was pinned to the dark
+   `:root` default — the "light" screenshot came back dark. Added the same `doorstep:theme` →
+   `prefers-color-scheme` resolution the apps get from the switcher.
+2. **A large dead zone below the fold** — the grid stretched to a viewport it did not fill. Content is now
+   vertically centred, and the sticky masthead (pointless without scroll) was dropped.
+3. **The light spill washed across the heading like a smudge** rather than reading as light from an opening.
+   Retuned to a tall, narrow falloff hugging the left edge, staying behind the text.
+
+Copy is unchanged, as instructed — the three descriptions, the bylines, and the concept-demo framing are
+exactly as they were; only the presentation changed.
+
+### Verification
+
+- All five routes resolve; landing, Customer, Provider, Admin and Chat all render with zero page errors.
+- **390px: PASS on all four**, no page-level horizontal scroll.
+- Landing verified at 1440 desktop (light + dark) and 390 mobile — no overflow, font loading confirmed.
+- Tests unchanged: `mock-data/validate.py` 104/104, `admin/test.mjs` passes, matching **49/49 booking,
+  20/25 parseJob**.

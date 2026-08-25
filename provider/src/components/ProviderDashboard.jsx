@@ -44,13 +44,6 @@ export default function ProviderDashboard() {
   return (
     <div className="dashboard">
       <nav className="topbar" aria-label="Provider workspace">
-        <a className="brand" href="#dashboard" aria-label="Go to dashboard overview">
-          <span className="brand-mark" aria-hidden="true">DS</span>
-          <span>
-            <strong>Doorstep</strong>
-            <small>Provider workspace</small>
-          </span>
-        </a>
         <div className="dashboard-nav" aria-label="Dashboard sections">
           <a href="#dashboard">Dashboard</a>
           <a href="#create-listing">Create listing</a>

@@ -2,11 +2,11 @@
  *
  * Shared tokens (Phase 4): --forest (primary/brand) now draws from the
  * shared accent, and --text/--muted/--border/radii/shadows/focus all draw
- * from shared/tokens.css. --cream/--surface stay this product's own warm
- * neutral canvas rather than the shared --color-page (a saturated sky blue
- * tuned for Chat) — same reasoning as Product D: an admin/workspace tool's
- * ground color is part of its own identity, not something the shared
- * palette dictates. --coral/--sage/--lavender/--sky are Kamal's own
+ * from shared/tokens.css. --cream/--surface now ALSO draw from the shared
+ * page tokens: Phase 4 kept a warm neutral canvas because the shared accent
+ * was teal and the shared page a saturated sky blue tuned for Chat, but with
+ * the app-wide palette settled on the landing page's pale blues, a warm cream
+ * ground under a blue accent reads as two different products. --coral/--sage/--lavender/--sky are Kamal's own
  * decorative category-color system (the 8 service-need icons, avatar
  * gradients) and are deliberately left untouched — they aren't a semantic
  * "danger/warning/success" system, they're wayfinding color, and collapsing
@@ -17,10 +17,10 @@
 
 :root {
   color-scheme: dark light;
-  --cream: #14120f;
-  --cream-deep: #1b1815;
-  --surface: #211e19;
-  --surface-soft: #262319;
+  --cream: var(--color-page);
+  --cream-deep: var(--color-page-deep);
+  --surface: var(--surface-overlay);
+  --surface-soft: color-mix(in srgb, var(--surface-overlay) 82%, var(--color-page));
   --forest: var(--color-accent);
   --forest-light: var(--color-accent-strong);
   --sage: #7fa68f;
@@ -59,10 +59,10 @@
 }
 
 :root[data-theme="light"] {
-  --cream: #fbf8f1;
-  --cream-deep: #f4eee1;
+  --cream: var(--color-page);
+  --cream-deep: var(--color-page-deep);
   --surface: #ffffff;
-  --surface-soft: #fffdf8;
+  --surface-soft: var(--surface-overlay);
   --sage-soft: #e5f0e9;
   --coral-dark: #bd4e3d;
   --coral-soft: #fce9e4;
@@ -89,8 +89,8 @@ body {
   font-family: var(--font);
   line-height: 1.55;
   background:
-    radial-gradient(circle at 5% 3%, color-mix(in srgb, var(--coral) 10%, transparent), transparent 24rem),
-    radial-gradient(circle at 96% 14%, color-mix(in srgb, var(--sage) 17%, transparent), transparent 27rem),
+    radial-gradient(circle at 5% 3%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 24rem),
+    radial-gradient(circle at 96% 14%, color-mix(in srgb, var(--color-accent-sky) 14%, transparent), transparent 27rem),
     var(--cream);
   -webkit-font-smoothing: antialiased;
 }

@@ -100,15 +100,21 @@ textarea { resize: vertical; }
   z-index: 30;
 }
 
-.app-header-brand {
-  display: flex;
+/* The wordmark moved to shared/header.js; this is the customer app's own
+   "back to Home" affordance in its place. */
+.app-header-home {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: none;
-  border: none;
-  padding: 0;
-  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: var(--glass-fill);
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
 }
+.app-header-home:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
 
 .app-header-brand-mark {
   display: grid;

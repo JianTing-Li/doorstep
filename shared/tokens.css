@@ -15,12 +15,12 @@
 @property --color-page {
   syntax: "<color>";
   inherits: true;
-  initial-value: #0c1626;
+  initial-value: #0b1b30;
 }
 @property --color-page-deep {
   syntax: "<color>";
   inherits: true;
-  initial-value: #091220;
+  initial-value: #071322;
 }
 
 :root {
@@ -31,17 +31,18 @@
 
 :root {
   /* ---- Color: surfaces & ground (dark, default) ---- */
-  /* Ground: deep, desaturated navy. Muted on purpose — the surfaces above it
-     are what carry lightness and saturation. */
-  --color-page: #0c1626;
-  --color-page-deep: #091220;
+  /* Ground: deep navy, the night-time reading of the same sky-blue family the
+     light theme uses. Muted on purpose — the surfaces above it are what carry
+     lightness and saturation. */
+  --color-page: #0b1b30;
+  --color-page-deep: #071322;
 
   /* Surfaces: a lighter, more saturated blue at 75% over the blur, so cards
      visibly lift off the ground. This lightness gap is the whole theme. */
-  --glass-fill: rgba(46, 78, 124, 0.75);
-  --glass-fill-strong: rgba(52, 86, 134, 0.80);
+  --glass-fill: rgba(32, 54, 90, 0.75);
+  --glass-fill-strong: rgba(38, 63, 104, 0.80);
   /* Emphasis fill for a selected/active state on the same glass family. */
-  --glass-fill-user: rgba(79, 121, 184, 0.85);
+  --glass-fill-user: rgba(58, 96, 156, 0.85);
   --glass-blur: blur(20px) saturate(120%);
 
   /* Hairlines are pale blue-white so edges survive against the dark ground.
@@ -51,19 +52,25 @@
   --shadow-lift: 0 18px 48px rgba(2, 8, 18, 0.55);
 
   /* ---- Color: text roles ---- */
-  /* Never pure white: a warm off-white primary, dimmer blue-grey secondary. */
-  --color-ink: #eef2f7;
-  --color-ink-soft: #b3c4dc;
+  /* Never pure white: a cool off-white primary, dimmer blue-grey secondary.
+     Both verified AA on the ground and on glass. */
+  --color-ink: #eaf2fb;
+  --color-ink-soft: #a9c2de;
 
   /* ---- Color: the one accent ---- */
-  /* Soft teal. Actions only — primary buttons, active chip, selected slot,
-     focus rings. Never a background, card fill, or body text. Text on a teal
-     fill takes the darkest shade of the same family rather than black or
-     white. */
-  --color-accent: #87c7bc;
-  --color-accent-strong: #9dd6cc;
-  --color-accent-text: #87c7bc;
-  --color-on-accent: #123028;
+  /* Sky blue — the dark-mode reading of the light theme's #1d4ed8. Same hue
+     family, lifted for contrast against a dark ground rather than swapped for
+     a different colour. Actions only: primary buttons, active chip, selected
+     slot, focus rings. Never a background, card fill, or body text. Text on a
+     blue fill takes the darkest shade of the same family, not black or white.
+     Verified: accent-text 6.21:1 on glass, on-accent 6.81:1 on the fill. */
+  --color-accent: #60a5fa;
+  --color-accent-strong: #93c5fd;
+  --color-accent-text: #7cc0fb;
+  --color-on-accent: #0b1b30;
+
+  /* Supporting sky tone (see the light theme note), lifted for a dark ground. */
+  --color-accent-sky: #38bdf8;
 
   /* ---- Color: semantic ---- */
   /* Same treatment as the accent — a fill/strong/on-fill triad per role, kept
@@ -79,6 +86,15 @@
   --color-on-danger: #3d0f0a;
 
   /* ---- Type ---- */
+  /* --font-wordmark is the "Doorstep" lockup specifically, used by
+     shared/header.js in all four products and by the landing page, so the
+     name is set in one face everywhere. Bricolage Grotesque is a deliberate
+     choice for this subject: a contemporary grotesque with intentionally
+     irregular widths that reads as made-by-hand rather than corporate —
+     which is what a marketplace of independent local tradespeople is.
+     --font-display stays a serif for Product D's editorial headlines, which
+     are Ibtisam's own treatment and unrelated to the wordmark. */
+  --font-wordmark: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
   --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
 
@@ -126,13 +142,13 @@
   --elevation-blur: var(--glass-blur);
   --elevation-shadow-soft: var(--shadow-soft);
   --elevation-shadow-lift: var(--shadow-lift);
-  --elevation-fallback-fill: #2c4a75;
+  --elevation-fallback-fill: #223a61;
   /* Floating overlays (popovers, menus) sit above arbitrary product content,
      so they take an OPAQUE surface rather than the translucent glass used for
      inline cards — a menu rendered over a high-contrast dashboard is unreadable
      otherwise. These values match what the glass resolves to over each theme's
      own ground, so an overlay looks identical, just legible. */
-  --surface-overlay: #2c4a75;
+  --surface-overlay: #223a61;
 
   /* ---- Motion ---- */
   /* One motion vocabulary: short, eased, fade plus a small shift. */
@@ -149,30 +165,37 @@
   --focus-ring-offset: 2px;
 }
 
-/* ---- Light theme: bright sky, near-white glass ---- */
+/* ---- Light theme: pale sky, near-white glass ----
+   The palette of record for the whole app. Values are the landing page's own
+   blues, promoted here so every product draws from one definition rather
+   than approximating them locally. */
 :root[data-theme="light"] {
-  --color-page: #cfe6fb;
-  --color-page-deep: #a9d0f2;
+  --color-page: #eff6ff;
+  --color-page-deep: #dbeafe;
 
   --glass-fill: rgba(255, 255, 255, 0.74);
-  --glass-fill-strong: rgba(255, 255, 255, 0.82);
-  --glass-fill-user: rgba(255, 255, 255, 0.92);
+  --glass-fill-strong: rgba(255, 255, 255, 0.86);
+  --glass-fill-user: rgba(255, 255, 255, 0.94);
 
-  --hairline: rgba(26, 58, 92, 0.18);
-  --shadow-soft: 0 8px 24px rgba(31, 68, 112, 0.10);
-  --shadow-lift: 0 14px 38px rgba(31, 68, 112, 0.14);
+  --hairline: rgba(29, 78, 216, 0.16);
+  --shadow-soft: 0 8px 24px rgba(15, 39, 68, 0.08);
+  --shadow-lift: 0 14px 38px rgba(15, 39, 68, 0.12);
 
-  --color-ink: #16304d;
-  /* Darkened until secondary text clears AA on the sky ground as well as on
-     glass — the pastel first pass failed at 2.77:1 there. */
-  --color-ink-soft: #35506b;
+  --color-ink: #0f2744;
+  --color-ink-soft: #4a6180;
 
-  --color-accent: #6fb3a8;
-  --color-accent-strong: #7cbcb1;
-  /* The fill teal is only 2.32:1 as text on near-white glass, so accent text
-     drops to a deeper shade of the same family. */
-  --color-accent-text: #3b7568;
-  --color-on-accent: #1c3d37;
+  /* The landing page's primary button gradient starts here; #1d4ed8 is the
+     accent of record. It clears AA as text on both the page (6.16:1) and
+     white glass (6.70:1), so unlike the old teal it needs no separate,
+     darker text shade — accent and accent-text are the same value. */
+  --color-accent: #1d4ed8;
+  --color-accent-strong: #1e3a8a;
+  --color-accent-text: #1d4ed8;
+  --color-on-accent: #ffffff;
+
+  /* Supporting sky tone, the second stop of the landing page's gradients.
+     Used for gradient ends and secondary emphasis, never as a second accent. */
+  --color-accent-sky: #0284c7;
 
   /* Semantic roles follow the same "darken for text-on-light" pattern as the
      accent above — the dark-theme fills are too pale to clear AA as text on

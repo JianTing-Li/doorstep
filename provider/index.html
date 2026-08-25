@@ -17,6 +17,17 @@
          build untouched. -->
     <script>
       (function () {
+        var pre1 = document.createElement("link");
+        pre1.rel = "preconnect"; pre1.href = "https://fonts.googleapis.com";
+        document.head.appendChild(pre1);
+        var pre2 = document.createElement("link");
+        pre2.rel = "preconnect"; pre2.href = "https://fonts.gstatic.com"; pre2.crossOrigin = "";
+        document.head.appendChild(pre2);
+        var fonts = document.createElement("link");
+        fonts.rel = "stylesheet";
+        fonts.href = "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600;700&display=swap";
+        document.head.appendChild(fonts);
+
         var tokens = document.createElement("link");
         tokens.rel = "stylesheet";
         tokens.href = "/shared/tokens.css";
@@ -27,15 +38,21 @@
         switcherCss.href = "/shared/switcher.css";
         document.head.appendChild(switcherCss);
 
-        var switcherJs = document.createElement("script");
-        switcherJs.type = "module";
-        switcherJs.src = "/shared/switcher.js";
-        document.head.appendChild(switcherJs);
+        var headerCss = document.createElement("link");
+        headerCss.rel = "stylesheet";
+        headerCss.href = "/shared/header.css";
+        document.head.appendChild(headerCss);
+
+        // header.js mounts the switcher pill itself, so only this is loaded.
+        var headerJs = document.createElement("script");
+        headerJs.type = "module";
+        headerJs.src = "/shared/header.js";
+        document.head.appendChild(headerJs);
       })();
     </script>
   </head>
   <body>
-    <div id="doorstep-switcher"></div>
+    <div id="doorstep-header" data-label="Provider workspace"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -9,16 +9,14 @@ export default function Header({ onLogoClick, onBookingsClick }) {
   const { customer, bookings, openPersonaModal } = useApp();
   const hasUpcoming = bookings.some((b) => b.status === "upcoming");
 
+  // The Doorstep wordmark is NOT rendered here — shared/header.js owns it for
+  // every product. This bar carries only what is specific to the customer
+  // app: which persona is active, and a shortcut to Bookings.
   return (
     <header className="app-header">
-      <button type="button" className="app-header-brand" onClick={onLogoClick}>
-        <span className="app-header-brand-mark">
-          <Icon name="door" size={18} />
-        </span>
-        <span className="app-header-brand-text">
-          <span className="app-header-title">Doorstep</span>
-          <span className="app-header-subtitle">Portland, OR</span>
-        </span>
+      <button type="button" className="app-header-home" onClick={onLogoClick}>
+        <Icon name="home" size={15} />
+        <span>Home</span>
       </button>
 
       <div className="app-header-actions">

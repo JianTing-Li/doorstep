@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -31,15 +31,21 @@
         switcherCss.href = "/shared/switcher.css";
         document.head.appendChild(switcherCss);
 
-        var switcherJs = document.createElement("script");
-        switcherJs.type = "module";
-        switcherJs.src = "/shared/switcher.js";
-        document.head.appendChild(switcherJs);
+        var headerCss = document.createElement("link");
+        headerCss.rel = "stylesheet";
+        headerCss.href = "/shared/header.css";
+        document.head.appendChild(headerCss);
+
+        // header.js mounts the switcher pill itself, so only this is loaded.
+        var headerJs = document.createElement("script");
+        headerJs.type = "module";
+        headerJs.src = "/shared/header.js";
+        document.head.appendChild(headerJs);
       })();
     </script>
   </head>
   <body>
-    <div id="doorstep-switcher"></div>
+    <div id="doorstep-header" data-label="Portland, OR" data-href="/customer/"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

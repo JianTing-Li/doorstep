@@ -66,7 +66,7 @@ function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
 }
 
-export function mountSwitcher(mountEl) {
+export function mountSwitcher(mountEl, { bare = false } = {}) {
   if (!mountEl) return;
 
   let persona = readPersona();
@@ -83,7 +83,7 @@ export function mountSwitcher(mountEl) {
   function render() {
     const current = PERSONAS[persona];
     mountEl.innerHTML =
-      '<div class="ds-switcher-bar">' +
+      (bare ? "" : '<div class="ds-switcher-bar">') +
       '<div class="ds-switcher ' + (open ? "is-open" : "") + '">' +
       '<button type="button" class="ds-switcher-pill" aria-haspopup="true" aria-expanded="' + open + '">' +
       "<span>Viewing as: <strong>" + current.label + "</strong></span>" +
@@ -113,7 +113,7 @@ export function mountSwitcher(mountEl) {
           "</div>"
         : "") +
       "</div>" +
-      "</div>";
+      (bare ? "" : "</div>");
     wire();
   }
 
@@ -227,5 +227,7 @@ export function mountSwitcher(mountEl) {
   render();
 }
 
+// Auto-mount only when the page has no unified header (shared/header.js
+// mounts the pill itself, inside the header, and sets this flag).
 const autoMount = document.getElementById("doorstep-switcher");
-if (autoMount) mountSwitcher(autoMount);
+if (autoMount && !document.getElementById("doorstep-header")) mountSwitcher(autoMount);
