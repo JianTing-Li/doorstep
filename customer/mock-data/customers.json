@@ -1,0 +1,162 @@
+[
+  {
+    "customer_id": "cst_001",
+    "name": "Hannah Breece",
+    "neighborhood": "Alberta Arts",
+    "latitude": 45.55794,
+    "longitude": -122.64491,
+    "signup_date": "2024-03-11"
+  },
+  {
+    "customer_id": "cst_002",
+    "name": "Terrence Wolfe",
+    "neighborhood": "Sellwood",
+    "latitude": 45.4636,
+    "longitude": -122.65431,
+    "signup_date": "2024-06-02"
+  },
+  {
+    "customer_id": "cst_003",
+    "name": "Junie Park",
+    "neighborhood": "Kenton",
+    "latitude": 45.58651,
+    "longitude": -122.69329,
+    "signup_date": "2024-09-19"
+  },
+  {
+    "customer_id": "cst_004",
+    "name": "Malik Ferreira",
+    "neighborhood": "Hawthorne",
+    "latitude": 45.50981,
+    "longitude": -122.62889,
+    "signup_date": "2025-01-08"
+  },
+  {
+    "customer_id": "cst_005",
+    "name": "Delia Nakamura",
+    "neighborhood": "Woodstock",
+    "latitude": 45.48178,
+    "longitude": -122.60837,
+    "signup_date": "2025-02-24"
+  },
+  {
+    "customer_id": "cst_006",
+    "name": "Owen Straub",
+    "neighborhood": "Buckman",
+    "latitude": 45.5184,
+    "longitude": -122.6495,
+    "signup_date": "2025-04-15"
+  },
+  {
+    "customer_id": "cst_007",
+    "name": "Rosalind Achterberg",
+    "neighborhood": "Montavilla",
+    "latitude": 45.51973,
+    "longitude": -122.58084,
+    "signup_date": "2025-05-30"
+  },
+  {
+    "customer_id": "cst_008",
+    "name": "Felix Amadi",
+    "neighborhood": "Lents",
+    "latitude": 45.48849,
+    "longitude": -122.56927,
+    "signup_date": "2025-07-13"
+  },
+  {
+    "customer_id": "cst_009",
+    "name": "Camille Duarte",
+    "neighborhood": "Laurelhurst",
+    "latitude": 45.528,
+    "longitude": -122.62224,
+    "signup_date": "2025-09-06"
+  },
+  {
+    "customer_id": "cst_010",
+    "name": "Bo Whitaker",
+    "neighborhood": "Multnomah Village",
+    "latitude": 45.4653,
+    "longitude": -122.7157,
+    "signup_date": "2025-11-17"
+  },
+  {
+    "customer_id": "cst_011",
+    "name": "Ingrid Solheim",
+    "neighborhood": "Irvington",
+    "latitude": 45.549,
+    "longitude": -122.64806,
+    "signup_date": "2026-01-26"
+  },
+  {
+    "customer_id": "cst_012",
+    "name": "Desta Fikru",
+    "neighborhood": "St. Johns",
+    "latitude": 45.58696,
+    "longitude": -122.7529,
+    "signup_date": "2026-04-04"
+  },
+  {
+    "customer_id": "cst_013",
+    "name": "Marguerite Ely",
+    "neighborhood": "Kenton",
+    "latitude": 45.58269,
+    "longitude": -122.69359,
+    "signup_date": "2024-05-21"
+  },
+  {
+    "customer_id": "cst_014",
+    "name": "Tobias Renn",
+    "neighborhood": "Montavilla",
+    "latitude": 45.51517,
+    "longitude": -122.58251,
+    "signup_date": "2024-08-14"
+  },
+  {
+    "customer_id": "cst_015",
+    "name": "Perpetua Nwosu",
+    "neighborhood": "Pearl District",
+    "latitude": 45.52634,
+    "longitude": -122.68425,
+    "signup_date": "2024-11-03"
+  },
+  {
+    "customer_id": "cst_016",
+    "name": "Halvard Sunde",
+    "neighborhood": "Northwest District",
+    "latitude": 45.53267,
+    "longitude": -122.69519,
+    "signup_date": "2025-02-11"
+  },
+  {
+    "customer_id": "cst_017",
+    "name": "Cleo Barrington",
+    "neighborhood": "Division-Clinton",
+    "latitude": 45.50179,
+    "longitude": -122.63514,
+    "signup_date": "2025-06-19"
+  },
+  {
+    "customer_id": "cst_018",
+    "name": "Anselm Kirby",
+    "neighborhood": "Alberta Arts",
+    "latitude": 45.55508,
+    "longitude": -122.6461,
+    "signup_date": "2025-08-25"
+  },
+  {
+    "customer_id": "cst_019",
+    "name": "Winifred Osei",
+    "neighborhood": "Sellwood",
+    "latitude": 45.4606,
+    "longitude": -122.6608,
+    "signup_date": "2025-12-09"
+  },
+  {
+    "customer_id": "cst_020",
+    "name": "Ravi Chandrasekar",
+    "neighborhood": "Woodstock",
+    "latitude": 45.47619,
+    "longitude": -122.61346,
+    "signup_date": "2026-02-17"
+  }
+]
