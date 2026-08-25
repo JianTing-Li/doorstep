@@ -63,22 +63,31 @@ been superseded by `mock-data/`.
 
 ## Local Development
 
-There are no workspaces and no monorepo tooling. Each product is a standalone app with its own stack
-and dependencies, and runs independently from inside its own folder — see that product's own
-README/setup instructions once its owner has added them.
+There are no workspaces and no monorepo tooling. Each product remains a standalone app with its own stack
+and dependencies. Run a product from its folder using that product's README. To exercise the integrated
+site, build and serve the unified output from the repository root:
 
-The root `package.json` is **not** a workspace root and does not build or own any product. It exists
-only because the repo deploys as a single Vercel project whose root directory is the repo root, and
-Vercel resolves dependencies for the serverless functions in `/api` from the root manifest. Add a
-dependency there only if a function under `/api` imports it; product dependencies belong in that
+```bash
+bash build.sh
+python3 -m http.server 4173 -d dist
+```
+
+Then open `http://localhost:4173/` and use the landing page or shared product switcher to move between apps.
+The root `package.json` is **not** a workspace root and does not own the product dependencies. It exists so
+Vercel can install dependencies for serverless functions in `/api`; product dependencies remain in each
 product's own `package.json`.
 
 ## Deployment
 
-The repo deploys as one Vercel project, configured by `vercel.json` at the root:
+The repo deploys as one Vercel project, configured by `vercel.json` and assembled by `build.sh`:
 
-- `/` — the static landing page in `index.html`
-- `/chat/` — the Matching Chatbot, built from `chat/` (its Vite `base` is `/chat/`)
+- `/` — unified product landing page
+- `/customer/` — Customer App (React/Vite)
+- `/chat/` — Matching Chatbot (React/Vite)
+- `/provider/` — Provider App (React/Vite)
+- `/admin/` — Trust & Safety Dashboard (static ES modules)
+- `/shared/` — common design tokens, role/theme switcher, and demo-state overlay
+- `/mock-data/` — canonical connected synthetic dataset used by every product
 - `/api/*` — serverless functions; each file re-exports the handler from its product folder
 
 `/api/chat` needs a `GEMINI_API_KEY` environment variable set in the Vercel project. It is read
