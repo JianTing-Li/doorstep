@@ -1,0 +1,814 @@
+import { useEffect, useRef, useState } from "react";
+import ChatThread from "./components/ChatThread.jsx";
+import ChatInput from "./components/ChatInput.jsx";
+import ExampleChips from "./components/ExampleChips.jsx";
+import FilterChips from "./components/FilterChips.jsx";
+import HeaderActions from "./components/HeaderActions.jsx";
+import { getFilters } from "./lib/getFilters.js";
+import { parseJob } from "./lib/parseJob.js";
+import { listingDistanceFromNeighborhood, listingRelevance, matchListings } from "./lib/matchListings.js";
+import {
+  applyBooking,
+  cancelBookingByKey,
+  formatSlot,
+  remainingCodes,
+  rescheduleBooking,
+} from "./lib/booking.js";
+import { revealExpandedCard, withGridTransition } from "./lib/viewTransition.js";
+import { activeListings } from "./data/listings.js";
+import { getMeta, getNeighborhoods, getProviders, getReviews, getServiceTypes } from "./data/loadData.js";
+import { applyTheme, systemTheme } from "./lib/theme.js";
+import {
+  compareListings,
+  describeFilterChange,
+  detailsAnswer,
+  findBookingMatch,
+  mergeFilters,
+  requestsAllBookings,
+  summariseBookings,
+} from "./lib/intents.js";
+
+const RESULTS_DISPLAY_CAP = 5;
+const THINKING_DELAY_MS = 450;
+const MAX_INPUT_LENGTH = 500;
+const MAX_UNCLEAR_TURNS = 2;
+
+const EMPTY_FILTERS = { service_types: [], max_price: null, neighborhood: null, urgency: null };
+
+const OFF_TOPIC_REPLIES = [
+  "I can only help you find home services. Try describing a job you need done.",
+  "That one's outside what I do. What needs fixing, cleaning, or moving?",
+];
+
+const EMPTY_NUDGE = "Tell me what needs doing and I'll find someone. A job, a room, or a mess all work.";
+
+function labelsFor(codes) {
+  const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
+  return codes.map((code) => labelByCode[code] ?? code);
+}
+
+function joinLabels(codes) {
+  const labels = labelsFor(codes);
+  if (labels.length <= 1) return labels[0] ?? "";
+  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
+}
+
+function enrichResults(rankedListings, filters, query = "") {
+  const providersById = new Map(getProviders().map((provider) => [provider.provider_id, provider]));
+  const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
+  const reviewByListing = new Map(getReviews().map((review) => [review.listing_id, review]));
+
+  return rankedListings.slice(0, RESULTS_DISPLAY_CAP).map((listing) => {
+    const matchedLabels = (filters.service_types ?? [])
+      .filter((code) => listing.service_type.includes(code))
+      .map((code) => labelByCode[code]);
+
+    const { matchedTerms } = listingRelevance(query, listing);
+    const distance = listingDistanceFromNeighborhood(listing, filters.neighborhood, getNeighborhoods());
+    const relevanceReason = matchedTerms.length > 0
+      ? `Matches details about ${matchedTerms.slice(0, 3).join(", ")}`
+      : matchedLabels.length > 0
+        ? `Covers ${matchedLabels.join(" and ")}`
+        : "Available in the Doorstep catalogue";
+    const locationReason = filters.neighborhood && distance != null
+      ? ` · serves ${filters.neighborhood} (${distance.toFixed(1)} mi from base)`
+      : "";
+
+    return {
+      ...listing,
+      provider: providersById.get(listing.provider_id) ?? null,
+      matchedLabels,
+      reason: `${relevanceReason}${locationReason}`,
+      relevantReview: reviewByListing.get(listing.listing_id) ?? null,
+    };
+  });
+}
+
+function botReplyFor(totalCount, shownCount, source) {
+  // The keyword path reads intent less reliably, so the copy says less and
+  // points at the chips the customer can correct.
+  if (source === "fallback") {
+    const lead =
+      totalCount > shownCount
+        ? `Here are ${shownCount} that look close.`
+        : `Here ${totalCount === 1 ? "is one that looks" : `are ${totalCount} that look`} close.`;
+    return `${lead} Adjust the filters below if I read that wrong.`;
+  }
+
+  if (totalCount > shownCount) return `Found ${totalCount} matches — here are the closest ${shownCount}.`;
+  return `Found ${totalCount} match${totalCount === 1 ? "" : "es"} for that.`;
+}
+
+// Typed text wins over an active chip; this explains the change in one line.
+function conflictNote(previous, next) {
+  const changes = [];
+  if (previous.max_price != null && next.max_price != null && previous.max_price !== next.max_price) {
+    changes.push(`budget to $${next.max_price}`);
+  }
+  if (previous.neighborhood && next.neighborhood && previous.neighborhood !== next.neighborhood) {
+    changes.push(`neighborhood to ${next.neighborhood}`);
+  }
+  if (changes.length === 0) return null;
+  return `Updated your ${changes.join(" and ")}.`;
+}
+
+// Not a module-level counter: Vite's Fast Refresh re-runs this module on every
+// edit, which would reset the counter to 1 while the thread still holds ids
+// 1, 2, 3 — React then sees duplicate keys and renders duplicated bubbles.
+function makeId() {
+  return globalThis.crypto?.randomUUID?.() ?? `m_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+const EMPTY_CONVERSATION = {
+  requestedCodes: [],
+  coveredCodes: [],
+  bundleOffered: false,
+  jobText: "",
+  unclearTurns: 0,
+  offTopicIndex: 0,
+  visibleListings: [],
+  lastListing: null,
+  request: null,
+  clarifyCodes: [],
+  pendingCancellationKeys: [],
+};
+
+export default function App() {
+  const [messages, setMessages] = useState([]);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Defaults to the system preference; an explicit choice lasts the session
+  // only, matching the rest of the app — nothing here survives a reload.
+  const [theme, setTheme] = useState(systemTheme);
+  useEffect(() => applyTheme(theme), [theme]);
+
+  // Booking lives on the card, not in the thread. openKey is the one expanded
+  // card, bookingKey the one showing its slots, and bookings records the
+  // cards that are done — a key in bookings can never leave that state.
+  const [openKey, setOpenKey] = useState(null);
+  const [bookingKey, setBookingKey] = useState(null);
+  // A booked card reopening its slot picker to change the time, distinct from
+  // bookingKey (an unbooked card choosing its first slot) — the card must
+  // stay in booked state throughout, never revert to collapsed.
+  const [reschedulingKey, setReschedulingKey] = useState(null);
+  const [bookings, setBookings] = useState({});
+  const [completedRequestIds, setCompletedRequestIds] = useState(() => new Set());
+  const bookingsRef = useRef({});
+
+  // Chip removal and booking taps run after the state that produced them was
+  // captured, so these reads come from refs rather than stale closures.
+  const filtersRef = useRef(EMPTY_FILTERS);
+  const conversationRef = useRef(EMPTY_CONVERSATION);
+
+  function appendMessage(message) {
+    const withId = { id: makeId(), ...message };
+    setMessages((current) => [...current, withId]);
+  }
+
+  function applyFilters(next) {
+    filtersRef.current = next;
+    setFilters(next);
+  }
+
+  function updateConversation(patch) {
+    conversationRef.current = { ...conversationRef.current, ...patch };
+  }
+
+  function matchingOptions(query = conversationRef.current.request?.description ?? conversationRef.current.jobText) {
+    return {
+      query,
+      referenceDate: getMeta().reference_date,
+      neighborhoods: getNeighborhoods(),
+    };
+  }
+
+  function buildRequest(description, nextFilters) {
+    const current = conversationRef.current.request;
+    return {
+      id: current?.description === description ? current.id : makeId(),
+      description,
+      serviceTypes: [...(nextFilters.service_types ?? [])],
+      serviceLabels: labelsFor(nextFilters.service_types ?? []),
+      neighborhood: nextFilters.neighborhood,
+      urgency: nextFilters.urgency,
+      maxPrice: nextFilters.max_price,
+    };
+  }
+
+  function appendResults(results, extra = {}) {
+    appendMessage({
+      type: "results",
+      results,
+      requestId: conversationRef.current.request?.id ?? null,
+      request: conversationRef.current.request,
+      ...extra,
+    });
+  }
+
+  function reopenRequest(requestId) {
+    if (!requestId) return;
+    setCompletedRequestIds((current) => {
+      const next = new Set(current);
+      next.delete(requestId);
+      return next;
+    });
+  }
+
+  function rankFor(codes) {
+    const scoped = { ...EMPTY_FILTERS, service_types: codes };
+    const query = conversationRef.current.request?.description ?? conversationRef.current.jobText;
+    return enrichResults(matchListings(scoped, activeListings(), matchingOptions(query)), scoped, query);
+  }
+
+  // ---- results ----
+
+  function showResults(nextFilters, source, originalText) {
+    const previous = filtersRef.current;
+    applyFilters(nextFilters);
+    setIsTyping(false);
+
+    const note = conflictNote(previous, nextFilters);
+    if (note) appendMessage({ type: "bot_text", text: note });
+
+    const requested = nextFilters.service_types ?? [];
+    const hasConstraint = nextFilters.max_price != null || nextFilters.neighborhood != null || nextFilters.urgency != null;
+
+    // Nothing to go on at all — nudge rather than error.
+    if (requested.length === 0 && !hasConstraint) {
+      appendMessage({ type: "bot_text", text: EMPTY_NUDGE, showExamples: true });
+      return;
+    }
+
+    const requestText = originalText || conversationRef.current.request?.description || conversationRef.current.jobText;
+    let ranked = matchListings(nextFilters, activeListings(), matchingOptions(requestText));
+
+    // A confident-looking model answer that matches nothing is worth one retry
+    // through the keyword reader before giving up.
+    if (ranked.length === 0 && source === "llm" && originalText) {
+      const retry = { ...parseJob(originalText) };
+      const retryRanked = matchListings(retry, activeListings(), matchingOptions(requestText));
+      if (retryRanked.length > 0) {
+        applyFilters(retry);
+        ranked = retryRanked;
+        nextFilters = retry;
+      }
+    }
+
+    const request = buildRequest(requestText, nextFilters);
+    updateConversation({ request });
+    appendMessage({ type: "request_summary", request });
+
+    // Relax one explicit constraint at a time and keep the requested service
+    // intact. An unrelated highly rated listing is not a useful alternative.
+    if (ranked.length === 0) {
+      if (nextFilters.urgency) {
+        const relaxed = { ...nextFilters, urgency: null };
+        const alternatives = matchListings(relaxed, activeListings(), matchingOptions(requestText));
+        if (alternatives.length > 0) {
+          appendMessage({
+            type: "bot_text",
+            text: `No matching provider has an opening for that timing. Here are the same services with later availability.`,
+          });
+          appendResults(enrichResults(alternatives, relaxed, requestText));
+          return;
+        }
+      }
+      if (nextFilters.max_price != null) {
+        const relaxed = { ...nextFilters, max_price: null };
+        const alternatives = matchListings(relaxed, activeListings(), matchingOptions(requestText));
+        if (alternatives.length > 0) {
+          appendMessage({
+            type: "bot_text",
+            text: `Nothing matching that service is available under $${nextFilters.max_price}. These relevant options are over budget.`,
+          });
+          appendResults(enrichResults(alternatives, relaxed, requestText));
+          return;
+        }
+      }
+      appendMessage({
+        type: "bot_text",
+        text: nextFilters.neighborhood
+          ? `No matching provider currently serves ${nextFilters.neighborhood}. Try another job area or remove that filter.`
+          : "Doorstep doesn't currently have a provider for that request. Try adding a little more detail or changing a filter.",
+      });
+      return;
+    }
+
+    updateConversation({ requestedCodes: requested, coveredCodes: [], bundleOffered: false });
+
+    // Bundle branch: one provider can cover the whole job.
+    const bundle = requested.length > 1
+      ? ranked.find((listing) => requested.every((code) => listing.service_type.includes(code))) ?? null
+      : null;
+    if (bundle && !conversationRef.current.bundleOffered) {
+      const providersById = new Map(getProviders().map((p) => [p.provider_id, p]));
+      const name = providersById.get(bundle.provider_id)?.name ?? "One provider";
+      updateConversation({ bundleOffered: true });
+      appendMessage({
+        type: "bot_text",
+        text: `${name} can cover ${joinLabels(requested)} in one visit.`,
+      });
+    }
+
+    const results = enrichResults(ranked, nextFilters, requestText);
+    updateConversation({ visibleListings: results });
+    appendMessage({ type: "bot_text", text: botReplyFor(ranked.length, results.length, source) });
+    appendResults(results);
+  }
+
+  // ---- input ----
+
+  async function handleUserText(rawText) {
+    const text = String(rawText ?? "").trim().slice(0, MAX_INPUT_LENGTH);
+    if (!text) return;
+
+    appendMessage({ type: "user_text", text });
+    updateConversation({ jobText: text });
+
+    if (resolvePendingCancellation(text)) return;
+
+    setIsTyping(true);
+
+    const result = await getFilters(text);
+
+    if (result.intent === "off_topic") {
+      const { offTopicIndex } = conversationRef.current;
+      updateConversation({ offTopicIndex: offTopicIndex + 1 });
+      setIsTyping(false);
+      appendMessage({
+        type: "bot_text",
+        text: OFF_TOPIC_REPLIES[offTopicIndex % OFF_TOPIC_REPLIES.length],
+        showExamples: true,
+      });
+      return;
+    }
+
+    if (result.intent === "greeting") {
+      setIsTyping(false);
+      appendMessage({ type: "bot_text", text: "Hey! What job can I help you get done?", showExamples: true });
+      return;
+    }
+
+    if (result.intent === "help") {
+      setIsTyping(false);
+      appendMessage({
+        type: "bot_text",
+        text: "Describe a job in plain language and I'll turn it into a service request, match relevant providers, and help you choose a preferred time.",
+        showExamples: true,
+      });
+      return;
+    }
+
+    if (result.intent === "unsupported_service") {
+      setIsTyping(false);
+      appendMessage({
+        type: "bot_text",
+        text: "That is a home-service request, but Doorstep doesn't currently have providers for it. I can help with cleaning, handyman work, plumbing, electrical, moving, junk removal, or yard work.",
+        showExamples: true,
+      });
+      return;
+    }
+
+    if (result.intent === "list_bookings") {
+      setIsTyping(false);
+      showBookings();
+      return;
+    }
+
+    if (result.intent === "cancel_booking") {
+      setIsTyping(false);
+      cancelBooking(text);
+      return;
+    }
+
+    if (result.intent === "change_filters") {
+      const merged = mergeFilters(filtersRef.current, result);
+      setIsTyping(false);
+      appendMessage({ type: "bot_text", text: describeFilterChange(filtersRef.current, merged) });
+      showResults(merged, result.source, conversationRef.current.request?.description ?? text);
+      return;
+    }
+
+    if (result.intent === "more_details") {
+      setIsTyping(false);
+      const listing = currentListing();
+      if (!listing) {
+        appendMessage({ type: "bot_text", text: "Which listing do you mean? Open one and ask again." });
+        return;
+      }
+      appendMessage({ type: "bot_text", text: detailsAnswer(listing, text) });
+      return;
+    }
+
+    if (result.intent === "compare") {
+      setIsTyping(false);
+      const visible = conversationRef.current.visibleListings;
+      if (visible.length < 2) {
+        appendMessage({ type: "bot_text", text: "I need at least two options on screen to compare. Try a search first." });
+        return;
+      }
+      appendMessage({ type: "bot_text", text: compareListings(visible, text) });
+      return;
+    }
+
+    if (result.intent === "unclear") {
+      const turns = conversationRef.current.unclearTurns + 1;
+      updateConversation({ unclearTurns: turns });
+      setIsTyping(false);
+
+      if (turns > MAX_UNCLEAR_TURNS) {
+        updateConversation({ unclearTurns: 0 });
+        appendMessage({ type: "bot_text", text: EMPTY_NUDGE, showExamples: true });
+        return;
+      }
+
+      const maybe = result.service_types.length > 0 ? ` Is it ${joinLabels(result.service_types)}?` : "";
+      updateConversation({ clarifyCodes: result.service_types, request: null });
+      appendMessage({
+        type: "bot_text",
+        text: `I want to get this right.${maybe || " What needs doing?"}`,
+        actions: [{ action: "skip_clarify", label: "Show both options" }],
+      });
+      return;
+    }
+
+    updateConversation({ unclearTurns: 0 });
+    updateConversation({ request: null });
+    showResults(result, result.source, text);
+  }
+
+  function handleExampleChip(example) {
+    appendMessage({ type: "user_text", text: example.text });
+    updateConversation({ jobText: example.text, request: null });
+    setIsTyping(true);
+    // Chips carry their own filters, so they skip both the model and parseJob.
+    setTimeout(() => showResults(example.filters, "chip", example.text), THINKING_DELAY_MS);
+  }
+
+  function handleRemoveFilter(key, value) {
+    const current = filtersRef.current;
+    const nextFilters =
+      key === "service_types"
+        ? { ...current, service_types: current.service_types.filter((code) => code !== value) }
+        : { ...current, [key]: null };
+
+    applyFilters(nextFilters);
+    const query = conversationRef.current.request?.description ?? conversationRef.current.jobText;
+    const ranked = matchListings(nextFilters, activeListings(), matchingOptions(query));
+    const request = buildRequest(query, nextFilters);
+    updateConversation({ request });
+    appendMessage({ type: "request_summary", request });
+    appendResults(enrichResults(ranked, nextFilters, query));
+  }
+
+  // ---- booking ----
+
+  function handleToggleCard(key) {
+    // A booked card is a record, not a control.
+    if (bookingsRef.current[key]) return;
+    const opening = openKey !== key;
+    if (opening) {
+      const match = conversationRef.current.visibleListings.find((l) => key.endsWith(l.listing_id));
+      if (match) updateConversation({ lastListing: match });
+    }
+    // Expanding makes the card span the whole grid row, so the siblings reflow.
+    withGridTransition(() => {
+      setBookingKey(null);
+      setOpenKey((current) => (current === key ? null : key));
+    });
+    // A card near the bottom grows underneath the floating composer. Nudge the
+    // thread just far enough that the newly revealed content clears it.
+    if (opening) revealExpandedCard(key);
+  }
+
+  function handleStartBooking(key) {
+    if (bookingsRef.current[key]) return;
+    setBookingKey(key);
+    // Revealing the slots grows the card again, so it may now run under the
+    // composer even though expanding alone did not.
+    revealExpandedCard(key);
+  }
+
+  function handleChooseSlot(key, listing, slot, request) {
+    // Guard the state machine rather than trusting the UI: a second slot tap on
+    // an already-booked card must not create a second booking or re-run the
+    // multi-service follow-up.
+    const { bookings: nextBookings, booking } = applyBooking(
+      bookingsRef.current,
+      key,
+      listing,
+      slot,
+      request,
+    );
+    if (!booking) return;
+
+    bookingsRef.current = nextBookings;
+    // The card shrinks from full-row back into a grid cell, so this reflows too.
+    withGridTransition(() => {
+      setBookings(nextBookings);
+      setBookingKey(null);
+      setOpenKey(null);
+    });
+
+    // Only now, once the card is genuinely booked, does the bot speak.
+    const { requestedCodes, coveredCodes } = conversationRef.current;
+    const nowCovered = [...new Set([...coveredCodes, ...listing.service_type])];
+    updateConversation({ coveredCodes: nowCovered });
+
+    const remaining = remainingCodes(requestedCodes, nowCovered);
+    if (remaining.length === 0) {
+      appendMessage({
+        type: "bot_text",
+        text: "Request prepared. In a live marketplace, the provider would confirm this time next. Anything else?",
+        actions: [{
+          action: "skip_remaining",
+          label: "I'm done",
+          requestId: booking.request?.id ?? conversationRef.current.request?.id,
+        }],
+      });
+      return;
+    }
+
+    appendMessage({
+      type: "bot_text",
+      text: `Still open: ${joinLabels(remaining)}. Here's who can cover it.`,
+    });
+    appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
+  }
+
+  function handleAction(action, requestId = null) {
+    if (action === "skip_remaining") {
+      const completedId = requestId ?? conversationRef.current.request?.id;
+      if (completedId) setCompletedRequestIds((current) => new Set(current).add(completedId));
+      updateConversation({ requestedCodes: [], coveredCodes: [] });
+      setOpenKey(null);
+      setBookingKey(null);
+      appendMessage({ type: "bot_text", text: "All set. Ask any time you need someone." });
+      return;
+    }
+    if (action === "reopen_request") {
+      reopenRequest(requestId);
+      appendMessage({ type: "bot_text", text: "Options reopened for this request." });
+      return;
+    }
+    if (action === "skip_clarify") {
+      updateConversation({ unclearTurns: 0 });
+      const codes = conversationRef.current.clarifyCodes;
+      if (codes.length > 0) {
+        showResults({ ...filtersRef.current, service_types: codes }, "fallback", conversationRef.current.jobText);
+      } else {
+        appendMessage({ type: "bot_text", text: EMPTY_NUDGE, showExamples: true });
+      }
+    }
+  }
+
+  function bookedEntries() {
+    // The same map the multi-service logic reads — one source of truth.
+    return Object.entries(bookingsRef.current).map(([key, record]) => ({
+      key,
+      booking: record,
+      listing: record.listing,
+    }));
+  }
+
+  function resolvePendingCancellation(text) {
+    const pendingKeys = conversationRef.current.pendingCancellationKeys;
+    if (pendingKeys.length === 0) return false;
+
+    const pending = bookedEntries().filter(({ key }) => pendingKeys.includes(key));
+    if (pending.length === 0) {
+      updateConversation({ pendingCancellationKeys: [] });
+      return false;
+    }
+
+    if (/\b(never mind|neither|keep (?:them|both|all)|don'?t cancel)\b/i.test(text)) {
+      updateConversation({ pendingCancellationKeys: [] });
+      appendMessage({ type: "bot_text", text: "Okay — I kept both requests." });
+      return true;
+    }
+
+    let targets = [];
+    if (requestsAllBookings(text)) {
+      targets = pending;
+    } else if (/^\s*(?:the\s+)?(?:first|1st)(?:\s+one)?\s*$/i.test(text)) {
+      targets = [pending[0]];
+    } else if (/^\s*(?:the\s+)?(?:second|2nd)(?:\s+one)?\s*$/i.test(text) && pending[1]) {
+      targets = [pending[1]];
+    } else {
+      const { match } = findBookingMatch(text, pending);
+      if (match) targets = [match];
+    }
+
+    if (targets.length === 0) {
+      appendMessage({
+        type: "bot_text",
+        text: `I still need a choice — ${pending.map((entry) => entry.listing.title).join(", or ")}. You can also say “both.”`,
+      });
+      return true;
+    }
+
+    const cancelled = targets.map(({ key }) => performCancel(key)).filter(Boolean);
+    updateConversation({ pendingCancellationKeys: [] });
+    finishCancel(cancelled);
+    return true;
+  }
+
+  function currentListing() {
+    const entries = bookedEntries();
+    if (openKey) {
+      const visible = conversationRef.current.visibleListings;
+      const match = visible.find((l) => openKey.endsWith(l.listing_id));
+      if (match) return match;
+    }
+    return conversationRef.current.lastListing ?? entries.at(-1)?.listing ?? conversationRef.current.visibleListings[0] ?? null;
+  }
+
+  function showBookings() {
+    const entries = bookedEntries();
+    if (entries.length === 0) {
+      appendMessage({
+        type: "bot_text",
+        text: "You haven't booked anything yet this session.",
+        showExamples: true,
+      });
+      return;
+    }
+    appendMessage({
+      type: "bot_text",
+      text: `You have ${entries.length} booking${entries.length === 1 ? "" : "s"} this session.`,
+    });
+    appendMessage({ type: "booking_list", bookings: summariseBookings(entries) });
+  }
+
+  // The single writer for freeing a booked key — called from both the
+  // cancel_booking chat intent and the card's own Cancel button, so tapping
+  // and typing produce identical state.
+  function performCancel(key) {
+    const { bookings: next, cancelled } = cancelBookingByKey(bookingsRef.current, key);
+    if (!cancelled) return null;
+
+    bookingsRef.current = next;
+    withGridTransition(() => setBookings(next));
+
+    // Free the codes it covered so the sequential offer recalculates.
+    const stillCovered = Object.values(next).flatMap((r) => r.listing.service_type);
+    updateConversation({ coveredCodes: [...new Set(stillCovered)] });
+    reopenRequest(cancelled.request?.id);
+    return cancelled;
+  }
+
+  // The messaging that follows any successful cancellation, regardless of how
+  // it was triggered.
+  function finishCancel(cancelled = []) {
+    const lead = cancelled.length > 1 ? `Cancelled ${cancelled.length} requests.` : "Cancelled.";
+    appendMessage({ type: "bot_text", text: `${lead} Let me know if you'd like to find someone else.` });
+
+    const remaining = remainingCodes(conversationRef.current.requestedCodes, conversationRef.current.coveredCodes);
+    if (remaining.length > 0) {
+      appendMessage({ type: "bot_text", text: `Still open: ${joinLabels(remaining)}.` });
+      appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
+    }
+  }
+
+  function cancelBooking(text) {
+    const entries = bookedEntries();
+    if (entries.length === 0) {
+      appendMessage({ type: "bot_text", text: "There's nothing booked to cancel yet." });
+      return;
+    }
+
+    if (requestsAllBookings(text) && entries.length > 1) {
+      const cancelled = entries.map(({ key }) => performCancel(key)).filter(Boolean);
+      updateConversation({ pendingCancellationKeys: [] });
+      finishCancel(cancelled);
+      return;
+    }
+
+    const { match, candidates } = findBookingMatch(text, entries);
+    if (!match) {
+      updateConversation({ pendingCancellationKeys: candidates.map(({ key }) => key) });
+      appendMessage({
+        type: "bot_text",
+        text: `Which one — ${candidates.map((c) => c.listing.title).join(", or ")}? You can also say “both.”`,
+      });
+      return;
+    }
+
+    const cancelled = performCancel(match.key);
+    if (!cancelled) return;
+    updateConversation({ pendingCancellationKeys: [] });
+    finishCancel([cancelled]);
+  }
+
+  function handleCancelCard(key) {
+    const cancelled = performCancel(key);
+    if (!cancelled) return;
+    updateConversation({ pendingCancellationKeys: [] });
+    finishCancel([cancelled]);
+  }
+
+  function handleToggleReschedule(key) {
+    const opening = reschedulingKey !== key;
+    setReschedulingKey((current) => (current === key ? null : key));
+    if (opening) revealExpandedCard(key);
+  }
+
+  function handleChooseReschedule(key, listing, slot) {
+    const current = bookingsRef.current[key];
+    if (!current) return;
+
+    // Picking the slot already booked is just backing out of the picker.
+    if (slot === current.slot) {
+      setReschedulingKey(null);
+      return;
+    }
+
+    const { bookings: next, booking } = rescheduleBooking(bookingsRef.current, key, slot);
+    if (!booking) return;
+
+    bookingsRef.current = next;
+    setBookings(next);
+    setReschedulingKey(null);
+    appendMessage({ type: "bot_text", text: `Rescheduled to ${formatSlot(slot)}.` });
+  }
+
+  function handleClearChat() {
+    // Every store resets together — thread, filters, card state, bookings and
+    // the multi-service bookkeeping — so nothing is left half-cleared.
+    setMessages([]);
+    applyFilters(EMPTY_FILTERS);
+    conversationRef.current = EMPTY_CONVERSATION;
+    setOpenKey(null);
+    setBookingKey(null);
+    setReschedulingKey(null);
+    bookingsRef.current = {};
+    setBookings({});
+    setCompletedRequestIds(new Set());
+    setIsTyping(false);
+  }
+
+  const hasStarted = messages.length > 0;
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <span className="brand">
+          <svg
+            className="brand-mark"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3.5 10.5 12 3.5l8.5 7" />
+            <path d="M5.5 9.4V20h13V9.4" />
+            <path d="M12 20v-4.2" />
+            <path d="M10.1 13.1a2.6 2.6 0 0 1 3.6-3.1l-1.3 1.3 1.4 1.4 1.3-1.3a2.6 2.6 0 0 1-3.1 3.6" />
+          </svg>
+          Doorstep
+        </span>
+        <HeaderActions
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          onClearChat={handleClearChat}
+          canClear={messages.length > 0}
+        />
+      </header>
+
+      <ChatThread
+        messages={messages}
+        isTyping={isTyping}
+        openKey={openKey}
+        bookingKey={bookingKey}
+        bookings={bookings}
+        reschedulingKey={reschedulingKey}
+        onToggleCard={handleToggleCard}
+        onStartBooking={handleStartBooking}
+        onChooseSlot={handleChooseSlot}
+        onCancelBooking={handleCancelCard}
+        onToggleReschedule={handleToggleReschedule}
+        onChooseReschedule={handleChooseReschedule}
+        onAction={handleAction}
+        onExampleSelect={handleExampleChip}
+        completedRequestIds={completedRequestIds}
+        emptyState={
+          <div className="empty-state">
+            <p className="empty-prompt">Tell me what needs doing around the house.</p>
+            <ExampleChips onSelect={handleExampleChip} />
+          </div>
+        }
+      />
+
+      {/* Chips and field share one raised surface so the filters read as part
+          of what you are about to send, not as a separate strip. */}
+      <div className="composer">
+        {hasStarted && <FilterChips filters={filters} onRemove={handleRemoveFilter} />}
+        <ChatInput onSubmit={handleUserText} />
+      </div>
+    </div>
+  );
+}
