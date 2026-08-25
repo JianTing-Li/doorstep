@@ -920,3 +920,275 @@ Verified: builds clean (`vite build`, 48 modules), zero console errors in either
 - A's decorative 8-color category system.
 - D's own `test.mjs`, `logic.mjs`, `app.mjs` — nothing in this phase touches D's behavior, only its
   stylesheet.
+
+---
+
+## Phase 5 — Port Product B: feature-parity checklist
+
+Read `customer/app.js` (2,207 lines), `customer/chatbot-engine.js` (369 lines), and `customer/index.html`
+(564 lines) in full before writing this. This is the contract for the phase — every row gets checked off at
+Gate 5, or explicitly flagged if it can't be.
+
+**This is a bigger app than the brief's own description assumed.** "A filter panel and a listing feed" undersells
+it — this is 7 full screens, 6 modals, a persona-switching system, a two-way provider messaging simulator, a
+trust-and-safety reporting flow, and a self-contained NLP-ish job-matching chatbot with its own parser. Flagging
+the size now, before starting the build, per the instruction to stop and say so rather than push through
+silently.
+
+### Screens (7)
+
+| # | Screen | Route in his code | Key elements |
+|---|---|---|---|
+| 1 | Dashboard | `dashboard` | Hero greeting ("Hello, {name}"), search bar (routes to chat *or* feed depending on query shape — see below), AI Matcher banner, 4-category grid with live counts, live Leaflet map, 3 featured top-rated listings |
+| 2 | Feed / Browse | `feed` | Sticky header: back, search input, Filter button (badge dot when filters active), horizontal category chip row (All/Cleaning/Handyman/Moving/Yard & Outdoor), listing cards, empty state with "Reset All Filters" |
+| 3 | Profile | `profile` | Cover banner, provider identity + rating/location/escrow stat row, Message Provider + Safety Report buttons, service scope + bio, 3 availability slots, "Continue to Checkout" |
+| 4 | Schedule | `schedule` | A second, plainer booking-slot picker (reached only from the provider-chat "Book Pro" button) — a real, distinct second path to checkout, not a duplicate of Profile's slot picker |
+| 5 | Checkout | `checkout` | Job summary, hourly-duration stepper (± hours, hourly listings only), address input, escrow trust notice, price breakdown (base + 15% fee), "Authorize $X in Escrow" |
+| 6 | Confirmation | `confirmation` | Success state, booking reference/date/total, "View in My Bookings" / "Return to Home" |
+| 7 | My Bookings & Activity | `my-bookings` | Upcoming jobs (Chat/Report/Complete actions), Completed history (rate-or-show-review), Trust & Safety Cases list — three sections, one screen |
+
+### Modals (6)
+
+| Modal | Trigger | Contents |
+|---|---|---|
+| AI Concierge chatbot | FAB, or dashboard search when query looks conversational | Full chat UI: quick-suggestion chips, active-filter pills, `ChatbotEngine`-parsed results with expandable slot picker, in-chat booking confirmation |
+| Provider direct chat | "Message Provider" / "Chat" buttons | Per-provider thread, quick-question chips, simulated typing indicator, keyword-based auto-reply, "Book Pro" shortcut into Schedule |
+| Trust & Safety report | "Safety Report" / "Report" buttons | 6 radio-button incident categories, details textarea, optional evidence URL |
+| Persona switcher | Header avatar chip, or "Switch" on My Bookings | Lists all `DB_CUSTOMERS`, click to switch; footer note that bookings/messages/reports are saved per persona |
+| Filter & Sort | Filter icon on Feed | Category chips, max-price slider ($30–250), min-rating chips (Any/4.0+/4.5+/4.8+), sort dropdown (recommended/rating/price asc/price desc/most-reviewed) |
+| Rating & Review | "Complete" on a booking, or "Leave Rating & Review" | 5-star picker, review textarea, "Submit & Release Escrow" |
+
+### Global chrome
+
+- Header: logo → dashboard, persona chip (avatar + first name + chevron), bookings icon with an unread-style
+  dot badge when any booking is `upcoming`.
+- Floating chatbot FAB, bottom-right, sparkle+message icon. **Flagged below — this cannot port as-is.**
+- Toast notification, bottom-anchored, auto-dismiss.
+
+### Filters — every one (Browse / Filter modal)
+
+Category (5, `All/Cleaning/Handyman/Moving/Yard & Outdoor`), free-text search (title, description, provider
+name, provider bio, location — five fields), max price ($30–250 slider), minimum rating (Any/4.0/4.5/4.8),
+sort (recommended/rating desc/price asc/price desc/review count desc). Dashboard search additionally
+branches: 3+ words or a natural-language-shaped query opens the chatbot pre-filled; anything shorter goes
+straight to Browse with that text as the query.
+
+### His map-background browse concept
+
+Not a background image (the *old* branch had that) — the real B has a **live Leaflet map** embedded directly
+in the Dashboard (not Browse), centered on Portland, one marker per active listing at the provider's real
+coordinates, each with a popup card (name, title, rating, price, "View Profile"). Confirmed this is a real,
+working feature — it's not decorative.
+
+### His card layout
+
+Listing cards: gradient avatar initial, provider name + verified check, location; price top-right; title +
+2-line description; footer row (rating + review count, an "Escrow" trust badge, a Message icon button, a Book
+button). Consistent across Dashboard's featured list and the Browse feed, just denser on Browse.
+
+### His copy — preserved verbatim where it survives
+
+Section headers ("Verified Local Pros", "Find trusted help for your home", "Popular Categories", "Nearby
+Service Map", "Top-Rated Providers", "Doorstep Escrow Guarantee", "My Bookings & Activity", etc.), button
+labels ("Continue to Checkout", "Authorize $X in Escrow", "Submit & Release Escrow"), the escrow-guarantee
+paragraph, and all 6 safety-report category descriptions carry over unchanged.
+
+### Data & persistence behavior
+
+- `localStorage` keys per persona: `doorstep_bookings_{id}`, `doorstep_messages_{id}`, `doorstep_reports_{id}`,
+  plus `doorstep_active_persona`. **Superseded by `shared/demo-store.js`** — already true as of Phase 3 for
+  bookings (mirrored via `window.Doorstep.recordBooking`); messages and reports are customer-app-local
+  concepts with no equivalent shared collection, so they stay as-is under his own keys unless told otherwise.
+- Booking object shape (`id`, `listing_id`, `provider_id`, `title`, `provider_name`, `timeSlot`, `address`,
+  `total`, `status`, `escrowStatus`, `rating`, `review`) is his own display shape, separate from the
+  canonical `shared/demo-store.js` shape his booking writes already also produce (Phase 3).
+- Two seeded demo personas (`cust_00001`/Maya Lin, `cust_00002`) with hand-authored sample bookings, and a
+  third (`cust_00004`) seeded with a sample safety report. **These IDs don't exist in real `DB_CUSTOMERS`**
+  (see Known bug below) — the seeded content itself (the sample booking/report shape and copy) is worth
+  keeping as realistic demo seed data, attached to real customer ids instead.
+
+### Known pre-existing bug — will be fixed in the port, not carried forward
+
+`state.currentCustomerId` defaults to `'cust_00001'`, which matches no record in the real `DB_CUSTOMERS`
+(actual ids are `cst_001`…`cst_020`) — flagged at Gate 0 and worked around (not fixed) in Phase 3. Per the
+non-negotiable rule ("when a ported product's code disagrees with local mock-data, change the code, not the
+data"), the port fixes this outright: default persona becomes `cst_001` (Hannah Breece) — the same customer
+the shared switcher already hardcodes for the site-wide Customer role, so the two stay in sync rather than
+showing two different "the customer" identities depending on which switcher you used.
+
+### Decision needed — the AI Concierge chatbot cannot be ported as specified
+
+This is the one item that doesn't fit the checklist cleanly, flagged rather than quietly dropped or quietly
+kept:
+
+- The floating FAB is **explicitly forbidden** by the architecture ("Chat is a search modality... Never a
+  floating bubble") and Phase 5 itself calls for a bottom tab bar with **Ask stubbed this phase** — real
+  content arrives in Phase 6 when Product C is fused in.
+- `chatbot-engine.js` is Abheeshu's **own** keyword-matching parser (`parseJob`, `matchListings`,
+  `detectLocalIntent`) — a real, independent piece of engineering, separate from Product C's Gemini-backed
+  one. It is not a stub; it's a working feature.
+- Given both constraints together, the FAB and its modal are removed this phase (replaced by the Ask tab,
+  stubbed) — I'm not aware of a reading where they survive, since "never a floating bubble" is unconditional.
+  What I want confirmed rather than assume: **does `chatbot-engine.js` itself get deleted, or kept in the
+  repo unused** (in case Phase 6 wants to borrow from its parsing logic, or simply so Abheeshu's own working
+  code isn't erased)? I'd lean toward keeping the file, unused, with a comment explaining why — deleting a
+  teammate's working feature outright feels like exactly the kind of unilateral call the preservation rules
+  ask me not to make silently.
+
+### Decision needed — his own persona switcher vs. the shared switcher
+
+Flagged at Gate 0/Phase 3, resolving now: B's persona switcher (all 20 customers, switch who you're "logged
+in" as) is **not the same feature** as `shared/switcher.js`'s Customer/Provider/Admin role switcher — one
+picks *which customer*, the other picks *which role*. They don't conflict and both have a real purpose. **I'm
+porting his persona switcher as its own feature**, reading through `customer/src/data/`. Its `localStorage`
+key stays separate from the shared switcher's (`doorstep_active_persona` vs. `doorstep:persona`) since they
+answer different questions.
+
+### What I am *not* treating as in-scope for this checklist
+
+The floating chatbot FAB and modal (see above — replaced by the stubbed Ask tab, not ported), and full
+responsiveness up to a 34" monitor (a real, separate, substantial piece of new design work this phase also
+requires per your earlier decision — not a "port" item since his original has zero responsive behavior above
+phone width to port *from*).
+
+---
+
+## Phase 5 — Port Product B: build report and parity walk-through
+
+Built as React 19 under `customer/`, per the checklist above. **His original vanilla files are not deleted —
+`customer/legacy/` holds `app.js`, `data.js`, `index.html`, and `chatbot-engine.js` exactly as he wrote them**,
+moved with `git mv` so `git blame` still attributes them to him. The port sits alongside in `customer/src/`.
+
+### Parity checklist, item by item
+
+**Screens — all 7 ported, all functional:**
+
+| Screen | Status | Component |
+|---|---|---|
+| Dashboard | ✅ | `DashboardScreen.jsx` |
+| Feed / Browse | ✅ | `ListingFeed.jsx` |
+| Profile (listing) | ✅ | `ListingProfileScreen.jsx` |
+| Schedule | ✅ | `ScheduleScreen.jsx` |
+| Checkout | ✅ | `CheckoutScreen.jsx` |
+| Confirmation | ✅ | `ConfirmationScreen.jsx` |
+| My Bookings & Activity | ✅ | `BookingsScreen.jsx` |
+
+**Modals — 5 of 6 ported; 1 flagged (below), not silently dropped:**
+
+| Modal | Status | Component |
+|---|---|---|
+| Provider direct chat | ✅ — quick chips, simulated typing, keyword auto-reply all intact | `ProviderChatModal.jsx` |
+| Trust & Safety report | ✅ — all 6 categories, verbatim copy, **now actually reaches Admin's queue** (see below) | `ReportModal.jsx` |
+| Persona switcher | ✅ — kept as its own feature, see Gate 0/3 resolution above | `PersonaModal.jsx` |
+| Filter & Sort | ✅ — category, price slider, rating, sort, all identical | `FilterPanel.jsx` |
+| Rating & Review | ✅ | `ReviewModal.jsx` |
+| AI Concierge chatbot | ❌ **Not ported — decided at the top of this phase.** Replaced by the stubbed Ask tab. `chatbot-engine.js` itself is untouched in `legacy/`, per your decision to delete rather than keep an unused copy in the active tree — the *file* still exists (git history preserved), it's just not wired into anything. | — |
+
+**Global chrome:**
+
+| Item | Status |
+|---|---|
+| Header (logo, persona chip, bookings badge) | ✅ ported exactly, `Header.jsx` |
+| Floating chatbot FAB | ❌ removed — forbidden by the architecture; see above |
+| Toast | ✅ same 3.2s auto-dismiss behavior |
+| **Bottom tab bar (Browse · Ask · Bookings · Profile)** | ✅ new this phase, `TabBar.jsx` — Ask is a stub, the other three are fully real |
+
+**Filters — every one, unchanged:** category (5), free-text search (same 5 fields: title, description,
+provider name, provider bio, location), max price slider, minimum rating, sort (5 options). Verified by
+walking the actual filter panel in the running app, not just reading the code.
+
+**Map:** the live Leaflet map is real, not decorative — `ServiceMap.jsx` renders one marker per active
+listing at the provider's real coordinates with a popup, same as his original, using the same CDN `L` global
+(no new npm dependency).
+
+**Card layout:** `ListingCard.jsx` is the one component both Dashboard's featured list and Browse's feed
+render — matching his original design, where the two screens shared the same visual card at two densities.
+
+**Copy:** verified against the running app screen by screen — section headers, button labels, the escrow
+guarantee paragraph, all 6 safety-report category descriptions, all carry over exactly.
+
+### The known pre-existing bug — fixed, not carried forward
+
+`cust_00001` → `cst_001` (Hannah Breece), as flagged in the checklist. Verified in the running app: opening
+fresh, the header shows "Hannah" and the persona modal correctly marks `cst_001` as "Active" — not a
+fallback "Maya Lin" object that matches nothing in mock-data.
+
+### A real cross-app connection made to actually work, not just documented
+
+His UI already said "Assigned to Product D Moderation" on every filed report — Phase 5 is what makes that
+literally true. A report filed through `ReportModal.jsx` now also writes to the shared store in canonical
+shape (`lib/reports.js`), mapped through the 6-reason enum documented in the parity checklist. **Verified
+end-to-end**, not assumed: filed a report through the real UI, Admin's "Needs review" metric went 4 → 5 in
+the same run.
+
+### Bugs found and fixed during build (all caught before the final verification pass, not left in)
+
+1. **Navigation bug**: `goBrowse()`'s slot-reset logic cleared `selectedSlot` on the transition to
+   `"checkout"` (it only preserved the value for `"profile"`/`"schedule"`), so every booking was written with
+   a null `scheduled_slot`. This didn't break the *customer* app's own display (which never re-reads that
+   field), but it crashed **Provider** — `selectors.js:52` does `booking.scheduled_slot.slice(0, 10)` with no
+   null guard. Caught by the cross-app verification step, not by testing the customer app in isolation, which
+   is exactly why that step exists. Fixed by only clearing the slot on a genuinely fresh browsing context
+   (`"dashboard"`/`"feed"`), not on every non-profile/schedule view.
+2. **CSS specificity bug**: a generic `input[type="text"]` base-style rule and three component-specific input
+   rules (search bar, feed search, checkout address field) had identical selector specificity; the generic
+   rule happened to be declared later in the file, so it silently won the cascade and collapsed the
+   icon-clearance padding on all three inputs back to the generic value — the search icon rendered on top of
+   the placeholder text. Fixed by moving the generic rule earlier, so component-specific overrides reliably
+   win by source order rather than accidentally by specificity.
+3. **A `useCallback` used incorrectly** (immediately invoked every render, which doesn't memoize anything —
+   the same as not using it) — caught in my own review before it was ever run, replaced with `useMemo`.
+4. **A confused conditional** in `ScheduleScreen`'s continue button (checking the setter function instead of
+   the selected value) — also caught in review before running.
+
+### Responsive layout — the explicit Phase 5 requirement
+
+Verified at 390px (phone), 768px (tablet), 1920px, and 3440px (34"). Mobile is the base layout — same
+single-column, bottom-tab experience his original had, just no longer artificially boxed into a fixed-height
+phone frame (his original's body was `h-screen overflow-hidden`, the exact "phone in a void" pattern flagged
+back at Gate 0). At 720px the category grid goes to 4 columns and the listing feed becomes 2 columns; at
+1080px the Dashboard becomes a two-column layout (map and featured providers side by side) and the feed
+becomes 3 columns. Screenshotted at all four widths — no horizontal scroll, no clipped controls, no empty
+void at 34".
+
+**One structural fix this required, caught before it shipped**: the app was originally built with `.app-main`
+as its own internal `overflow-y: auto` scroll region — exactly the same "phone app in a box" pattern his
+vanilla build had, just recreated. That breaks `position: sticky` on the header and tab bar the moment content
+exceeds one viewport, and is generally wrong for desktop use. Fixed by making the whole page scroll normally
+(matching Admin's and Provider's own pattern) — the header and tab bar stay pinned via ordinary `position:
+sticky`, not a nested scroll container.
+
+### Icon set
+
+Every Font Awesome icon replaced with the shared inline-SVG convention (`Icon.jsx`, ~35 icons) — the
+convergence Phase 2 said would happen here. No new dependency.
+
+### Verification
+
+- **Full user journey**, run twice against the final build with zero page errors both times: Dashboard →
+  category → Browse → Filter → listing Profile → slot selection → Checkout → Authorize → Confirmation → My
+  Bookings (new booking visible, correctly ordered above the seeded one) → Profile tab → Ask stub → Provider
+  chat (seeded thread renders, a live message gets a correct keyword-matched reply) → Report modal (files
+  correctly, appears in Bookings' Trust & Safety section) → Persona switcher (all 20 personas listed, current
+  one marked Active).
+- **Cross-app, through the real UI, not synthetic store calls**: booked → Provider's incoming count 3 → 4;
+  filed a report → Admin's needs-review 4 → 5. Both zero errors.
+- **Reset**, through the switcher: verified the *values* revert to the pristine seed (not just that
+  localStorage keys exist) — bookings returned to exactly `["BK-49201"]`, the single seeded record.
+- **No regression in the three untouched products**: Provider, Admin, Chat, and the landing page are all
+  **byte-identical** to their Phase 3/4 screenshots (verified with matched capture methodology after
+  discovering my first comparison attempt had a methodology mismatch, not a real difference — corrected
+  before reporting it here).
+- **Tests**: `mock-data/validate.py` 104/104, `admin/test.mjs` passes, chat **49/49 booking, 20/25 parseJob**
+  — unchanged.
+- **No stray data access**: `customer/src/data/loadData.js` is the only file in `customer/src/` that
+  references `mock-data`; the two other hits are comments.
+- `build.sh` updated — `customer/` is now built like `chat/`/`provider/` (it stopped being a static
+  copy-through the moment it became a real Vite app).
+
+### Left alone, as instructed
+
+- His floating chatbot and `chatbot-engine.js` — not ported, not deleted, explained above.
+- His persona switcher's own `localStorage` keys (`doorstep_bookings_*`, `doorstep_messages_*`,
+  `doorstep_reports_*`) — messages have no shared-collection equivalent, so they stay app-local exactly as
+  designed; bookings and reports also write to the shared store, as documented in Phase 3/5.

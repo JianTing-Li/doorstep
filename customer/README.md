@@ -1,6 +1,17 @@
 # Doorstep — Customer App (Product B)
 
-This folder contains Abheeshu Dhungana's Product B build for Doorstep.
+This folder contains Abheeshu Dhungana's Product B design, ported to React 19 for Doorstep (Phase 5).
+
+**His original vanilla build lives in [`legacy/`](legacy/)**, kept in the same history rather than deleted —
+`app.js`, `data.js`, `index.html`, and `chatbot-engine.js` are exactly as he wrote them (moved with `git mv`,
+so `git blame` still shows him as the author). The React port in `src/` is built one-to-one against a feature
+parity checklist written from those files — every screen, every filter, his map-background browse concept,
+his card layout, his copy — documented in full at the repo root in `INTEGRATION-NOTES.md` under "Phase 5."
+
+One feature did not carry forward as-is: his own floating AI-matcher chatbot (`legacy/chatbot-engine.js`) is
+disconnected — a floating chat bubble is outside the shared architecture's design (chat lives as the **Ask**
+tab, not a popup), and Product C's chatbot takes over that role in Phase 6. His parser and matching logic are
+untouched in `legacy/`, not deleted.
 
 A two-sided local marketplace for home services. It connects independent home-service providers like cleaners, handymen, and movers with customers in the same city. Doorstep does not employ providers. It takes a percentage of each booking made through the platform.
 
@@ -26,17 +37,8 @@ The internal team reviews listings and bookings with reports or low reviews, pri
 
 ## Shared Data Architecture
 
-All four products use one connected synthetic dataset and the same schema contract. Stable IDs connect customers, providers, listings, bookings, reviews, reports, moderation cases, and audit entries.
-
-- Product A writes provider and listing data.
-- Product B reads active listings and writes bookings, reviews, and reports.
-- Product C reads active listings for recommendations.
-- Product D reads safety signals and writes moderation status and audit entries.
-- Only listings with `status = active` are customer-visible.
-
-Project data: [`data/tasklocal-connected-dataset.json`](data/tasklocal-connected-dataset.json)
-
-Reviewable source of truth: [TaskLocal / Doorstep Connected Synthetic Dataset](https://docs.google.com/spreadsheets/d/1CRYa-m6E0FnbR1py-Wu9XeLZ5H1WX0zQgkwOswCXHRY/edit)
+All four products read and write through `shared/demo-store.js` over the canonical `mock-data/` at the repo
+root — never this folder's own copy of anything. See `src/data/loadData.js`.
 
 ## Developers
 

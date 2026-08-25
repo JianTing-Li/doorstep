@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Builds the unified Doorstep deploy. Vercel's outputDirectory is dist/.
 #
-# chat/ and provider/ are real Vite apps and get built. admin/ and customer/
-# are vanilla (no build step) and are copied through as-is. mock-data/ is
-# copied into dist/ so the runtime-fetching products (admin/, customer/)
-# resolve their relative ../mock-data path once deployed. shared/ (tokens,
-# switcher) is copied the same way — admin/, provider/, and customer/ all
-# reference it by the absolute path /shared/, which only resolves once it
-# sits at the site root alongside them.
+# chat/, provider/, and customer/ (Phase 5: React, no longer vanilla) are
+# real Vite apps and get built. admin/ is vanilla (no build step) and is
+# copied through as-is. mock-data/ is copied into dist/ so the
+# runtime-fetching products (admin/) resolve their relative ../mock-data path
+# once deployed. shared/ (tokens, switcher) is copied the same way —
+# admin/, provider/, and customer/ all reference it by the absolute path
+# /shared/, which only resolves once it sits at the site root alongside them.
 set -euo pipefail
 
 rm -rf dist
@@ -30,10 +30,11 @@ mkdir -p dist/admin
 cp -R admin/. dist/admin/
 rm -f dist/admin/.gitignore dist/admin/test.mjs
 
-echo "== customer/ (static, no build) =="
+echo "== customer/ =="
+npm --prefix customer install
+npm --prefix customer run build
 mkdir -p dist/customer
-cp -R customer/. dist/customer/
-rm -f dist/customer/.gitignore
+cp -R customer/dist/. dist/customer/
 
 echo "== shared/ =="
 cp -R shared dist/shared
