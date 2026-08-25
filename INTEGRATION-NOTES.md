@@ -182,12 +182,10 @@ Recorded per the preservation rules, not implemented.
 
 ## Decisions needed at Gate 0
 
-**D-1 — Product A's "TaskLocal" in Kamal's copy.** Phase 1 says normalize all visible branding to Doorstep.
-Preservation says do not change their copy. These collide in two body-copy sentences inside
-`ProviderDashboard.jsx` (0.2 #4), not just the title and topbar. Options: (a) change title + topbar +
-copy — fully consistent, edits two of his sentences; (b) change title + topbar only, leave the two sentences
-saying "TaskLocal" — visibly inconsistent; (c) as (a), and send Kamal the diff. **Recommend (a), flagged to
-Kamal at Gate 4** when he reviews screenshots anyway.
+**D-1 — Product A's "TaskLocal" in Kamal's copy.** **Decided: the app's name is Doorstep, final.** Rename
+everywhere in Product A — title, topbar logo mark, and both body-copy sentences in `ProviderDashboard.jsx`
+(0.2 #4) that currently say "TaskLocal." Full consistency, no partial rename. Will show Kamal the diff at
+Gate 4 when he reviews screenshots anyway, but the decision itself is closed.
 
 **D-2 — Product B's absent filters.** No filter UI exists to port (0.8). Options: (a) parity checklist records
 Browse as category-only, and the filter set Phase 6 hands off is built fresh in Phase 6 where the Ask
@@ -195,17 +193,19 @@ handoff actually needs it; (b) build a filter panel in Phase 5 as new work, mark
 added-not-ported. **Recommend (a)** — it keeps Phase 5 an honest port and puts the new work where there is a
 stated requirement for it.
 
-**D-3 — Product D's existing localStorage layer.** D already persists moderation decisions under its own key
-and has its own Reset button (0.7). Phase 3 wants one flat store and one Reset. Options: (a) repoint D's
-persistence at `shared/demo-store.js` and have its existing Reset button call the shared reset — one write
-layer, but touches slightly more of `app.mjs` than a pure read-path redirect; (b) leave D's write layer alone
-and only redirect its reads — smaller diff, but two write layers and a Reset button that only half-resets.
-**Recommend (a)**; it is the only option where a suspension in Admin actually hides the listing in Customer,
-which is the cross-app demo Gate 3 asks for. Note this is wider than the "read path only" exception as
-written, which is why I am asking rather than assuming.
+**D-3 — Product D's existing localStorage layer.** **Decided: redirect both reads and writes.** D currently
+persists moderation decisions (dismiss/warn/suspend/resolve) under its own private key
+(`doorstep-product-d-demo-v1`) and has its own "Reset demo decisions" button that only clears that key (0.7).
+At Phase 3, D's write path gets repointed at `shared/demo-store.js` instead of its private key, and its
+existing Reset button gets rewired to call the shared reset rather than clearing its own key alone. Net
+effect: one write layer (a suspension recorded in Admin actually hides that listing in Customer/Chat, which
+is what Gate 3's cross-app demo requires), and one Reset across all four products, not two independent ones.
+This is wider than the brief's literal "read path only" exception for A and D — flagged for that reason, and
+now confirmed rather than assumed.
 
-**D-4 — Product B's payments/escrow checkout.** (0.8) Keep as demo chrome, or drop? Affects the parity
-checklist. No recommendation — this is a product call.
+**D-4 — Product B's payments/escrow checkout.** **Decided: keep as visual flavor.** The escrow copy, the fee
+breakdown, "Authorize $X in Escrow" stay in the ported UI as demo chrome — no real payment processing, same
+as today.
 
 ---
 
@@ -235,3 +235,130 @@ copy available to bring. I can proceed through Gate 4 and resolve this before Ph
 authorship trail is built on it. **Cheapest fix is to sort access before Phase 1 commits.**
 
 Until then, the "is `product-b` older than his repo?" diff is unanswered.
+
+### Update — manual download resolves access, and it changes the Phase 5 picture
+
+You downloaded Abheeshu's current repo by hand into `doorstep-productb/` at repo root (already covered by
+`.gitignore`, confirmed — it will not get committed). This is **substantially newer** than the `product-b`
+branch and changes several open items above.
+
+**Scale.** `app.js` is 2,205 lines (was 371). Seven view functions instead of five — adds `getScheduleHTML`
+and `getMyBookingsHTML`, so there is now a real `Bookings` ancestor to port (there wasn't one before). Also
+adds a `chatbot-engine.js` (369 lines, his own keyword matcher), provider messaging, a review-submission flow,
+a trust & safety reporting flow, and a real Leaflet map (`unpkg.com/leaflet`) replacing the old static
+Wikipedia image.
+
+**Data schema — verified, and it resolves cleanly.** `index.html` loads `data.js`, not the
+`data/tasklocal-connected-dataset.json` the README points to. I parsed `data.js`'s `DB_LISTINGS`,
+`DB_PROVIDERS`, `DB_CUSTOMERS`, and `DB_SERVICE_TYPES` and diffed each against local `mock-data/` as JSON —
+**all four are exactly equal.** `data.js`'s own header comment says "Auto-generated ... from JT repository
+mock-data," and `build_data.js` confirms it: it pulls straight from `origin/feature/mock-data` via `git show`
+(the branch that's since been deleted — this file predates that deletion). So the active data path already
+matches the canonical schema; nothing to reconcile there.
+
+The `data/tasklocal-connected-dataset.json` the README references is dead weight: nothing loads it. Its
+schema is the **historical, superseded one** Product A's README warned about — singular `service_category`
+(not the array `service_type`), prices in cents (`rate_amount: 6500`), `list_00001`/`prov_00001` IDs, a
+top-level `audit_log`. Confirmed by inspecting a record directly. Since the app never reads this file, it's
+inert — noting it under Suggestions, not touching it.
+
+**D-2 resolved.** `state.filters` is real: `category`, `searchQuery`, `maxPrice`, `minRating`, `sortBy`, with
+a separate `tempFilters` staging object. There is now something genuine to port; the Phase 6 filter handoff
+has real filter state to carry into Ask instead of being built from nothing.
+
+**D-4 still open, more baked-in now.** The header comment literally advertises "Escrow Checkout & Lifecycle"
+as a feature. Same question as before — keep as demo chrome or drop — just with more surface area riding on
+the answer.
+
+**New, not previously flagged: still has the floating chatbot FAB.** `index.html:157`, `toggleChatbot()`,
+opens a modal — same shape as before, just restyled (gradient FAB, "Open AI Assistant"). Confirms the earlier
+flag under 0.8: removing this is required by the architecture ("never a floating bubble"), not optional, and
+is a bigger removal now that it's a more developed feature (his own `chatbot-engine.js` keyword matcher, not
+just a stub).
+
+**New, not previously flagged: his own persona switcher.** `state.currentCustomerId`, persisted to
+`localStorage['doorstep_active_persona']`, lets you page through different **customer** personas inside his
+app. This is a narrower concept than Phase 2's cross-role switcher (Customer/Provider/Admin) but sits in the
+same territory. Two things to watch in Phase 2/5: the localStorage key must not collide with
+`shared/switcher.js`'s, and a decision is needed on whether his intra-customer persona picker survives the
+port as a distinct feature or gets superseded by the one hardcoded customer ID the brief specifies for
+Phase 2. Not deciding now — flagging so it isn't lost.
+
+**Secret scan: clean.** No API keys, Gemini or otherwise, anywhere in the dropped-in folder.
+
+**One real gap: no `.git` history.** This is a file dump, not a clone — there's no commit log to preserve.
+Phase 5's instruction to `git mv` mapping file-to-file and keep the relationship visible in history assumes a
+shared lineage with what's already in the repo. There isn't one here. I can still credit Abheeshu fully in
+the commit message and `customer/README.md` as instructed, and diffing this against the `product-b` branch
+(which *does* share history with the repo) can anchor a real `git mv` for the four files that exist in both
+(`app.js`, `data.js`, `index.html`, `README.md`) before layering the new files in as additions. That gets
+close to the spirit of the rule without fabricating history that doesn't exist. Flagging as a Phase 5
+mechanic to confirm with you when we get there, not a blocker now.
+
+**Net effect on the earlier "Blocked" section above:** resolved for the purposes of writing the Phase 5
+parity checklist. You also gave me the live deploy URL
+(`https://doorstep-git-main-gana62.vercel.app/`) — I diffed `app.js`, `data.js`, and `chatbot-engine.js` from
+that URL against the downloaded folder byte-for-byte (`md5`) and they are **identical**. (`index.html`
+differs, but only because that URL serves a Vercel preview-alias redirect shim, not real page content — the
+browser follows it to the same app.) So this is not just "newer than the branch," it is confirmed current to
+the live deployment. Treating it as fully authoritative.
+
+### Update — Product B is not responsive above phone width (live-verified)
+
+You flagged that the live site looks like a mobile app even on a large monitor. Verified with screenshots at
+3440×1440, 1920×1080, and 390×844 (Playwright, `/private/tmp/.../scratchpad/live-check/`): at every desktop
+width the app renders as a fixed ~390px-wide card centered in empty space — it does not use the available
+screen, it just floats a phone-shaped card in the middle of it. Confirmed on both the live URL and (since the
+code is identical) the local folder.
+
+This is not a violation of anything already agreed — the brief's only stated responsive requirement is the
+Gate 6 checklist's floor ("usable on a phone at 390px wide, no horizontal scroll"), which this exceeds; it
+never asked for desktop optimization. But it's a legitimate product decision for you to make, and Phase 5 is
+the natural place to fix it, since B is the only product getting fully rebuilt — building a responsive layout
+there doesn't touch A's or D's preservation rules and doesn't conflict with anything already decided.
+
+For comparison: Product C does not have this problem. Checked it at 1920×1080 — it fills the viewport with a
+full-bleed background and keeps the message column centered at a readable width, which is a normal desktop
+treatment, not a phone-in-a-void. A and D's Phase 0 baseline screenshots already show full-width desktop
+dashboards.
+
+**Consequence for the Phase 0 baseline captured earlier.** `docs/baseline/product-b/` was captured against
+the stale `product-b` branch, before this download existed. It is no longer representative of the product
+Phase 5 actually ports. Re-captured — see below.
+
+### Decisions closed at Gate 0
+
+- **D-2** (filters) — resolved by the real download: `openFilterModal()` is a genuine filter/sort sheet
+  (category chips, max-price slider, minimum-rating tiers, sort dropdown). Real filters exist; nothing to
+  build fresh.
+- **D-4** (escrow checkout) — **keep as visual flavor.** No real payment processing; the escrow copy and fee
+  breakdown carry through the port unchanged in spirit.
+- **Floating chat bubble** — **confirmed removal.** Ask becomes a tab, never a floating bubble, per the
+  architecture. Not a decision so much as a re-confirmation; recorded here since it's now closed.
+- **Responsive layout — new explicit requirement for Phase 5.** Product B must work as a real responsive
+  layout from phone width through a 34" monitor (~3440px), not the current fixed ~390px card centered in
+  empty space. This is now a stated requirement for the rewrite, not just "meets the 390px floor." Doesn't
+  touch A's or D's preservation rules — it's scoped to the one product getting fully rebuilt anyway.
+
+### Product B baseline — recaptured against the real, current product
+
+`docs/baseline/product-b/` now holds 12 screenshots against the actual code (local folder and live deploy
+are byte-identical, confirmed via `md5` on `app.js`, `data.js`, `chatbot-engine.js`):
+
+| File | Shows |
+|---|---|
+| `01-dashboard.png` | Home: search, AI Matcher entry, category tiles, live Leaflet map |
+| `02-feed.png` | Category feed |
+| `03-profile.png` | Listing/provider profile |
+| `04-schedule.png` | Time-slot picker |
+| `05-checkout.png` | Escrow checkout — date/time, location, fee breakdown, "Authorize $X in Escrow" |
+| `06-confirmation.png` | Booking confirmation |
+| `07-my-bookings.png` | Bookings & Activity — upcoming jobs, per-booking Chat / Report / Complete, completed history, trust & safety cases |
+| `08-persona-switcher.png` | His own customer-persona picker (see the persona-key-collision note above) |
+| `09-filter-modal.png` | Filter & Sort sheet — category, max price slider, min rating, sort by |
+| `10-ai-chatbot-fab-AS-LEFT.png` | The floating chatbot FAB + modal, exactly as it exists today — kept only as the "before" record; this is what Phase 6 removes |
+| `11-desktop-1920-AS-LEFT.png` | 1920×1080 — the phone-in-a-void problem |
+| `12-ultrawide-3440-AS-LEFT.png` | 3440×1440 — same problem, more empty space |
+
+All mobile shots at 390×844 @2x except the two desktop captures. `-AS-LEFT` suffix marks the two things Phase
+5 is explicitly changing (the FAB, the fixed-width layout) so the before-state stays on record.
