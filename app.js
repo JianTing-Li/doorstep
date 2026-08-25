@@ -2156,6 +2156,70 @@ function sendChatMessage() {
             return;
         }
 
+        if (localIntent === 'cancel_booking') {
+            const activeBookings = state.bookingsList.filter(b => b.status === 'upcoming');
+            if (activeBookings.length === 0) {
+                state.chatbot.messages.push({
+                    id: `msg_${Date.now()}`,
+                    from: 'bot',
+                    type: 'text',
+                    text: "There are no active bookings to cancel right now."
+                });
+            } else {
+                const target = activeBookings[0];
+                target.status = 'cancelled';
+                target.escrowStatus = 'refunded';
+                saveBookingsToStorage();
+                updateNavBadge();
+
+                state.chatbot.messages.push({
+                    id: `msg_${Date.now()}`,
+                    from: 'bot',
+                    type: 'text',
+                    text: `Cancelled booking for **${target.title}** with ${target.provider_name}. Held escrow funds ($${target.total.toFixed(2)}) have been released back to your account. Let me know if you'd like to find someone else.`
+                });
+            }
+            renderChatbot();
+            return;
+        }
+
+        if (localIntent === 'compare') {
+            const lastResultsMsg = [...state.chatbot.messages].reverse().find(m => m.type === 'results');
+            const listingsToCompare = lastResultsMsg ? lastResultsMsg.results : ChatbotEngine.getActiveListings();
+            const answer = ChatbotEngine.compareListings(listingsToCompare, msg);
+            state.chatbot.messages.push({
+                id: `msg_${Date.now()}`,
+                from: 'bot',
+                type: 'text',
+                text: answer
+            });
+            renderChatbot();
+            return;
+        }
+
+        if (localIntent === 'more_details') {
+            const lastResultsMsg = [...state.chatbot.messages].reverse().find(m => m.type === 'results');
+            const listing = lastResultsMsg && lastResultsMsg.results.length > 0 ? lastResultsMsg.results[0] : null;
+            if (listing) {
+                const answer = ChatbotEngine.detailsAnswer(listing, msg);
+                state.chatbot.messages.push({
+                    id: `msg_${Date.now()}`,
+                    from: 'bot',
+                    type: 'text',
+                    text: answer
+                });
+            } else {
+                state.chatbot.messages.push({
+                    id: `msg_${Date.now()}`,
+                    from: 'bot',
+                    type: 'text',
+                    text: "Tell me what service you're looking for first, and I'll give you full details on duration and pricing!"
+                });
+            }
+            renderChatbot();
+            return;
+        }
+
         if (localIntent === 'list_bookings') {
             const activeBookings = state.bookingsList.filter(b => b.status === 'upcoming');
             if (activeBookings.length === 0) {
@@ -2166,12 +2230,12 @@ function sendChatMessage() {
                     text: "You don't have any upcoming bookings right now. Tell me what job you need done to find a pro!"
                 });
             } else {
-                const summary = activeBookings.map(b => `• ${b.title} (${b.provider_name}) on ${ChatbotEngine.formatSlot(b.timeSlot)}`).join('\n');
+                const summary = activeBookings.map(b => `• **${b.title}** (${b.provider_name}) on ${ChatbotEngine.formatSlot(b.timeSlot)} — $${b.total.toFixed(2)} [Escrow Held]`).join('\n');
                 state.chatbot.messages.push({
                     id: `msg_${Date.now()}`,
                     from: 'bot',
                     type: 'text',
-                    text: `You have ${activeBookings.length} upcoming booking${activeBookings.length === 1 ? '' : 's'}:\n${summary}`
+                    text: `You have ${activeBookings.length} active appointment${activeBookings.length === 1 ? '' : 's'}:\n\n${summary}`
                 });
             }
             renderChatbot();
@@ -2183,23 +2247,18 @@ function sendChatMessage() {
                 id: `msg_${Date.now()}`,
                 from: 'bot',
                 type: 'text',
-                text: "Doorstep focuses on home cleaning, handyman tasks, plumbing, electrical, moving help, junk removal, and yard maintenance. We don't currently support roofing or pest control."
+                text: "Doorstep focuses on home cleaning, handyman tasks, plumbing, electrical, moving help, junk removal, and yard maintenance in Portland. We don't currently support roofing, painting, or pest control."
             });
             renderChatbot();
             return;
         }
 
-        // Job query intake
+        // Job query intake & parsing (JT parseJob model)
         const parsed = ChatbotEngine.parseJob(msg);
         parsed.rawQuery = msg;
 
         // Merge filters
-        const mergedFilters = {
-            service_types: parsed.service_types.length > 0 ? parsed.service_types : state.chatbot.activeFilters.service_types,
-            max_price: parsed.max_price != null ? parsed.max_price : state.chatbot.activeFilters.max_price,
-            neighborhood: parsed.neighborhood != null ? parsed.neighborhood : state.chatbot.activeFilters.neighborhood,
-            urgency: parsed.urgency != null ? parsed.urgency : state.chatbot.activeFilters.urgency,
-        };
+        const mergedFilters = ChatbotEngine.mergeFilters(state.chatbot.activeFilters, parsed);
         state.chatbot.activeFilters = mergedFilters;
 
         // Request Summary
@@ -2210,7 +2269,7 @@ function sendChatMessage() {
             request: { ...mergedFilters, rawQuery: msg }
         });
 
-        // Match & Rank Listings
+        // Match & Rank Listings (JT matchListings model)
         const activeListings = ChatbotEngine.getActiveListings();
         const ranked = ChatbotEngine.matchListings(mergedFilters, activeListings, { query: msg });
         const enriched = ChatbotEngine.enrichResults(ranked, mergedFilters, msg);

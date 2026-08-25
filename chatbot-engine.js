@@ -327,10 +327,62 @@ const ChatbotEngine = (() => {
         return `$${listing.price}/hr${commitment}`;
     }
 
+    function detailsAnswer(listing, message) {
+        const ask = String(message || "").toLowerCase();
+        const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
+
+        if (/\b(how long|duration|take|hours?)\b/.test(ask)) {
+            const minutes = listing.duration_estimate_minutes;
+            return minutes
+                ? `${listing.title} is estimated at about ${minutes} minutes.`
+                : `The data doesn't give an exact duration for ${listing.title}.`;
+        }
+        if (/\b(price|cost|included|charge|rate)\b/.test(ask)) {
+            const unit = listing.price_unit === "hourly" ? "an hourly rate" : "a flat price for the job";
+            return `${priceLabel(listing)} — ${unit}. ${listing.listing_description}`;
+        }
+        if (/\b(also|too|other|else|cover|do)\b/.test(ask)) {
+            return `${listing.provider?.name || "This provider"} covers ${listing.service_type.map(c => labelByCode[c] || c).join(" and ")} on this listing.`;
+        }
+        return `${listing.title}: ${listing.listing_description}`;
+    }
+
+    function compareListings(listings, message) {
+        const ask = String(message || "").toLowerCase();
+        const named = listings.slice(0, 3);
+
+        if (/\b(cheap|price|cost|expensive)\b/.test(ask)) {
+            return named.map(l => `${l.title} is ${priceLabel(l)}`).join("; ") + ".";
+        }
+        if (/\b(rating|rated|better|review)\b/.test(ask)) {
+            return (
+                named
+                    .map(l => `${l.title} is ${l.rating != null ? `${l.rating.toFixed(1)} from ${l.review_count || 0}` : "unrated"}`)
+                    .join("; ") + " on this listing."
+            );
+        }
+        if (/\b(long|duration|time|quick)\b/.test(ask)) {
+            return named.map(l => `${l.title} is about ${l.duration_estimate_minutes || 60} minutes`).join("; ") + ".";
+        }
+        return named.map(l => `${l.title}: ${priceLabel(l)}, about ${l.duration_estimate_minutes || 60} minutes`).join("; ") + ".";
+    }
+
+    function mergeFilters(current, change) {
+        const merged = { ...current };
+        if (change.max_price != null) merged.max_price = change.max_price;
+        if (change.neighborhood) merged.neighborhood = change.neighborhood;
+        if (change.urgency) merged.urgency = change.urgency;
+        if (change.service_types && change.service_types.length > 0) merged.service_types = change.service_types;
+        return merged;
+    }
+
     const LOCAL_INTENTS = [
+        ["cancel_booking", /\b(cancel|never ?mind|undo|don'?t want|drop (?:the )?booking)\b/i],
+        ["compare", /\b(compare|which is (?:cheaper|better|faster|higher)|difference between|how do they compare)\b/i],
+        ["more_details", /\b(how long|duration|cost|price breakdown|what'?s included|does it include)\b/i],
         ["greeting", /^\s*(hi|hey|hello|yo|howdy|good (morning|afternoon|evening))\s*[!.?]*\s*$/i],
         ["help", /\b(what can you do|how does this work|not sure how to use|help me)\b/i],
-        ["list_bookings", /\b(my|all|the)\s+(bookings?|appointments?)\b|\bwhat have i booked\b/i],
+        ["list_bookings", /\b(my|all|the)\s+(bookings?|appointments?)\b|\bwhat have i booked\b|\bshow my bookings\b/i],
         ["unsupported_service", /\b(paint(?:ed|ing)?|roof(?:ing)?|roofer|pest control|exterminator|childcare|babysitt(?:er|ing)|pet care|dog walk(?:er|ing))\b/i],
     ];
 
@@ -357,6 +409,9 @@ const ChatbotEngine = (() => {
         availabilityLabel,
         priceLabel,
         detectLocalIntent,
+        compareListings,
+        detailsAnswer,
+        mergeFilters,
         getServiceTypes,
         getProviders,
         EXAMPLES,
