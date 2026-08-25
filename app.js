@@ -513,106 +513,123 @@ function getFeedHTML() {
     let cardsHTML = '';
     if (listings.length === 0) {
         cardsHTML = `
-            <div class="text-center py-12 px-4 bg-white rounded-2xl border border-slate-200/80 my-4 shadow-sm">
-                <div class="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-xl mx-auto mb-3">
+            <div class="text-center py-16 px-4 bg-white rounded-3xl border border-slate-200/80 my-4 shadow-sm max-w-lg mx-auto">
+                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
-                <h3 class="font-bold text-slate-800 text-sm mb-1">No matching providers found</h3>
-                <p class="text-xs text-slate-500 max-w-xs mx-auto mb-4">Try adjusting your filters or price slider to see more available options.</p>
-                <button onclick="resetFilters()" class="text-xs font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition btn-pop">
+                <h3 class="font-extrabold text-slate-900 text-base mb-1">No matching providers found</h3>
+                <p class="text-xs text-slate-500 max-w-xs mx-auto mb-5 leading-relaxed">Try searching broader keywords like "clean", "furniture", "sink", "yard", or resetting your filters.</p>
+                <button onclick="resetFilters()" class="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-xl transition btn-pop shadow-md">
                     Reset All Filters
                 </button>
             </div>
         `;
     } else {
-        cardsHTML = listings.map(l => {
+        const cardsList = listings.map(l => {
             const provider = (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS : []).find(p => p.provider_id === l.provider_id) || {};
             const rating = l.rating ? l.rating.toFixed(1) : '5.0';
             const priceUnit = l.price_unit === 'hourly' ? '/hr' : ' flat';
             const initial = provider.name ? provider.name.charAt(0) : 'P';
 
             return `
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm mb-3.5 card-hover transition relative">
-                    <div class="flex justify-between items-start mb-2.5">
-                        <div class="flex items-center space-x-3 cursor-pointer" onclick="navigate('profile', {id: '${l.listing_id}'})">
-                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-md">
-                                ${initial}
-                            </div>
-                            <div>
-                                <div class="flex items-center space-x-1">
-                                    <h3 class="font-bold text-slate-900 text-sm hover:text-blue-600 transition">${provider.name}</h3>
-                                    <i class="fa-solid fa-circle-check text-blue-500 text-xs" title="Verified Provider"></i>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm card-hover transition relative flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center space-x-3 cursor-pointer" onclick="navigate('profile', {id: '${l.listing_id}'})">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-md">
+                                    ${initial}
                                 </div>
-                                <span class="text-[11px] text-slate-400">${l.provider_location}</span>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm hover:text-blue-600 transition flex items-center space-x-1">
+                                        <span>${provider.name || 'Local Pro'}</span>
+                                        <i class="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+                                    </h4>
+                                    <div class="flex items-center space-x-1.5 text-xs text-slate-500 mt-0.5">
+                                        <span class="text-amber-500 font-bold flex items-center"><i class="fa-solid fa-star text-[10px] mr-1"></i>${rating}</span>
+                                        <span>•</span>
+                                        <span>${l.provider_location}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-base font-extrabold text-emerald-600">$${l.price}</span>
+                                <span class="text-xs text-slate-400 font-medium">${priceUnit}</span>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-base font-extrabold text-emerald-600">$${l.price}</span>
-                            <span class="text-[11px] text-slate-400 font-normal">${priceUnit}</span>
+
+                        <div class="cursor-pointer mb-4" onclick="navigate('profile', {id: '${l.listing_id}'})">
+                            <h5 class="font-bold text-slate-800 text-xs sm:text-sm mb-1 line-clamp-1">${l.title}</h5>
+                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${l.listing_description}</p>
                         </div>
                     </div>
 
-                    <div class="cursor-pointer" onclick="navigate('profile', {id: '${l.listing_id}'})">
-                        <h4 class="font-bold text-slate-800 text-xs mb-1">${l.title}</h4>
-                        <p class="text-xs text-slate-500 line-clamp-2 mb-3 leading-relaxed">${l.listing_description}</p>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-                        <div class="flex items-center space-x-3 text-slate-500">
-                            <span class="text-amber-500 font-bold flex items-center">
-                                <i class="fa-solid fa-star text-[10px] mr-1"></i> ${rating}
-                                <span class="text-slate-400 font-normal ml-1">(${l.review_count || 0})</span>
-                            </span>
-                            <span class="text-slate-300">•</span>
-                            <span class="text-[11px] text-slate-500"><i class="fa-solid fa-shield-halved text-blue-500 mr-1"></i>Escrow</span>
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+                        <div class="flex items-center space-x-1.5 text-[11px] text-slate-500 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>Available this week</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <button onclick="openProviderChat('${provider.provider_id}', '${l.listing_id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Message Provider">
+                            <button onclick="event.stopPropagation(); openProviderChat('${provider.provider_id}', '${l.listing_id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Message provider">
                                 <i class="fa-solid fa-message text-xs"></i>
                             </button>
-                            <button onclick="navigate('profile', {id: '${l.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-sm btn-pop text-xs">
-                                Book
+                            <button onclick="navigate('profile', {id: '${l.listing_id}'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-1.5 rounded-xl transition text-xs shadow-sm btn-pop">
+                                View Profile
                             </button>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
+
+        cardsHTML = `
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-xs font-bold text-slate-500">
+                    Showing <strong class="text-slate-900 font-extrabold">${listings.length}</strong> ${state.filters.category === 'All' ? 'verified providers' : state.filters.category + ' pros'} in Portland
+                    ${state.filters.searchQuery ? `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1 font-semibold">"${state.filters.searchQuery}"</span>` : ''}
+                </div>
+                ${state.filters.searchQuery || state.filters.category !== 'All' ? `
+                    <button onclick="resetFilters()" class="text-xs text-blue-600 font-bold hover:underline">Clear Filters</button>
+                ` : ''}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${cardsList}
+            </div>
+        `;
     }
 
     return `
         <!-- Sticky Feed Header -->
-        <div class="glass-header px-4 py-3 border-b border-slate-200 sticky top-0 z-10 space-y-2.5">
-            <div class="flex items-center space-x-2">
-                <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-slate-900 p-1 btn-pop">
-                    <i class="fa-solid fa-arrow-left"></i>
+        <div class="glass-header px-4 sm:px-8 py-4 border-b border-slate-200 sticky top-0 z-10 space-y-3">
+            <div class="flex items-center space-x-3 max-w-5xl mx-auto">
+                <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-slate-900 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition btn-pop" title="Back to Dashboard">
+                    <i class="fa-solid fa-arrow-left text-sm"></i>
                 </button>
                 <div class="relative flex-1">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                    <input type="text" id="feed-search-input" placeholder="Search services..." 
-                        class="w-full pl-8 pr-8 py-2 bg-slate-100 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                    <input type="text" id="feed-search-input" placeholder="Search services e.g. furniture, cleaning, plumbing, hauling..." 
+                        class="w-full pl-9 pr-9 py-2.5 bg-slate-100 rounded-2xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition shadow-xs"
                         value="${state.filters.searchQuery}"
                         oninput="handleFeedSearch(this.value)">
                     ${state.filters.searchQuery ? `
-                        <button onclick="clearFeedSearch()" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600">
+                        <button onclick="clearFeedSearch()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     ` : ''}
                 </div>
-                <button onclick="openFilterModal()" class="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Filter & Sort">
+                <button onclick="openFilterModal()" class="relative p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-pop" title="Filter & Sort">
                     <i class="fa-solid fa-sliders text-xs"></i>
                     ${state.filters.minRating > 0 || state.filters.maxPrice < 200 || state.filters.sortBy !== 'recommended' ? `
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></span>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full"></span>
                     ` : ''}
                 </button>
             </div>
 
             <!-- Horizontal Category Chips -->
-            <div class="flex space-x-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+            <div class="flex space-x-2 overflow-x-auto pb-1 text-xs no-scrollbar max-w-5xl mx-auto">
                 ${categories.map(c => {
                     const isSelected = state.filters.category === c;
                     return `
-                        <button onclick="setCategoryFilter('${c}')" class="whitespace-nowrap px-3 py-1.5 rounded-full font-semibold transition btn-pop ${isSelected ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                        <button onclick="setCategoryFilter('${c}')" class="whitespace-nowrap px-4 py-2 rounded-full font-bold transition btn-pop ${isSelected ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
                             ${c}
                         </button>
                     `;
@@ -621,7 +638,7 @@ function getFeedHTML() {
         </div>
 
         <!-- Feed List Container -->
-        <div class="p-4 flex-1 overflow-y-auto bg-slate-50">
+        <div class="p-4 sm:p-8 flex-1 overflow-y-auto bg-slate-50 max-w-5xl mx-auto w-full">
             ${cardsHTML}
             <div class="h-12"></div>
         </div>
