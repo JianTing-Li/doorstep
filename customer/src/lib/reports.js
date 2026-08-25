@@ -1,4 +1,4 @@
-import { createCanonicalReport } from "../data/loadData.js";
+import { createCanonicalReport, getMeta } from "../data/loadData.js";
 
 // Abheeshu's 6 safety-flag categories — copy preserved verbatim (see the
 // Report modal). Each maps to one of the canonical schema's 6 `reason`
@@ -56,7 +56,7 @@ export function buildDisplayReport({ target, flagValue, details, evidenceUrl, cu
     safety_flag_type: flagValue,
     report_details: details,
     evidence_url: evidenceUrl,
-    created_at: new Date().toISOString(),
+    created_at: `${getMeta().reference_date}T18:00:00-07:00`,
     status: "in_review",
   };
 }

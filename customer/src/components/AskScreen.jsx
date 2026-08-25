@@ -18,7 +18,12 @@ import { revealExpandedCard, withGridTransition } from "../lib/viewTransition.js
 import { activeListings } from "../data/listings.js";
 import { getMeta, getNeighborhoods, getProviders, getReviews, getServiceTypes } from "../data/loadData.js";
 import { toBrowseFilters } from "../lib/filterBridge.js";
-import { buildDisplayBooking, recordCanonicalBooking } from "../lib/bookings.js";
+import {
+  buildDisplayBooking,
+  cancelCanonicalBooking,
+  recordCanonicalBooking,
+  rescheduleCanonicalBooking,
+} from "../lib/bookings.js";
 import { useApp } from "../AppContext.jsx";
 import {
   compareListings,
@@ -141,7 +146,7 @@ const EMPTY_CONVERSATION = {
 // those now — but every bit of the matching, booking, and conversation logic
 // below is unchanged.
 export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
-  const { customerId, setBookings: setCustomerBookings, showToast } = useApp();
+  const { customerId, bookings: customerBookings, setBookings: setCustomerBookings, showToast } = useApp();
   const [messages, setMessages] = useState([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [isTyping, setIsTyping] = useState(false);
@@ -506,14 +511,6 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
     );
     if (!booking) return;
 
-    bookingsRef.current = nextBookings;
-    // The card shrinks from full-row back into a grid cell, so this reflows too.
-    withGridTransition(() => {
-      setBookings(nextBookings);
-      setBookingKey(null);
-      setOpenKey(null);
-    });
-
     // Phase 6: one bookings list. A booking made here goes through exactly the
     // same path as one made from Browse — the customer app's own list plus the
     // canonical record in shared/demo-store.js — so it shows up under Bookings,
@@ -523,7 +520,18 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
       provider: listing.provider ?? { provider_id: listing.provider_id, name: "Doorstep provider" },
       timeSlot: slot,
       address: "1420 NW Lovejoy St, Portland, OR",
-      total: listing.price,
+      quantity: listing.price_unit === "hourly" ? (listing.minimum_quantity ?? 1) : 1,
+    });
+    const linkedBookings = {
+      ...nextBookings,
+      [key]: { ...nextBookings[key], displayBookingId: displayBooking.id },
+    };
+    bookingsRef.current = linkedBookings;
+    // The card shrinks from full-row back into a grid cell, so this reflows too.
+    withGridTransition(() => {
+      setBookings(linkedBookings);
+      setBookingKey(null);
+      setOpenKey(null);
     });
     setCustomerBookings((prev) => [displayBooking, ...prev]);
     recordCanonicalBooking(displayBooking, customerId);
@@ -668,6 +676,15 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
 
     bookingsRef.current = next;
     withGridTransition(() => setBookings(next));
+    if (cancelled.displayBookingId) {
+      const displayBooking = customerBookings.find((item) => item.id === cancelled.displayBookingId);
+      cancelCanonicalBooking(displayBooking);
+      setCustomerBookings((current) => current.map((item) => (
+        item.id === cancelled.displayBookingId
+          ? { ...item, status: "cancelled", escrowStatus: "released" }
+          : item
+      )));
+    }
 
     // Free the codes it covered so the sequential offer recalculates.
     const stillCovered = Object.values(next).flatMap((r) => r.listing.service_type);
@@ -747,6 +764,13 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
 
     bookingsRef.current = next;
     setBookings(next);
+    if (booking.displayBookingId) {
+      const displayBooking = customerBookings.find((item) => item.id === booking.displayBookingId);
+      rescheduleCanonicalBooking(displayBooking, slot);
+      setCustomerBookings((current) => current.map((item) => (
+        item.id === booking.displayBookingId ? { ...item, timeSlot: slot } : item
+      )));
+    }
     setReschedulingKey(null);
     appendMessage({ type: "bot_text", text: `Rescheduled to ${formatSlot(slot)}.` });
   }

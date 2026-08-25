@@ -1,9 +1,9 @@
 import { useState } from "react";
 import Icon from "./Icon.jsx";
-import { formatSlotShort, initial, priceLabel, ratingLabel } from "../lib/format.js";
+import { formatSlotShort, initial, priceLabel, ratingLabel, referenceSlots } from "../lib/format.js";
 import { useApp } from "../AppContext.jsx";
 
-const FALLBACK_SLOTS = [1, 2, 3].map((d) => new Date(Date.now() + 86400000 * d).toISOString());
+const FALLBACK_SLOTS = referenceSlots();
 
 // Listing/provider profile — his getProfileHTML(), ported.
 export default function ListingProfileScreen({ listing, provider, onBack, onContinue, onSelectSlot, selectedSlot }) {

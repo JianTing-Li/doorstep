@@ -4,7 +4,9 @@ A two-sided local marketplace for home services. It connects independent home-se
 
 ## Products
 
-Doorstep is built as four standalone products, each owned by one developer, each living in its own folder at the repo root.
+Doorstep combines four product contributions into three user-facing applications. Product C's matching
+experience is integrated into Product B as the Customer app's Ask tab; its server-side handler remains in
+`chat/` and is exposed through the root API entry point.
 
 ### Provider App — Product A ([`/provider`](provider/))
 
@@ -14,9 +16,10 @@ Providers create listings describing a specific service, set a price, and manage
 
 Customers browse and filter active listings by service type, price, and availability, and book directly.
 
-### Matching Chatbot — Product C ([`/chat`](chat/))
+### Matching Chatbot — Product C ([`/customer/?tab=ask`](customer/))
 
-Customers describe a job in their own words and get matched to current active listings that best fit jobs that do not map cleanly onto one service type.
+Customers describe a job in their own words and get matched to current active listings that best fit jobs
+that do not map cleanly onto one service type. The legacy `/chat/` URL redirects to this Ask tab.
 
 ### Trust & Safety Dashboard — Product D ([`/admin`](admin/))
 
@@ -33,8 +36,8 @@ reviews.
 It documents every field, the relationship map, and the rules all four products follow.
 
 - Product A writes provider and listing data.
-- Product B reads active listings and writes bookings, reviews, and reports.
-- Product C reads active listings for recommendations, and has its own test fixtures in
+- Product B reads active listings and writes booking lifecycle changes, reviews, and reports through the shared overlay.
+- Product C's Ask tab reads active listings for recommendations and has its own test fixtures in
   `mock-data/example-queries.json`.
 - Product D reads safety signals and writes moderation actions.
 - Only listings with `listing_status = "active"` are customer-visible to Products B and C.
@@ -52,10 +55,12 @@ been superseded by `mock-data/`.
 
 ## Repo Rules
 
-1. Each product lives in its own folder and never imports from another product folder.
+1. Product UI modules do not import from another product folder. Cross-product infrastructure is exposed
+   through root or `shared/` entry points.
 2. `/mock-data` is read-only and shared. Changing it requires team agreement.
 3. Service type codes come from `mock-data/service-types.json`. Never invent new ones.
-4. Use `_meta.reference_date` as "today", never `new Date()`.
+4. Use `_meta.reference_date` as "today". Parsing or formatting an existing datetime with `Date` is fine;
+   do not use the system clock to decide demo dates.
 5. The customer and chat products show only listings where `listing_status` is `"active"`.
 6. Keep business logic in pure functions in `src/lib` or `lib/`, separate from rendering.
 7. Run `python3 mock-data/validate.py` before committing any dataset change.
@@ -63,9 +68,8 @@ been superseded by `mock-data/`.
 
 ## Local Development
 
-There are no workspaces and no monorepo tooling. Each product is a standalone app with its own stack
-and dependencies, and runs independently from inside its own folder — see that product's own
-README/setup instructions once its owner has added them.
+There are no workspaces and no monorepo tooling. Customer and Provider are standalone Vite apps; Admin is
+static. Product C's UI and tests now live under Customer, while its server handler remains under `chat/`.
 
 The root `package.json` is **not** a workspace root and does not build or own any product. It exists
 only because the repo deploys as a single Vercel project whose root directory is the repo root, and
@@ -78,7 +82,7 @@ product's own `package.json`.
 The repo deploys as one Vercel project, configured by `vercel.json` at the root:
 
 - `/` — the static landing page in `index.html`
-- `/chat/` — the Matching Chatbot, built from `chat/` (its Vite `base` is `/chat/`)
+- `/chat/` — compatibility redirect to `/customer/?tab=ask`
 - `/api/*` — serverless functions; each file re-exports the handler from its product folder
 
 `/api/chat` needs a `GEMINI_API_KEY` environment variable set in the Vercel project. It is read
@@ -88,5 +92,5 @@ server-side only — never expose it to a client bundle, and never prefix it wit
 
 - Kamal Mohamed — Provider App (Product A) — [`/provider`](provider/)
 - Abheeshu Dhungana — Customer App (Product B) — [`/customer`](customer/)
-- Jian Ting Li — Matching Chatbot (Product C) — [`/chat`](chat/)
+- Jian Ting Li — Matching Chatbot (Product C) — [`/customer/?tab=ask`](customer/)
 - Ibtisam Hossain — Trust & Safety Dashboard (Product D) — [`/admin`](admin/)

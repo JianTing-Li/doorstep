@@ -1,6 +1,7 @@
 import Icon from "./Icon.jsx";
 import { formatMoney, formatSlotFull } from "../lib/format.js";
 import { useApp } from "../AppContext.jsx";
+import { completeCanonicalBooking } from "../lib/bookings.js";
 
 // My Bookings & Activity — his getMyBookingsHTML(), ported. Three sections
 // on one screen: upcoming jobs, completed history, trust & safety cases.
@@ -10,7 +11,10 @@ export default function BookingsScreen() {
   const completed = bookings.filter((b) => b.status === "completed");
 
   function complete(bookingId) {
-    setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, status: "completed", escrowStatus: "released" } : b)));
+    completeCanonicalBooking(bookings.find((b) => b.id === bookingId));
+    setBookings((prev) => prev.map((b) => (
+      b.id === bookingId ? { ...b, status: "completed", escrowStatus: "released" } : b
+    )));
     showToast("Job completed! Escrow released to provider.", "checkCircle");
     openReview(bookingId);
   }
@@ -30,7 +34,7 @@ export default function BookingsScreen() {
             <span className="dot dot-accent" /> Upcoming Jobs ({upcoming.length})
           </h3>
           {upcoming.length === 0 ? (
-            <div className="empty-panel empty-panel-sm">No upcoming bookings currently.</div>
+            <div className="empty-panel empty-panel-sm ds-empty-state">No upcoming bookings currently.</div>
           ) : (
             upcoming.map((b) => (
               <div key={b.id} className="booking-card">
@@ -68,7 +72,7 @@ export default function BookingsScreen() {
         <section>
           <h3 className="section-label"><Icon name="history" size={13} /> Completed History ({completed.length})</h3>
           {completed.length === 0 ? (
-            <div className="empty-panel empty-panel-sm">No completed jobs yet.</div>
+            <div className="empty-panel empty-panel-sm ds-empty-state">No completed jobs yet.</div>
           ) : (
             completed.map((b) => (
               <div key={b.id} className="booking-card booking-card-muted">
@@ -101,7 +105,7 @@ export default function BookingsScreen() {
         <section>
           <h3 className="section-label section-label-danger"><Icon name="shieldCat" size={13} /> Trust &amp; Safety Cases ({reports.length})</h3>
           {reports.length === 0 ? (
-            <div className="empty-panel empty-panel-sm">No active safety reports filed for this account.</div>
+            <div className="empty-panel empty-panel-sm ds-empty-state">No active safety reports filed for this account.</div>
           ) : (
             reports.map((rep) => (
               <div key={rep.report_id} className="report-card">

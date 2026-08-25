@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCustomers } from "../data/loadData.js";
+import { getCustomers, getMeta } from "../data/loadData.js";
 
 // Per-persona local state: bookings, provider messages, safety reports.
 // Same localStorage keys and seeded demo content as Abheeshu's original
@@ -15,6 +15,12 @@ import { getCustomers } from "../data/loadData.js";
 const DEFAULT_PERSONA_ID = "cst_001";
 const ACTIVE_PERSONA_KEY = "doorstep_active_persona";
 
+function referenceDateTime(dayOffset, hour) {
+  const at = new Date(`${getMeta().reference_date}T12:00:00Z`);
+  at.setUTCDate(at.getUTCDate() + dayOffset);
+  return `${at.toISOString().slice(0, 10)}T${hour}:00:00-07:00`;
+}
+
 const SEED_BOOKINGS = {
   cst_001: [
     {
@@ -23,7 +29,7 @@ const SEED_BOOKINGS = {
       provider_id: "prv_001",
       title: "Weekly & Bi-Weekly Apartment Cleaning",
       provider_name: "Marisol Vega",
-      timeSlot: new Date(Date.now() + 86400000 * 2).toISOString(),
+      timeSlot: referenceDateTime(2, "10"),
       address: "1420 NW Lovejoy St, Apt 3B, Portland, OR",
       total: 51.75,
       status: "upcoming",
@@ -39,7 +45,7 @@ const SEED_BOOKINGS = {
       provider_id: "prv_005",
       title: "IKEA Furniture Assembly & Mounting",
       provider_name: "Tomasz Bak",
-      timeSlot: new Date(Date.now() - 86400000 * 3).toISOString(),
+      timeSlot: referenceDateTime(-3, "14"),
       address: "825 SE Hawthorne Blvd, Portland, OR",
       total: 86.25,
       status: "completed",
@@ -53,9 +59,9 @@ const SEED_BOOKINGS = {
 const SEED_MESSAGES = {
   cst_001: {
     prv_001: [
-      { id: "m1", sender: "provider", text: "Hi! I saw your booking for Friday. Do you have any specific pet instructions for my visit?", timestamp: new Date(Date.now() - 3600000 * 4).toISOString() },
-      { id: "m2", sender: "customer", text: "Hi Marisol! Yes, our cat will be in the bedroom during cleaning. Thanks for asking!", timestamp: new Date(Date.now() - 3600000 * 3).toISOString() },
-      { id: "m3", sender: "provider", text: "Sounds wonderful! Looking forward to Friday.", timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
+      { id: "m1", sender: "provider", text: "Hi! I saw your booking for Friday. Do you have any specific pet instructions for my visit?", timestamp: referenceDateTime(0, "08") },
+      { id: "m2", sender: "customer", text: "Hi Marisol! Yes, our cat will be in the bedroom during cleaning. Thanks for asking!", timestamp: referenceDateTime(0, "09") },
+      { id: "m3", sender: "provider", text: "Sounds wonderful! Looking forward to Friday.", timestamp: referenceDateTime(0, "10") },
     ],
   },
 };
@@ -71,7 +77,7 @@ const SEED_REPORTS = {
       safety_flag_type: "payment_request_off_platform",
       report_details: "Provider asked for cash payment outside Doorstep escrow after accepting.",
       evidence_url: "",
-      created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+      created_at: referenceDateTime(-4, "12"),
       status: "in_review",
     },
   ],

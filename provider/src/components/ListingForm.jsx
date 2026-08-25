@@ -155,7 +155,7 @@ export default function ListingForm({ onCreate }) {
             );
           })}
         </div>
-        {errors.need_key && <span className="field-error">{errors.need_key}</span>}
+        {errors.need_key && <span className="field-error ds-field-error">{errors.need_key}</span>}
         <button type="button" className="no-match-link" onClick={handleNoMatch}>
           I don't see the need I solve
         </button>
@@ -214,7 +214,7 @@ export default function ListingForm({ onCreate }) {
               })}
             </div>
             {errors.included_tasks && (
-              <span className="field-error">{errors.included_tasks}</span>
+              <span className="field-error ds-field-error">{errors.included_tasks}</span>
             )}
           </fieldset>
 
@@ -239,7 +239,7 @@ export default function ListingForm({ onCreate }) {
               Customers see this exact price before they book—no hidden estimate.
             </small>
             {errors.price_per_day && (
-              <span className="field-error">{errors.price_per_day}</span>
+              <span className="field-error ds-field-error">{errors.price_per_day}</span>
             )}
           </label>
 

@@ -16,7 +16,7 @@ export default function ListingFeed({ listings, providersById, initialFilters, o
     [listings, filters, providersById],
   );
 
-  const filtersActive = filters.minRating > 0 || filters.maxPrice < 200 || filters.sortBy !== "recommended";
+  const filtersActive = filters.minRating > 0 || filters.maxPrice < DEFAULT_FILTERS.maxPrice || filters.sortBy !== "recommended";
 
   return (
     <div className="feed-screen">
@@ -67,7 +67,7 @@ export default function ListingFeed({ listings, providersById, initialFilters, o
 
       <div className="feed-list">
         {results.length === 0 ? (
-          <div className="empty-panel">
+          <div className="empty-panel ds-empty-state">
             <span className="empty-panel-icon"><Icon name="search" size={20} /></span>
             <h3>No matching providers found</h3>
             <p>Try adjusting your filters or price slider to see more available options.</p>

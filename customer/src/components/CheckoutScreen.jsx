@@ -3,25 +3,27 @@ import Icon from "./Icon.jsx";
 import { formatMoney, formatSlotFull, initial } from "../lib/format.js";
 import { buildDisplayBooking, recordCanonicalBooking } from "../lib/bookings.js";
 import { useApp } from "../AppContext.jsx";
+import { getMeta } from "../data/loadData.js";
 
 // Escrow checkout — his getCheckoutHTML(), ported. Kept as visual flavor
 // per the Gate 0 decision: no real payment processing, same copy and fee
 // breakdown as before.
 export default function CheckoutScreen({ listing, provider, slot, onBack, onConfirmed }) {
   const { customer, customerId, setBookings, showToast } = useApp();
-  const [hours, setHours] = useState(1);
+  const isHourly = listing.price_unit === "hourly";
+  const minimumHours = isHourly ? (listing.minimum_quantity ?? 1) : 1;
+  const [hours, setHours] = useState(minimumHours);
   const [address, setAddress] = useState(customer.address || "1420 NW Lovejoy St, Portland, OR");
   const [paying, setPaying] = useState(false);
 
-  const isHourly = listing.price_unit === "hourly";
   const subtotal = isHourly ? listing.price * hours : listing.price;
-  const platformFee = subtotal * 0.15;
+  const platformFee = subtotal * (getMeta().commission_rate ?? 0.15);
   const total = subtotal + platformFee;
 
   function authorize() {
     setPaying(true);
     setTimeout(() => {
-      const booking = buildDisplayBooking({ listing, provider, timeSlot: slot, address, total });
+      const booking = buildDisplayBooking({ listing, provider, timeSlot: slot, address, quantity: hours });
       setBookings((prev) => [booking, ...prev]);
       recordCanonicalBooking(booking, customerId);
       showToast("Escrow Payment Authorized!", "shield");
@@ -55,7 +57,7 @@ export default function CheckoutScreen({ listing, provider, slot, onBack, onConf
             <div className="checkout-line checkout-line-border">
               <span><Icon name="clock" size={12} /> Estimated Duration</span>
               <span className="stepper">
-                <button type="button" onClick={() => setHours((h) => Math.max(1, h - 1))}>&minus;</button>
+                <button type="button" onClick={() => setHours((h) => Math.max(minimumHours, h - 1))}>&minus;</button>
                 <strong>{hours} hr</strong>
                 <button type="button" onClick={() => setHours((h) => Math.min(8, h + 1))}>+</button>
               </span>

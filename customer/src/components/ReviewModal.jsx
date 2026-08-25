@@ -1,16 +1,19 @@
 import { useState } from "react";
 import Icon from "./Icon.jsx";
 import { useApp } from "../AppContext.jsx";
+import { recordCanonicalReview } from "../lib/bookings.js";
 
 export default function ReviewModal({ bookingId, booking, onClose }) {
-  const { setBookings, showToast } = useApp();
+  const { customerId, setBookings, showToast } = useApp();
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
 
   function submit() {
+    const reviewText = text.trim() || "Excellent service and great communication!";
     setBookings((prev) => prev.map((b) => (
-      b.id === bookingId ? { ...b, rating, review: text.trim() || "Excellent service and great communication!" } : b
+      b.id === bookingId ? { ...b, rating, review: reviewText } : b
     )));
+    recordCanonicalReview(booking, customerId, rating, reviewText);
     showToast("Review submitted & Escrow finalized! ★★★★★", "star");
     onClose();
   }

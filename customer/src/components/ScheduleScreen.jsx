@@ -1,7 +1,7 @@
 import Icon from "./Icon.jsx";
-import { formatSlotLong, initial } from "../lib/format.js";
+import { formatSlotLong, initial, referenceSlots } from "../lib/format.js";
 
-const FALLBACK_SLOTS = [1, 2, 3].map((d) => new Date(Date.now() + 86400000 * d).toISOString());
+const FALLBACK_SLOTS = referenceSlots();
 
 // A second, plainer slot picker — reached only from the provider-chat
 // "Book Pro" shortcut, not from Profile. A real, distinct second path to

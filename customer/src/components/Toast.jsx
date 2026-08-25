@@ -11,7 +11,7 @@ export default function Toast() {
 
 function ToastInner({ message, icon }) {
   return (
-    <div className="toast" role="status">
+    <div className="toast ds-toast" role="status">
       <Icon name={icon} size={16} />
       <span>{message}</span>
     </div>

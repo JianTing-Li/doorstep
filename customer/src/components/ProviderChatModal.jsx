@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon.jsx";
-import { initial } from "../lib/format.js";
+import { initial, referenceTimestamp } from "../lib/format.js";
 import { useApp } from "../AppContext.jsx";
 
 const QUICK_QUESTIONS = [
@@ -18,7 +18,7 @@ export default function ProviderChatModal({ providerId, listingId, provider, lis
   const feedRef = useRef(null);
 
   const thread = messages[providerId] || [
-    { id: "init", sender: "provider", text: `Hi there! I'm ${provider.name}. Feel free to message me with any questions about my services!`, timestamp: new Date().toISOString() },
+    { id: "init", sender: "provider", text: `Hi there! I'm ${provider.name}. Feel free to message me with any questions about my services!`, timestamp: referenceTimestamp("09") },
   ];
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function ProviderChatModal({ providerId, listingId, provider, lis
   function send(text) {
     const msg = text.trim();
     if (!msg) return;
-    const userMsg = { id: "m_" + Date.now(), sender: "customer", text: msg, timestamp: new Date().toISOString() };
+    const userMsg = { id: "m_" + Date.now(), sender: "customer", text: msg, timestamp: referenceTimestamp("10") };
     setMessages((prev) => ({ ...prev, [providerId]: [...(prev[providerId] || thread), userMsg] }));
     setInput("");
     setTyping(true);
@@ -46,7 +46,7 @@ export default function ProviderChatModal({ providerId, listingId, provider, lis
       } else if (/clean/.test(lower)) {
         reply = "I bring non-toxic, eco-friendly supplies and microfiber mops for thorough cleaning. Looking forward to helping!";
       }
-      const replyMsg = { id: "m_reply_" + Date.now(), sender: "provider", text: reply, timestamp: new Date().toISOString() };
+      const replyMsg = { id: "m_reply_" + Date.now(), sender: "provider", text: reply, timestamp: referenceTimestamp("10", "01") };
       setMessages((prev) => ({ ...prev, [providerId]: [...(prev[providerId] || thread), replyMsg] }));
     }, 950);
   }

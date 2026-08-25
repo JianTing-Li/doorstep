@@ -6,10 +6,8 @@
  * pattern per product. Consumes shared/tokens.css; defines no color, size,
  * or spacing value of its own.
  *
- * Nothing imports this yet — no product's screens change this phase. It
- * exists so Phase 4 (A, D) and Phase 5 (the B port) have one place to draw
- * these patterns from instead of each inventing its own toast/spinner/error
- * treatment. See INTEGRATION-NOTES.md for the convention each class encodes.
+ * Imported by Customer, Provider, and Admin. Products combine these shared
+ * structural classes with composition-specific classes where needed.
  */
 
 /* ---- Loading: a skeleton block, not a spinner ---- */

@@ -21,7 +21,8 @@ export const CATEGORY_ICON = {
 export const DEFAULT_FILTERS = {
   category: "All",
   searchQuery: "",
-  maxPrice: 200,
+  // The slider's top label is "$250+": at the top, price is unconstrained.
+  maxPrice: 250,
   minRating: 0,
   sortBy: "recommended",
 };
@@ -55,12 +56,12 @@ export function applyFilters(listings, filters, providersById) {
     });
   }
 
-  if (filters.maxPrice) {
+  if (filters.maxPrice < DEFAULT_FILTERS.maxPrice) {
     result = result.filter((l) => (l.price || 0) <= filters.maxPrice);
   }
 
   if (filters.minRating > 0) {
-    result = result.filter((l) => (l.rating || 5.0) >= filters.minRating);
+    result = result.filter((l) => l.rating != null && l.rating >= filters.minRating);
   }
 
   result = [...result];

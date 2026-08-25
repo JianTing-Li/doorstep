@@ -1,4 +1,4 @@
-import { createRecord, mergeCollection } from "../../../shared/demo-store.js";
+import { createRecord, mergeCollection, patchRecord } from "../../../shared/demo-store.js";
 
 import exampleQueries from "../../../mock-data/example-queries.json" with { type: "json" };
 import listings from "../../../mock-data/listings.json" with { type: "json" };
@@ -60,6 +60,18 @@ export function createCanonicalBooking(record) {
   return createRecord("bookings", record);
 }
 
+export function patchCanonicalBooking(bookingId, patch) {
+  patchRecord("bookings", bookingId, patch);
+}
+
+export function patchCanonicalListing(listingId, patch) {
+  patchRecord("listings", listingId, patch);
+}
+
+export function patchCanonicalProvider(providerId, patch) {
+  patchRecord("providers", providerId, patch);
+}
+
 /**
  * Persist a customer-filed safety report in the canonical shared shape, so
  * it actually reaches Admin's moderation queue — his own UI already promises
@@ -67,4 +79,8 @@ export function createCanonicalBooking(record) {
  */
 export function createCanonicalReport(record) {
   return createRecord("reports", record);
+}
+
+export function createCanonicalReview(record) {
+  return createRecord("reviews", record);
 }

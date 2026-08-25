@@ -2,14 +2,14 @@
 // how many bubbles a single send produces, and whether the thread only ever
 // shows two message styles.
 //
-//   npm run dev            # in another terminal
+//   npm run dev            # in another terminal (customer/, port 5174)
 //   node src/lib/__tests__/ui.test.mjs
 //
 // Override the origin with UI_BASE if the dev server is on another port.
 import { chromium } from "playwright";
 
-const BASE = process.env.UI_BASE ?? "http://localhost:5173";
-const APP = `${BASE.replace(/\/$/, "")}/chat/`;
+const BASE = process.env.UI_BASE ?? "http://localhost:5174";
+const APP = `${BASE.replace(/\/$/, "")}/customer/?tab=ask`;
 
 const results = [];
 function check(label, pass, detail = "") {
@@ -158,6 +158,27 @@ const bookedByTapTitle = await bookFirstAvailable(page.locator(".results-list").
 const bookedCard = page.locator(".listing-card.is-booked").filter({ hasText: bookedByTapTitle ?? "" });
 await bookedCard.waitFor({ timeout: 5000 });
 
+const readSharedBooking = async (title) => page.evaluate((bookingTitle) => {
+  const local = JSON.parse(localStorage.getItem("doorstep_bookings_cst_001") || "[]");
+  const display = local.find((item) => item.title === bookingTitle && item.canonical);
+  const overlay = JSON.parse(localStorage.getItem("doorstep:demo:v1") || "{}");
+  const canonical = (overlay.bookings?.created || []).find((item) => item.booking_id === display?.id);
+  return {
+    display,
+    canonical,
+    reviews: overlay.reviews?.created || [],
+    listingPatch: overlay.listings?.patched?.[display?.listing_id],
+    providerPatch: overlay.providers?.patched?.[display?.provider_id],
+  };
+}, title);
+
+let shared = await readSharedBooking(bookedByTapTitle);
+check(
+  "Ask booking is mirrored to Customer and the shared store",
+  Boolean(shared.display && shared.canonical),
+  shared.display?.id || "missing linked booking",
+);
+
 check("booking a card reaches booked state", (await bookedCard.count()) === 1, bookedByTapTitle ?? "no bookable card found");
 
 const priceBefore = (await bookedCard.locator(".booked-line").nth(1).innerText()).trim();
@@ -177,6 +198,12 @@ check("reschedule keeps the card in booked state", (await bookedCard.locator(".b
 const whenAfter = (await bookedCard.locator(".booked-line").first().innerText()).trim();
 const priceAfter = (await bookedCard.locator(".booked-line").nth(1).innerText()).trim();
 check("reschedule changes only the slot", whenAfter !== whenBefore && priceAfter === priceBefore, `${whenBefore} -> ${whenAfter}, price ${priceAfter}`);
+shared = await readSharedBooking(bookedByTapTitle);
+check(
+  "reschedule updates Customer and canonical slots together",
+  shared.display?.timeSlot === shared.canonical?.scheduled_slot,
+  `${shared.display?.timeSlot} / ${shared.canonical?.scheduled_slot}`,
+);
 
 // Cancel by tap: inline confirm, then the card reverts to a normal tappable
 // card — same as what the chat intent does. A follow-up "Still open" message
@@ -199,6 +226,12 @@ check(
   (await page.locator(".listing-card.is-booked").filter({ hasText: bookedByTapTitle ?? "" }).count()) === 0,
   `${bookedByTapTitle} no longer booked`,
 );
+shared = await readSharedBooking(bookedByTapTitle);
+check(
+  "tap Cancel updates Customer and canonical status together",
+  shared.display?.status === "cancelled" && shared.canonical?.status === "cancelled",
+  `${shared.display?.status} / ${shared.canonical?.status}`,
+);
 
 // Cancel by chat intent, on a fresh booking, should land in the identical
 // end state: same confirmation copy, same reversion out of booked state.
@@ -215,6 +248,31 @@ check(
   "cancel_booking chat intent reverts the card exactly like tap Cancel does",
   (await page.locator(".listing-card.is-booked").filter({ hasText: bookedByChatTitle ?? "" }).count()) === 0,
   `${bookedByChatTitle} no longer booked`,
+);
+
+console.log("--- Customer completion and canonical review ---");
+const completedTitle = await bookFirstAvailable(page.locator(".results-list").first());
+await page.locator(".tab-bar-item", { hasText: "Bookings" }).click();
+const customerCard = page.locator(".booking-card").filter({ hasText: completedTitle ?? "" }).first();
+await customerCard.locator(".booking-card-complete").click();
+await page.locator(".modal-card textarea").fill("Verified shared review");
+await page.locator(".modal-card .btn-primary").click();
+await page.waitForTimeout(300);
+shared = await readSharedBooking(completedTitle);
+check(
+  "Complete patches the canonical booking",
+  shared.display?.status === "completed" && shared.canonical?.status === "completed",
+  `${shared.display?.status} / ${shared.canonical?.status}`,
+);
+check(
+  "review submission creates a linked canonical review",
+  shared.reviews.some((review) => review.booking_id === shared.display?.id && review.text === "Verified shared review"),
+  `${shared.reviews.length} canonical review(s)`,
+);
+check(
+  "review submission refreshes listing and provider aggregates",
+  Number.isFinite(shared.listingPatch?.rating) && Number.isFinite(shared.providerPatch?.rating),
+  `listing ${shared.listingPatch?.rating} / provider ${shared.providerPatch?.rating}`,
 );
 
 check("no console or page errors", pageErrors.length === 0, pageErrors.join(" | "));

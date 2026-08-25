@@ -65,7 +65,7 @@ function devApi() {
       server.middlewares.use("/api/chat", async (req, res, next) => {
         let handler;
         try {
-          ({ default: handler } = await import("../chat/api/chat.js"));
+          ({ default: handler } = await import("../api/chat.js"));
         } catch {
           return next();
         }

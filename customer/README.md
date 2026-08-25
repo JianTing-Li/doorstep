@@ -17,7 +17,7 @@ A two-sided local marketplace for home services. It connects independent home-se
 
 ## Products
 
-Doorstep is built as four standalone products, each owned by one developer:
+Doorstep combines four product contributions into three user-facing applications:
 
 ### Provider App (Product A)
 
@@ -27,7 +27,7 @@ Providers create listings describing a specific service, set a price, and manage
 
 Customers browse and filter active listings by service type, price, and availability, and book directly.
 
-### Matching Chatbot (Product C)
+### Matching Chatbot (Product C, Customer Ask tab)
 
 Customers describe a job in their own words and get matched to current active listings that best fit jobs that do not map cleanly onto one service type.
 
@@ -37,8 +37,9 @@ The internal team reviews listings and bookings with reports or low reviews, pri
 
 ## Shared Data Architecture
 
-All four products read and write through `shared/demo-store.js` over the canonical `mock-data/` at the repo
-root — never this folder's own copy of anything. See `src/data/loadData.js`.
+Customer reads canonical data through `src/data/loadData.js` and writes booking lifecycle changes, reviews,
+and safety reports through `shared/demo-store.js`. Provider-message threads and Customer's display-oriented
+per-persona state remain local to this app; canonical marketplace records do not.
 
 ## Developers
 

@@ -49,13 +49,13 @@ export default function ConfirmationMessage({
 
       <div className={`collapse ${confirmingCancel ? "is-open" : ""}`} aria-hidden={!confirmingCancel}>
         <div className="collapse-inner">
-          <div className="booked-confirm">
-            <span className="booked-confirm-label">Cancel this request?</span>
+          <div className="booked-confirm ds-confirm-inline">
+            <span className="booked-confirm-label ds-confirm-inline-label">Cancel this request?</span>
             <div className="booked-confirm-actions">
-              <button type="button" className="booked-confirm-yes" onClick={onCancel}>
+              <button type="button" className="booked-confirm-yes ds-confirm-inline-danger" onClick={onCancel}>
                 Cancel request
               </button>
-              <button type="button" className="booked-confirm-no" onClick={() => setConfirmingCancel(false)}>
+              <button type="button" className="booked-confirm-no ds-confirm-inline-cancel" onClick={() => setConfirmingCancel(false)}>
                 Keep it
               </button>
             </div>

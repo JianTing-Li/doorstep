@@ -1,5 +1,9 @@
 # Doorstep Matching Chatbot (Product C)
 
+Product C's interface, matching modules, and tests now live in `customer/src/` as the Customer app's Ask
+tab. This folder retains the server-side Gemini handler, environment example, historical package metadata,
+and the compatibility redirect used by `/chat/`.
+
 Describe a household job in plain language and the chatbot turns it into a compact
 service request, ranks active Portland listings, explains why each one fits, and lets
 the customer choose a preferred time in the thread.
@@ -73,15 +77,17 @@ deterministic ranker puts an expected listing first for all 22.
 ## Setup and running
 
 ```bash
-cp .env.example .env.local     # add a key from https://aistudio.google.com
+cp chat/.env.example chat/.env.local  # add a key from https://aistudio.google.com
+cd customer
 npm install && npm run dev
 ```
 
-One server: landing page at `/`, chatbot at `/chat/`, and `/api/chat` running the
-Gemini function in-process — `vercel dev` is **not** required. Without a key the
-app still runs; every message uses the keyword path.
+The Customer dev server serves the Ask tab at `/customer/?tab=ask` and runs `/api/chat` in-process through
+the repository-root API entry. `vercel dev` is not required. Without a key the app still runs; every message
+uses the keyword path. The deployed `/chat/` URL redirects to the Ask tab.
 
-Tests: `node src/lib/__tests__/matching.test.js`
+Tests: `node customer/src/lib/__tests__/matching.test.js` and
+`node customer/src/lib/__tests__/ui.test.mjs` (with the Customer dev server running).
 (add `CHAT_API_BASE=http://localhost:5199` to include the live LLM path).
 
 ## The key
@@ -92,6 +98,6 @@ publishing the key to anyone who opens devtools.
 
 ## Data
 
-Reads `listings`, `providers`, `reviews`, `service-types`, `neighborhoods`, `_meta`,
-and `example-queries` from `/mock-data` through `src/data/`. It writes nothing to the
-shared dataset. Prepared requests live in conversation state and disappear on reload.
+The Ask tab reads `listings`, `providers`, `reviews`, `service-types`, `neighborhoods`, `_meta`, and
+`example-queries` through `customer/src/data/loadData.js`. Its conversation remains in memory, while booked
+requests and later lifecycle changes are mirrored into Customer's persisted list and `shared/demo-store.js`.

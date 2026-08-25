@@ -10,6 +10,12 @@
  * new features. */
 
 @import "../../shared/tokens.css";
+@import "../../shared/patterns.css";
+
+:root {
+  --customer-white: #ffffff;
+  --customer-scrim: #04080e;
+}
 
 * {
   box-sizing: border-box;
@@ -200,7 +206,7 @@ textarea { resize: vertical; }
   color: var(--color-ink);
 }
 .icon-button-invert {
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--customer-white) 12%, transparent);
   color: white;
 }
 
@@ -694,7 +700,7 @@ a:focus-visible {
   background: linear-gradient(140deg, var(--color-accent-strong), var(--color-accent), var(--color-page-deep));
   flex-shrink: 0;
 }
-.profile-cover-wordmark { font-size: 44px; font-weight: 800; color: rgba(255,255,255,0.18); letter-spacing: 0.02em; user-select: none; }
+.profile-cover-wordmark { font-size: 44px; font-weight: 800; color: color-mix(in srgb, var(--customer-white) 18%, transparent); letter-spacing: 0.02em; user-select: none; }
 .profile-back { position: absolute; top: var(--space-3); left: var(--space-3); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; border: none; background: var(--glass-fill-strong); color: var(--color-ink); }
 
 .profile-sheet {
@@ -880,7 +886,7 @@ a:focus-visible {
 .sheet-backdrop, .drawer-backdrop, .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4, 8, 14, 0.55);
+  background: color-mix(in srgb, var(--customer-scrim) 55%, transparent);
   z-index: 100;
   display: flex;
   align-items: flex-end;

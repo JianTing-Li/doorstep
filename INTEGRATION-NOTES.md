@@ -1293,7 +1293,7 @@ thread's bottom padding grown to match. Caught by screenshot, not by reading the
 |---|---|---|
 | 1 | Every color/size/space/radius resolves to a token | **PASS with two documented exceptions** |
 | 2 | One icon set, no leftover Font Awesome | **PASS** |
-| 3 | Buttons, inputs, badges, loading/empty/error identical everywhere | **PARTIAL FAIL** |
+| 3 | Shared loading/empty/error/toast/validation/confirm patterns | **PASS after post-Phase-6 audit remediation** |
 | 4 | Dark mode in all four, survives navigation | **PASS** |
 | 5 | No product reads mock-data directly | **PASS** |
 | 6 | Usable at 390px, no horizontal scroll | **PASS — after fixing two real bugs** |
@@ -1309,13 +1309,11 @@ shared accent cannot do — that is wayfinding, not a missing token.
 **2 — Icons.** Zero Font Awesome outside `customer/legacy/` (the archived original, which isn't built or
 served). All four products use the shared inline-SVG convention.
 
-**3 — Interaction patterns. This one genuinely fails, and I'm not going to dress it up.**
-`shared/patterns.css` was written in Phase 2 and **is still imported by nothing**. Each product defines its
-own button primitive (customer 18 rules, provider 15, admin 6) and its own empty-state markup. The saving
-grace is that they all consume the same tokens, so they *look* consistent — same accent, radius, type scale —
-but the implementations are three parallel definitions, not one shared one. Wiring `patterns.css` in now
-would mean touching Provider's and Admin's CSS again late in the phase for a mostly-cosmetic gain, so I've
-left it and flagged it. **This is the one checklist item I'd fix given more time.**
+**3 — Interaction patterns.** The original Gate 6 result was a genuine partial failure: `shared/patterns.css`
+was imported by nothing. The post-Phase-6 audit remediation imported it in Customer, Provider, and Admin and
+adopted its shared empty-state, toast, field-error, and inline-confirm classes in active markup. Products
+retain composition-specific button variants, but the cross-product state/feedback patterns now have one
+consumed implementation rather than an unused stylesheet.
 
 **4 — Dark mode.** Verified in all four with the theme persisted through navigation: `data-theme="dark"`
 survives `/customer/` → `/provider/` → `/admin/`, and the Ask tab renders correctly in dark (Product C's glass
@@ -1381,6 +1379,46 @@ local key keeps working without anyone moving a file.
 ### Left alone
 
 - Product C's matching, parsing, intent, and booking logic — moved, not rewritten.
-- `shared/patterns.css` — still unconsumed (item 3 above).
 - Abheeshu's "Appointment Slots" copy.
 - `customer/legacy/` — his original vanilla build, archived and unbuilt.
+
+---
+
+## Post-Phase-6 audit remediation
+
+An independent read-only audit at commit `a6e5d29` found six gaps. All were addressed together after the
+audit so the record distinguishes the original Gate 6 result from the corrected implementation.
+
+### Shared booking lifecycle and schema
+
+- Ask booking records now retain the id of their Customer/shared counterpart. Cancel and reschedule update
+  Ask state, Customer's persisted list, and `shared/demo-store.js` together.
+- Completing a Customer booking patches the canonical booking to `completed`; submitting its review creates
+  a canonical `reviews` record. Seed-only legacy bookings remain local because they have no canonical FK.
+- Hourly checkout starts at `minimum_quantity`, cannot decrement below it, and writes the selected quantity
+  with `quantity_unit: "hours"`. Flat bookings remain quantity 1 / `job`.
+- Canonical booking `created_at` is anchored to `_meta.reference_date` with the selected slot's offset rather
+  than the viewer's system clock. Customer seed data and new report timestamps are deterministic for the
+  same reason.
+
+### Browse correctness
+
+- The slider's `$250+` top position is now genuinely unbounded, so a default All browse returns all 32 active
+  listings rather than silently hiding the 7 priced over $200.
+- Minimum-rating filters exclude unrated listings instead of treating `null` as 5.0.
+
+### Tests, architecture docs, and tokens
+
+- Playwright moved with the UI test into Customer's dev dependencies, was upgraded to 1.62.1 to avoid the
+  advisory affecting the former 1.48 release, and the test now targets `/customer/?tab=ask` on Customer's
+  documented dev port. The expanded suite passes 25/25, including shared cancel/reschedule/complete/review
+  and refreshed listing/provider review aggregates.
+- Root and Customer READMEs now describe Product C as the Ask tab, `/chat/` as a compatibility redirect,
+  and the actual shared/local persistence boundary. Customer dev API plumbing imports the root API entry
+  rather than another product folder directly.
+- Remaining active CSS color literals are confined to token definitions or the two documented category/avatar
+  wayfinding exceptions. Former inline rgba/hex usages in Provider and Customer now resolve through tokens.
+- `shared/patterns.css` is imported and used by all three applications rather than remaining dead code.
+- Final dependency audit found the Provider app's Vite 5 toolchain carried one high and one moderate
+  dev-server advisory. Provider now uses Vite 8.2.2 and `@vitejs/plugin-react` 6.1.0 (matching Customer);
+  React remains 18.3.1 and the production build is unchanged in application behavior.
