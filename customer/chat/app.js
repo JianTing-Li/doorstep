@@ -11,7 +11,11 @@ let state = {
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof window.initData === 'function') {
-        await window.initData();
+        try {
+            await window.initData();
+        } catch (e) {
+            console.warn('initData fallback:', e);
+        }
     }
     applyTheme(state.theme);
     renderMessages();
@@ -50,11 +54,11 @@ function applyTheme(theme) {
     if (theme === 'light') {
         document.documentElement.setAttribute('data-theme', 'light');
         const glyph = document.getElementById('theme-glyph');
-        if (glyph) glyph.textContent = '??';
+        if (glyph) glyph.textContent = '\uD83C\uDF19';
     } else {
         document.documentElement.removeAttribute('data-theme');
         const glyph = document.getElementById('theme-glyph');
-        if (glyph) glyph.textContent = '??';
+        if (glyph) glyph.textContent = '\u2600';
     }
 }
 
@@ -194,14 +198,12 @@ function processUserInput(text) {
                     text: "You haven't booked anything yet this session."
                 });
             } else {
-                const summary = bookedList.map(b => `? ${b.listing.title} (${b.listing.provider?.name || 'Pro'}) on ${typeof ChatbotEngine !== 'undefined' ? ChatbotEngine.formatSlot(b.slot) : b.slot}`).join('
-');
+                const summary = bookedList.map(b => `\u2022 ${b.listing.title} (${b.listing.provider?.name || 'Pro'}) on ${typeof ChatbotEngine !== 'undefined' ? ChatbotEngine.formatSlot(b.slot) : b.slot}`).join('\n');
                 state.messages.push({
                     id: 'msg_' + Date.now(),
                     from: 'bot',
                     type: 'text',
-                    text: `You have ${bookedList.length} booking${bookedList.length === 1 ? '' : 's'}:
-${summary}`
+                    text: `You have ${bookedList.length} booking${bookedList.length === 1 ? '' : 's'}:\n${summary}`
                 });
             }
             renderMessages();
@@ -364,8 +366,8 @@ function renderFilterChips() {
     container.innerHTML = chips.map(c => 
         '<span class="filter-chip">' +
         '<span>' + c.label + '</span>' +
-        '<button type="button" class="filter-chip-remove" onclick="removeFilter('' + c.key + '', '' + (c.code || '') + '')" aria-label="Remove filter">' +
-        '<span class="filter-chip-remove-glyph">?</span>' +
+        '<button type="button" class="filter-chip-remove" onclick="removeFilter(\'' + c.key + '\', \'' + (c.code || '') + '\')" aria-label="Remove filter">' +
+        '<span class="filter-chip-remove-glyph">\u00D7</span>' +
         '</button>' +
         '</span>'
     ).join('');
@@ -405,13 +407,13 @@ function renderMessages() {
             } else if (msg.type === 'request_summary') {
                 const req = msg.request || {};
                 const badges = (req.service_types || []).map(c => '<span style="background: var(--glass-fill-strong); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--hairline);">' + c.replace('_', ' ') + '</span>').join('') +
-                    (req.neighborhood ? '<span style="background: var(--glass-fill-strong); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--hairline);">?? ' + req.neighborhood + '</span>' : '') +
-                    (req.max_price ? '<span style="background: var(--glass-fill-strong); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--hairline);">?? Under $' + req.max_price + '</span>' : '');
+                    (req.neighborhood ? '<span style="background: var(--glass-fill-strong); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--hairline);">\u2316 ' + req.neighborhood + '</span>' : '') +
+                    (req.max_price ? '<span style="background: var(--glass-fill-strong); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--hairline); font-weight: 700;">Under $' + req.max_price + '</span>' : '');
 
                 html += 
                     '<div class="request-summary message-enter">' +
                     '<div class="request-summary-label">Interpreted request</div>' +
-                    '<h4 class="request-summary-title">?' + (req.rawQuery || 'Job') + '?</h4>' +
+                    '<h4 class="request-summary-title">\u201C' + (req.rawQuery || 'Job') + '\u201D</h4>' +
                     '<div class="request-summary-meta" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; font-size: 0.8rem; color: var(--color-ink-soft);">' +
                     badges +
                     '</div>' +
@@ -434,12 +436,12 @@ function renderMessages() {
                         if (isBooked) {
                             const bkg = state.bookings[key];
                             return '<article class="listing-card is-booked">' +
-                                '<p class="booked-marker">? Booked request</p>' +
+                                '<p class="booked-marker">\u2713 Booked request</p>' +
                                 '<h4 class="booked-title">' + listing.title + '</h4>' +
                                 '<div class="booked-provider">' + (provider.name || 'Doorstep Provider') + '</div>' +
-                                '<div class="booked-line">??? ' + (typeof ChatbotEngine !== 'undefined' ? ChatbotEngine.formatSlot(bkg.slot) : bkg.slot) + '</div>' +
+                                '<div class="booked-line">\uD83D\uDCC5 ' + (typeof ChatbotEngine !== 'undefined' ? ChatbotEngine.formatSlot(bkg.slot) : bkg.slot) + '</div>' +
                                 '<div class="booked-actions">' +
-                                '<button type="button" class="booked-action" onclick="handleCancelBooking('' + key + '')">Cancel request</button>' +
+                                '<button type="button" class="booked-action" onclick="handleCancelBooking(\'' + key + '\')">Cancel request</button>' +
                                 '</div>' +
                                 '</article>';
                         }
@@ -451,7 +453,7 @@ function renderMessages() {
                                 '<div class="slot-picker" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px;">' +
                                 slots.map(s => {
                                     const parts = typeof ChatbotEngine !== 'undefined' ? ChatbotEngine.formatSlotParts(s) : { day: s, time: '' };
-                                    return '<button type="button" class="slot-button" onclick="event.stopPropagation(); handleChooseSlot('' + listing.listing_id + '', '' + s + '')" style="padding: 8px; border: 1px solid var(--hairline); border-radius: var(--radius-md); background: var(--glass-fill); color: var(--color-ink); cursor: pointer; text-align: left;">' +
+                                    return '<button type="button" class="slot-button" onclick="event.stopPropagation(); handleChooseSlot(\'' + listing.listing_id + '\', \'' + s + '\')" style="padding: 8px; border: 1px solid var(--hairline); border-radius: var(--radius-md); background: var(--glass-fill); color: var(--color-ink); cursor: pointer; text-align: left;">' +
                                         '<div style="font-weight: 600; font-size: 0.8rem;">' + parts.day + '</div>' +
                                         '<div style="font-size: 0.75rem; color: var(--color-accent-text);">' + parts.time + '</div>' +
                                         '</button>';
@@ -466,26 +468,26 @@ function renderMessages() {
                                 '<p>' + (listing.listing_description || '') + '</p>' +
                                 slotPickerHtml +
                                 '<div style="display: flex; gap: 8px; margin-top: 12px;">' +
-                                '<button type="button" onclick="event.stopPropagation(); toggleBookingSlots('' + key + '')" style="flex: 1; padding: 10px; border-radius: var(--radius-full); background: var(--color-accent); color: var(--color-on-accent); font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer;">' +
+                                '<button type="button" onclick="event.stopPropagation(); toggleBookingSlots(\'' + key + '\')" style="flex: 1; padding: 10px; border-radius: var(--radius-full); background: var(--color-accent); color: var(--color-on-accent); font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer;">' +
                                 (isPickingSlots ? 'Hide slots' : 'Book a slot') +
                                 '</button>' +
-                                '<button type="button" onclick="event.stopPropagation(); window.location.href='../'" style="padding: 10px 16px; border-radius: var(--radius-full); background: transparent; border: 1px solid var(--hairline); color: var(--color-ink); font-size: 0.85rem; cursor: pointer;">' +
+                                '<button type="button" onclick="event.stopPropagation(); window.location.href=\'../\'" style="padding: 10px 16px; border-radius: var(--radius-full); background: transparent; border: 1px solid var(--hairline); color: var(--color-ink); font-size: 0.85rem; cursor: pointer;">' +
                                 'View on Marketplace' +
                                 '</button>' +
                                 '</div>' +
                                 '</div>';
                         }
 
-                        return '<article class="listing-card ' + (isOpen ? 'is-open' : '') + '" onclick="toggleCard('' + key + '')">' +
+                        return '<article class="listing-card ' + (isOpen ? 'is-open' : '') + '" onclick="toggleCard(\'' + key + '\')">' +
                             '<div class="listing-header" style="display: flex; justify-content: space-between; align-items: flex-start;">' +
                             '<div>' +
                             '<div class="listing-provider" style="font-size: 0.85rem; color: var(--color-ink-soft); display: flex; align-items: center; gap: 6px;">' +
                             '<span>' + (provider.name || 'Provider') + '</span>' +
-                            '<span style="font-size: 0.72rem; background: var(--glass-fill); padding: 1px 6px; border-radius: var(--radius-full); border: 1px solid var(--hairline);">Verified</span>' +
+                            '<span style="font-size: 0.72rem; background: var(--glass-fill); padding: 1px 6px; border-radius: var(--radius-full); border: 1px solid var(--hairline);">\u2713 Verified</span>' +
                             '</div>' +
                             '<h4 class="listing-title" style="margin: 2px 0 4px; font-family: var(--font-display); font-size: 1.1rem; color: var(--color-ink);">' + listing.title + '</h4>' +
                             '<div style="font-size: 0.8rem; color: var(--color-ink-soft);">' +
-                            '? ' + (listing.rating ? listing.rating.toFixed(1) : '5.0') + ' (' + (listing.review_count || 0) + ') ? ? ' + listing.provider_location +
+                            '\u2605 ' + (listing.rating ? listing.rating.toFixed(1) : '5.0') + ' (' + (listing.review_count || 0) + ') \u2022 \u2316 ' + listing.provider_location +
                             '</div>' +
                             '</div>' +
                             '<div class="listing-price" style="font-weight: 700; font-size: 1rem; color: var(--color-accent-text); background: var(--glass-fill); padding: 4px 10px; border-radius: var(--radius-md); border: 1px solid var(--hairline);">' +
@@ -493,7 +495,7 @@ function renderMessages() {
                             '</div>' +
                             '</div>' +
                             '<div class="listing-reason" style="margin-top: 8px; font-size: 0.8rem; color: var(--color-ink-soft); background: var(--glass-fill); padding: 6px 10px; border-radius: var(--radius-md);">' +
-                            '? ' + (listing.reason || 'Matches your request') +
+                            '\u2726 ' + (listing.reason || 'Matches your request') +
                             '</div>' +
                             detailsHtml +
                             '</article>';
