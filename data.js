@@ -1,4 +1,4 @@
-// Auto-generated comprehensive dataset from JT repository mock-data
+// Doorstep Shared Mock Data Loader - Auto-synced from JT mock-data repository
 
 var DB_META = {
   "reference_date": "2026-08-19",
@@ -3982,11 +3982,63 @@ var DB_EXAMPLE_QUERIES = [
 
 
 async function initData() {
-    console.log('Doorstep data loaded successfully:', {
-        listings: (typeof DB_LISTINGS !== 'undefined' ? DB_LISTINGS.length : 0),
-        providers: (typeof DB_PROVIDERS !== 'undefined' ? DB_PROVIDERS.length : 0),
-        customers: (typeof DB_CUSTOMERS !== 'undefined' ? DB_CUSTOMERS.length : 0)
+    try {
+        const fetchJson = async (file) => {
+            // Try relative path from mock-data/ first (works on Vercel and local static servers)
+            try {
+                const res = await fetch(./mock-data/);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+
+            // Fallback to GitHub raw main branch
+            try {
+                const url = https://raw.githubusercontent.com/JianTing-Li/doorstep/main/mock-data/;
+                const res = await fetch(url);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+
+            return null;
+        };
+
+        const [fetchedListings, fetchedProviders, fetchedServiceTypes, fetchedNeighborhoods, fetchedCustomers] = await Promise.all([
+            fetchJson('listings.json'),
+            fetchJson('providers.json'),
+            fetchJson('service-types.json'),
+            fetchJson('neighborhoods.json'),
+            fetchJson('customers.json')
+        ]);
+
+        if (fetchedListings && fetchedListings.length > 0) DB_LISTINGS = fetchedListings;
+        if (fetchedProviders && fetchedProviders.length > 0) DB_PROVIDERS = fetchedProviders;
+        if (fetchedServiceTypes && fetchedServiceTypes.length > 0) DB_SERVICE_TYPES = fetchedServiceTypes;
+        if (fetchedNeighborhoods && fetchedNeighborhoods.length > 0) DB_NEIGHBORHOODS = fetchedNeighborhoods;
+        if (fetchedCustomers && fetchedCustomers.length > 0) DB_CUSTOMERS = fetchedCustomers;
+
+    } catch (err) {
+        console.warn('Network fetch for mock-data failed, using pre-embedded dataset:', err);
+    }
+
+    if (typeof window !== 'undefined') {
+        window.DB_META = DB_META;
+        window.DB_NEIGHBORHOODS = DB_NEIGHBORHOODS;
+        window.DB_LISTINGS = DB_LISTINGS;
+        window.DB_PROVIDERS = DB_PROVIDERS;
+        window.DB_SERVICE_TYPES = DB_SERVICE_TYPES;
+        window.DB_CUSTOMERS = DB_CUSTOMERS;
+        window.DB_BOOKINGS = DB_BOOKINGS;
+        window.DB_REVIEWS = DB_REVIEWS;
+        window.DB_REPORTS = DB_REPORTS;
+        window.DB_MODERATION_ACTIONS = DB_MODERATION_ACTIONS;
+        window.DB_EXAMPLE_QUERIES = DB_EXAMPLE_QUERIES;
+    }
+
+    console.log('Doorstep data ready:', {
+        listings: DB_LISTINGS.length,
+        providers: DB_PROVIDERS.length,
+        serviceTypes: DB_SERVICE_TYPES.length,
+        neighborhoods: DB_NEIGHBORHOODS.length
     });
+
     return true;
 }
 
