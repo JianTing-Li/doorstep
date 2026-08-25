@@ -1,6 +1,19 @@
 // Doorstep App State & Logic (Product B - Customer App)
 // Features: Multi-Persona Switching, Provider Direct Messaging, Trust & Safety Reporting, Escrow Checkout & Lifecycle
 
+function toggleProductsMenu() {
+    const dropdown = document.getElementById('products-dropdown');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+window.addEventListener('click', (e) => {
+    const btn = document.getElementById('products-menu-btn');
+    const dropdown = document.getElementById('products-dropdown');
+    if (dropdown && !dropdown.classList.contains('hidden') && btn && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+
 let state = {
     currentCustomerId: 'cust_00001',
     activeProvider: null, // { listing, provider }

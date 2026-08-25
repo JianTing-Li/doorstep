@@ -133,13 +133,80 @@
 
             <!-- Top Actions -->
             <div class="flex items-center space-x-2.5">
-                <a href="./admin/" class="flex items-center space-x-1.5 bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-xl shadow-xs transition btn-pop text-xs font-bold border border-slate-700" title="Open Product D: Trust & Safety Operations Dashboard">
-                    <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
-                    <span class="hidden sm:inline">Product D (Safety Admin)</span>
-                    <span class="sm:hidden">Safety Ops</span>
-                </a>
-                <button onclick="navigate('my-bookings')" class="flex items-center space-x-2 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs transition btn-pop text-xs font-bold text-slate-800" title="My Account & Bookings">
-                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-[10px] shadow-xs">
+                <!-- Products Suite Dropdown Menu (A, B, C, D) -->
+                <div class="relative">
+                    <button id="products-menu-btn" onclick="toggleProductsMenu()" class="flex items-center space-x-2 bg-slate-900 text-white hover:bg-slate-800 px-3.5 py-2 rounded-xl shadow-md transition btn-pop text-xs font-bold border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Products Suite</span>
+                        <i class="fa-solid fa-chevron-down text-[9px] text-slate-400"></i>
+                    </button>
+
+                    <!-- Dropdown List -->
+                    <div id="products-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 slide-up">
+                        <div class="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Doorstep Ecosystem</span>
+                            <span class="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">4 Products</span>
+                        </div>
+                        
+                        <!-- Product A -->
+                        <a href="./provider/" class="flex items-start space-x-3 px-4 py-3 hover:bg-purple-50/70 transition group">
+                            <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-extrabold shrink-0 group-hover:scale-105 transition">
+                                A
+                            </div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-900 group-hover:text-purple-700 flex items-center space-x-1">
+                                    <span>Product A: Provider Portal</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Manage listings, accept bookings & calendar</div>
+                            </div>
+                        </a>
+
+                        <!-- Product B -->
+                        <button onclick="toggleProductsMenu(); navigate('dashboard')" class="w-full text-left flex items-start space-x-3 px-4 py-3 hover:bg-blue-50/60 transition group border-t border-slate-50">
+                            <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-extrabold shrink-0 shadow-xs">
+                                B
+                            </div>
+                            <div>
+                                <div class="font-bold text-xs text-blue-900 flex items-center space-x-1">
+                                    <span>Product B: Customer App</span>
+                                    <span class="bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.2 rounded-full">Current</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Discover services, escrow booking & reviews</div>
+                            </div>
+                        </button>
+
+                        <!-- Product C -->
+                        <button onclick="toggleProductsMenu(); toggleChatbot(true)" class="w-full text-left flex items-start space-x-3 px-4 py-3 hover:bg-amber-50/70 transition group border-t border-slate-50">
+                            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-extrabold shrink-0 group-hover:scale-105 transition">
+                                C
+                            </div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-900 group-hover:text-amber-800 flex items-center space-x-1">
+                                    <span>Product C: AI Matcher</span>
+                                    <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.2 rounded-full">NLP</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Natural language matching & direct booking</div>
+                            </div>
+                        </button>
+
+                        <!-- Product D -->
+                        <a href="./admin/" class="flex items-start space-x-3 px-4 py-3 hover:bg-emerald-50/70 transition group border-t border-slate-50">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-extrabold shrink-0 group-hover:scale-105 transition">
+                                D
+                            </div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-900 group-hover:text-emerald-700 flex items-center space-x-1">
+                                    <span>Product D: Safety Ops</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Trust & safety triage, moderation & audits</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- My Account -->
+                <button onclick="navigate('my-bookings')" class="flex items-center space-x-2 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-xs transition btn-pop text-xs font-bold text-slate-800" title="My Account & Bookings">
+                    <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-[10px] shadow-xs">
                         <i class="fa-solid fa-user"></i>
                     </div>
                     <span class="text-xs text-slate-800 font-bold hidden sm:inline">My Account</span>
@@ -152,14 +219,6 @@
         <main id="app-container" class="flex-1 overflow-y-auto relative w-full bg-slate-50">
             <!-- Dynamic view injected via JavaScript -->
         </main>
-
-        <!-- Global Chatbot FAB -->
-        <div class="fixed bottom-6 right-6 z-40">
-            <button onclick="toggleChatbot()" class="fab-pulse bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white w-14 h-14 p-3.5 rounded-2xl shadow-xl shadow-blue-600/30 flex items-center justify-center text-xl transition-transform transform hover:scale-105 active:scale-95" aria-label="Open AI Assistant">
-                <i class="fa-solid fa-sparkles text-yellow-300 mr-1.5 text-xs"></i>
-                <i class="fa-solid fa-comment-dots text-lg"></i>
-            </button>
-        </div>
 
         <!-- Chatbot Modal / Drawer (Product C Grounded Matching) -->
         <div id="chatbot-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center sm:justify-end p-0 sm:p-4">
