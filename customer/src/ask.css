@@ -1,50 +1,28 @@
-/* Doorstep shared tokens (Phase 2). These values used to be declared here
-   directly; they now live in shared/tokens.css so every product draws from
-   one definition. Nothing below redeclares --color-page, --glass-fill,
-   --color-accent, etc. — this file only consumes them. */
-@import "../../shared/tokens.css";
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background: linear-gradient(168deg, var(--color-page) 0%, var(--color-page-deep) 100%);
-  transition: background-color var(--duration-theme) var(--ease), color var(--duration-theme) var(--ease);
-  background-attachment: fixed;
-  color: var(--color-ink);
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-}
+/* Ask tab styles — Product C's stylesheet (Jian Ting Li), scoped under
+ * .ask-screen so it applies only inside the Ask tab (Phase 6).
+ *
+ * Every selector below is prefixed with .ask-screen. That resolves the six
+ * genuine class-name collisions with the customer app's own stylesheet
+ * (.filter-chip, .typing-indicator, .slot-day, .slot-time, and the shared
+ * .listing-card family) without renaming anything in Product C's markup.
+ *
+ * Removed rather than scoped: the global resets and the app shell
+ * (.app-shell, .app-header, .brand, .header-button, the clear-chat confirm)
+ * — the customer app owns the shell now, and Ask no longer renders one.
+ */
 
 /* Matte, not glossy: a faint grain sits over everything so the glass reads as
    frosted rather than polished. Self-contained SVG turbulence, no asset. */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-}
 
 /* A theme swap eases rather than snapping. */
-.listing-card,
-.message-bubble,
-.typing-indicator,
-.composer,
-.filter-chip,
-.header-button,
-.service-label,
-.app-header .brand {
+
+.ask-screen .listing-card,
+.ask-screen .message-bubble,
+.ask-screen .typing-indicator,
+.ask-screen .composer,
+.ask-screen .filter-chip,
+.ask-screen .service-label,
+.ask-screen .app-header .brand {
   transition:
     background-color var(--duration-theme) var(--ease),
     border-color var(--duration-theme) var(--ease),
@@ -52,15 +30,16 @@ body::after {
 }
 
 /* Interactive surfaces ease between their states instead of snapping. */
-.listing-card,
-.example-chip,
-.skip-button,
-.slot-button,
-.detail-book-button,
-.chat-input-bar input,
-.chat-input-bar button,
-.filter-chip-remove-glyph,
-.listing-card-head {
+
+.ask-screen .listing-card,
+.ask-screen .example-chip,
+.ask-screen .skip-button,
+.ask-screen .slot-button,
+.ask-screen .detail-book-button,
+.ask-screen .chat-input-bar input,
+.ask-screen .chat-input-bar button,
+.ask-screen .filter-chip-remove-glyph,
+.ask-screen .listing-card-head {
   transition:
     background-color var(--duration-hover) var(--ease),
     border-color var(--duration-hover) var(--ease),
@@ -70,23 +49,24 @@ body::after {
     transform var(--duration-hover) var(--ease);
 }
 
-.slot-button:active,
-.skip-button:active,
-.example-chip:active,
-.detail-book-button:active,
-.chat-input-bar button:not(:disabled):active {
+.ask-screen .slot-button:active,
+.ask-screen .skip-button:active,
+.ask-screen .example-chip:active,
+.ask-screen .detail-book-button:active,
+.ask-screen .chat-input-bar button:not(:disabled):active {
   transform: scale(0.97);
 }
 
 /* One glass recipe, shared by every raised surface. */
-.listing-card,
-.message-bubble.bot,
-.typing-indicator,
-.composer,
-.example-chip,
-.skip-button,
-.slot-button,
-.chat-input-bar input {
+
+.ask-screen .listing-card,
+.ask-screen .message-bubble.bot,
+.ask-screen .typing-indicator,
+.ask-screen .composer,
+.ask-screen .example-chip,
+.ask-screen .skip-button,
+.ask-screen .slot-button,
+.ask-screen .chat-input-bar input {
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--shadow-soft);
@@ -94,107 +74,28 @@ body::after {
 
 /* Where the browser cannot blur, fall back to an opaque warm fill rather than
    a washed-out translucent panel. */
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .listing-card,
-  .message-bubble.bot,
-  .typing-indicator,
-  .composer,
-  .example-chip,
-  .skip-button,
-  .slot-button,
-  .chat-input-bar input {
-    background: #2c4a75;
+.ask-screen .listing-card,
+.ask-screen .message-bubble.bot,
+.ask-screen .typing-indicator,
+.ask-screen .composer,
+.ask-screen .example-chip,
+.ask-screen .skip-button,
+.ask-screen .slot-button,
+.ask-screen .chat-input-bar input {
+    background: var(--elevation-fallback-fill);
   }
 }
 
-button {
+.ask-screen button {
   font-family: inherit;
-}
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 20px 12px;
-  flex-shrink: 0;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.header-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-full);
-  background: var(--glass-fill);
-  color: var(--color-ink);
-  cursor: pointer;
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-}
-
-.header-button svg {
-  width: 19px;
-  height: 19px;
-}
-
-.header-button:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent-text);
-}
-
-.clear-confirm-label,
-.booked-confirm-label {
-  font-size: 0.85rem;
-  color: var(--color-ink-soft);
-}
-
-.clear-confirm,
-.clear-cancel,
-.booked-confirm-yes,
-.booked-confirm-no {
-  min-height: 36px;
-  padding: 7px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.clear-confirm,
-.booked-confirm-yes {
-  border: none;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-}
-
-.clear-cancel,
-.booked-confirm-no {
-  border: 1px solid var(--hairline);
-  background: transparent;
-  color: var(--color-ink);
 }
 
 /* The accent belongs to actions, so the wordmark is ink. The monoline mark is
    sized to the text it sits beside. */
-.app-header .brand {
+
+.ask-screen .app-header .brand {
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -205,14 +106,14 @@ button {
   margin: 0;
 }
 
-.app-header .brand-mark {
+.ask-screen .app-header .brand-mark {
   width: 1.15em;
   height: 1.15em;
   flex-shrink: 0;
   color: var(--color-ink);
 }
 
-.app-header .tagline {
+.ask-screen .app-header .tagline {
   margin: 4px 0 0;
   font-size: 0.95rem;
   color: var(--color-ink-soft);
@@ -220,7 +121,7 @@ button {
 
 /* ---- Thread ---- */
 
-.chat-thread {
+.ask-screen .chat-thread {
   flex: 1;
   overflow-y: auto;
   /* Bottom padding clears the floating composer, which is out of flow. Sized
@@ -231,17 +132,17 @@ button {
   gap: 14px;
 }
 
-.chat-thread-empty {
+.ask-screen .chat-thread-empty {
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.empty-state {
+.ask-screen .empty-state {
   padding: 24px 4px 8px;
 }
 
-.empty-state .empty-prompt {
+.ask-screen .empty-state .empty-prompt {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 500;
@@ -251,7 +152,7 @@ button {
   color: var(--color-ink);
 }
 
-.message-enter {
+.ask-screen .message-enter {
   animation: message-in var(--duration-enter) var(--ease) both;
 }
 
@@ -269,7 +170,8 @@ button {
 /* Height that animates. `height: auto` cannot transition, so the row track goes
    0fr -> 1fr and the inner element clips. Used by the card body, the slot
    picker, and the typing indicator — anything that opens and closes in place. */
-.collapse {
+
+.ask-screen .collapse {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
@@ -285,7 +187,7 @@ button {
     visibility 0s linear var(--duration-collapse);
 }
 
-.collapse.is-open {
+.ask-screen .collapse.is-open {
   grid-template-rows: 1fr;
   opacity: 1;
   visibility: visible;
@@ -296,14 +198,15 @@ button {
     visibility 0s;
 }
 
-.collapse-inner {
+.ask-screen .collapse-inner {
   overflow: hidden;
   min-height: 0;
 }
 
 /* The booked card replaces the expanded one, so it announces itself rather than
    cutting in. */
-.listing-card.is-booked {
+
+.ask-screen .listing-card.is-booked {
   animation: booked-in var(--duration-enter) var(--ease) both;
 }
 
@@ -319,35 +222,37 @@ button {
 }
 
 /* The empty state and any inline nudge fade in rather than appearing. */
-.empty-state {
+
+.ask-screen .empty-state {
   animation: message-in var(--duration-enter) var(--ease) both;
 }
 
 /* ---- Message bubbles ---- */
 
-.message-row {
+.ask-screen .message-row {
   display: flex;
   width: 100%;
 }
 
-.message-row.from-user {
+.ask-screen .message-row.from-user {
   justify-content: flex-end;
 }
 
-.message-row.from-bot {
+.ask-screen .message-row.from-bot {
   justify-content: flex-start;
 }
 
 /* Width is owned by .message-column alone. Setting it here too nested the two
    caps and made bubbles 68% wide instead of the intended 85%. */
-.message-bubble {
+
+.ask-screen .message-bubble {
   padding: 12px 16px;
   border-radius: var(--radius-md);
   font-size: 0.98rem;
   line-height: 1.45;
 }
 
-.message-bubble.user {
+.ask-screen .message-bubble.user {
   background: var(--glass-fill-user);
   color: var(--color-ink);
   border: 1px solid var(--hairline);
@@ -357,7 +262,7 @@ button {
   box-shadow: var(--shadow-soft);
 }
 
-.message-bubble.bot {
+.ask-screen .message-bubble.bot {
   background: var(--glass-fill-strong);
   color: var(--color-ink);
   border: 1px solid var(--hairline);
@@ -368,7 +273,7 @@ button {
 
 /* ---- Typing indicator ---- */
 
-.typing-indicator {
+.ask-screen .typing-indicator {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -380,7 +285,7 @@ button {
   width: fit-content;
 }
 
-.typing-indicator .dot {
+.ask-screen .typing-indicator .dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -388,11 +293,11 @@ button {
   animation: dot-pulse 1.1s ease-in-out infinite;
 }
 
-.typing-indicator .dot:nth-child(2) {
+.ask-screen .typing-indicator .dot:nth-child(2) {
   animation-delay: 0.15s;
 }
 
-.typing-indicator .dot:nth-child(3) {
+.ask-screen .typing-indicator .dot:nth-child(3) {
   animation-delay: 0.3s;
 }
 
@@ -411,7 +316,7 @@ button {
 
 /* ---- Results ---- */
 
-.request-summary {
+.ask-screen .request-summary {
   width: min(100%, 560px);
   padding: 16px;
   border: 1px solid var(--hairline);
@@ -419,7 +324,7 @@ button {
   background: var(--glass-fill);
 }
 
-.request-summary-kicker {
+.ask-screen .request-summary-kicker {
   margin: 0;
   color: var(--color-ink-soft);
   font-size: 0.72rem;
@@ -428,7 +333,7 @@ button {
   text-transform: uppercase;
 }
 
-.request-summary-description {
+.ask-screen .request-summary-description {
   margin: 7px 0 0;
   color: var(--color-ink);
   font-family: var(--font-display);
@@ -436,30 +341,30 @@ button {
   line-height: 1.4;
 }
 
-.request-summary-details {
+.ask-screen .request-summary-details {
   display: flex;
   flex-wrap: wrap;
   gap: 10px 20px;
   margin: 14px 0 0;
 }
 
-.request-summary-details div {
+.ask-screen .request-summary-details div {
   min-width: 120px;
 }
 
-.request-summary-details dt {
+.ask-screen .request-summary-details dt {
   color: var(--color-ink-soft);
   font-size: 0.72rem;
   font-weight: 600;
 }
 
-.request-summary-details dd {
+.ask-screen .request-summary-details dd {
   margin: 2px 0 0;
   color: var(--color-ink);
   font-size: 0.88rem;
 }
 
-.request-summary-help {
+.ask-screen .request-summary-help {
   margin: 14px 0 0;
   color: var(--color-ink-soft);
   font-size: 0.78rem;
@@ -467,7 +372,8 @@ button {
 
 /* Collapsed cards tile into two columns when there is room. An expanded or
    booked card breaks out to the full row so its detail is never squeezed. */
-.results-list {
+
+.ask-screen .results-list {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
@@ -478,21 +384,22 @@ button {
 }
 
 @media (min-width: 640px) {
-  .results-list {
+.ask-screen .results-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.results-list .listing-card.is-open,
-.results-list .listing-card.is-booked,
-.results-list .skip-button,
-.results-list .request-complete-state {
+.ask-screen .results-list .listing-card.is-open,
+.ask-screen .results-list .listing-card.is-booked,
+.ask-screen .results-list .skip-button,
+.ask-screen .results-list .request-complete-state {
   grid-column: 1 / -1;
 }
 
 /* The grid itself cannot tween, so the reflow is animated by the View
    Transitions API (see lib/viewTransition.js); this only sets its pace. */
-::view-transition-group(*) {
+
+.ask-screen ::view-transition-group(*) {
   animation-duration: var(--duration-collapse);
   animation-timing-function: var(--ease);
 }
@@ -501,15 +408,16 @@ button {
    fixed element — so an expanding card would sweep over the floating input.
    Naming the composer gives it its own group, and its group is painted last
    because it comes after the thread in the DOM. */
-.composer {
+
+.ask-screen .composer {
   view-transition-name: composer;
 }
 
-::view-transition-group(composer) {
+.ask-screen ::view-transition-group(composer) {
   z-index: 100;
 }
 
-.listing-card {
+.ask-screen .listing-card {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -520,30 +428,34 @@ button {
   animation: message-in var(--duration-enter) ease-out both;
 }
 
-.results-list .listing-card:nth-child(1) {
+.ask-screen .results-list .listing-card:nth-child(1) {
   animation-delay: 0ms;
 }
-.results-list .listing-card:nth-child(2) {
+
+.ask-screen .results-list .listing-card:nth-child(2) {
   animation-delay: 40ms;
 }
-.results-list .listing-card:nth-child(3) {
+
+.ask-screen .results-list .listing-card:nth-child(3) {
   animation-delay: 80ms;
 }
-.results-list .listing-card:nth-child(4) {
+
+.ask-screen .results-list .listing-card:nth-child(4) {
   animation-delay: 120ms;
 }
-.results-list .listing-card:nth-child(5) {
+
+.ask-screen .results-list .listing-card:nth-child(5) {
   animation-delay: 160ms;
 }
 
-.listing-card-top {
+.ask-screen .listing-card-top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
 }
 
-.listing-card-title {
+.ask-screen .listing-card-title {
   font-family: var(--font-display);
   font-size: 1.08rem;
   font-weight: 600;
@@ -551,27 +463,27 @@ button {
   margin: 0;
 }
 
-.listing-card-price {
+.ask-screen .listing-card-price {
   font-weight: 600;
   max-width: 48%;
   text-align: right;
   color: var(--color-ink);
 }
 
-.listing-card-provider {
+.ask-screen .listing-card-provider {
   margin: 2px 0 0;
   font-size: 0.88rem;
   color: var(--color-ink-soft);
 }
 
-.listing-card-availability {
+.ask-screen .listing-card-availability {
   margin: 7px 0 0;
   color: var(--color-ink);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
-.listing-card-meta {
+.ask-screen .listing-card-meta {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -579,59 +491,59 @@ button {
   flex-wrap: wrap;
 }
 
-.listing-card-rating {
+.ask-screen .listing-card-rating {
   font-size: 0.85rem;
   color: var(--color-ink-soft);
 }
 
-.service-label {
+.ask-screen .service-label {
   display: inline-block;
   padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: rgba(186, 212, 245, 0.14);
+  background: color-mix(in srgb, var(--hairline) 78%, transparent);
   color: var(--color-ink);
   font-size: 0.78rem;
   font-weight: 600;
 }
 
-.listing-card-reason {
+.ask-screen .listing-card-reason {
   margin: 10px 0 0;
   font-size: 0.86rem;
   color: var(--color-ink-soft);
 }
 
-.listing-card-head {
+.ask-screen .listing-card-head {
   cursor: pointer;
 }
 
-.listing-card-tappable:focus-visible {
+.ask-screen .listing-card-tappable:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: var(--radius-md);
 }
 
-.listing-card:hover {
-  border-color: rgba(186, 212, 245, 0.35);
+.ask-screen .listing-card:hover {
+  border-color: color-mix(in srgb, var(--color-ink-soft) 35%, transparent);
 }
 
-.listing-card.is-disabled {
+.ask-screen .listing-card.is-disabled {
   opacity: 0.52;
   cursor: default;
 }
 
-.listing-card.is-disabled .listing-card-head {
+.ask-screen .listing-card.is-disabled .listing-card-head {
   cursor: default;
 }
 
-.listing-card.is-disabled:hover {
+.ask-screen .listing-card.is-disabled:hover {
   border-color: var(--hairline);
 }
 
-.listing-card.is-open {
-  border-color: rgba(186, 212, 245, 0.42);
+.ask-screen .listing-card.is-open {
+  border-color: color-mix(in srgb, var(--color-ink-soft) 42%, transparent);
 }
 
-.listing-card-body {
+.ask-screen .listing-card-body {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--hairline);
@@ -640,7 +552,8 @@ button {
 /* Every bubble, user or bot, is wrapped in this. Two styles exist and only
    two: .message-bubble.user (accent fill, right) and .message-bubble.bot
    (glass fill, serif, left). Nothing else may look like a message. */
-.message-column {
+
+.ask-screen .message-column {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -648,17 +561,17 @@ button {
   align-items: flex-start;
 }
 
-.message-row.from-user .message-column {
+.ask-screen .message-row.from-user .message-column {
   align-items: flex-end;
 }
 
-.message-actions {
+.ask-screen .message-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.skip-button {
+.ask-screen .skip-button {
   min-height: 44px;
   padding: 10px 18px;
   border: 1px solid var(--hairline);
@@ -670,12 +583,12 @@ button {
   cursor: pointer;
 }
 
-.skip-button:hover {
-  background: rgba(135, 199, 188, 0.16);
+.ask-screen .skip-button:hover {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
   border-color: var(--color-accent);
 }
 
-.request-complete-state {
+.ask-screen .request-complete-state {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -686,7 +599,7 @@ button {
   font-size: 0.84rem;
 }
 
-.request-complete-state button {
+.ask-screen .request-complete-state button {
   min-height: 36px;
   padding: 7px 13px;
   border: 1px solid var(--hairline);
@@ -697,40 +610,40 @@ button {
   cursor: pointer;
 }
 
-.request-complete-state button:hover {
+.ask-screen .request-complete-state button:hover {
   color: var(--color-ink);
-  border-color: rgba(186, 212, 245, 0.35);
+  border-color: color-mix(in srgb, var(--color-ink-soft) 35%, transparent);
 }
 
 /* ---- Detail (inside a card) ---- */
 
-.detail-provider-meta {
+.ask-screen .detail-provider-meta {
   margin: 2px 0 0;
   font-size: 0.85rem;
   color: var(--color-ink-soft);
 }
 
-.detail-provider-bio {
+.ask-screen .detail-provider-bio {
   margin: 8px 0 0;
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--color-ink);
 }
 
-.detail-listing-description {
+.ask-screen .detail-listing-description {
   margin: 8px 0 0;
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--color-ink-soft);
 }
 
-.detail-availability {
+.ask-screen .detail-availability {
   margin: 10px 0 0;
   font-size: 0.85rem;
   color: var(--color-ink-soft);
 }
 
-.detail-review {
+.ask-screen .detail-review {
   margin: 12px 0 0;
   padding: 10px 12px;
   border-left: 1px solid var(--hairline);
@@ -739,7 +652,7 @@ button {
   line-height: 1.45;
 }
 
-.detail-review cite {
+.ask-screen .detail-review cite {
   display: block;
   margin-top: 6px;
   color: var(--color-ink-soft);
@@ -748,7 +661,7 @@ button {
   font-weight: 600;
 }
 
-.detail-book-button {
+.ask-screen .detail-book-button {
   margin-top: 14px;
   width: 100%;
   min-height: 44px;
@@ -761,13 +674,13 @@ button {
   cursor: pointer;
 }
 
-.detail-book-button:hover:not(:disabled) {
+.ask-screen .detail-book-button:hover:not(:disabled) {
   background: var(--color-accent-strong);
 }
 
-.detail-book-button:disabled {
-  background: #cbd5e1;
-  color: #414e61;
+.ask-screen .detail-book-button:disabled {
+  background: color-mix(in srgb, var(--color-ink-soft) 40%, transparent);
+  color: var(--color-ink-soft);
   cursor: not-allowed;
 }
 
@@ -775,7 +688,8 @@ button {
 
 /* Equal columns so every button shares a width and the left/right edges line
    up exactly across rows. Padded to sit inside the card's text margin. */
-.slot-picker {
+
+.ask-screen .slot-picker {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
@@ -785,7 +699,8 @@ button {
 
 /* A selectable time: squared-off tile, outlined not filled, heavier text.
    Shape and weight carry the difference from a filter chip, not colour. */
-.slot-button {
+
+.ask-screen .slot-button {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -804,28 +719,29 @@ button {
   cursor: pointer;
 }
 
-.slot-day {
+.ask-screen .slot-day {
   white-space: nowrap;
 }
 
-.slot-time {
+.ask-screen .slot-time {
   font-size: 0.9rem;
   font-weight: 700;
 }
 
-.slot-button:hover {
-  background: rgba(135, 199, 188, 0.16);
+.ask-screen .slot-button:hover {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
   border-color: var(--color-accent);
 }
 
 /* The slot the card is already booked into, shown alongside the others in a
    reschedule picker so the customer can see what they'd be changing. */
-.slot-button.is-current {
+
+.ask-screen .slot-button.is-current {
   border-color: var(--color-ink-soft);
   background: var(--glass-fill);
 }
 
-.slot-current-label {
+.ask-screen .slot-current-label {
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -835,11 +751,11 @@ button {
 
 /* ---- Booked card (compact record) ---- */
 
-.listing-card.is-booked {
-  border-color: rgba(186, 212, 245, 0.42);
+.ask-screen .listing-card.is-booked {
+  border-color: color-mix(in srgb, var(--color-ink-soft) 42%, transparent);
 }
 
-.booked-marker {
+.ask-screen .booked-marker {
   margin: 0 0 6px;
   font-size: 0.72rem;
   font-weight: 700;
@@ -848,7 +764,7 @@ button {
   color: var(--color-ink-soft);
 }
 
-.booked-title {
+.ask-screen .booked-title {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1rem;
@@ -856,50 +772,50 @@ button {
   line-height: 1.3;
 }
 
-.booked-provider {
+.ask-screen .booked-provider {
   font-family: var(--font-body);
   font-size: 0.88rem;
   font-weight: 400;
   color: var(--color-ink-soft);
 }
 
-.booked-line {
+.ask-screen .booked-line {
   margin: 4px 0 0;
   font-size: 0.9rem;
   color: var(--color-ink-soft);
 }
 
-.booked-request {
+.ask-screen .booked-request {
   margin: 10px 0 0;
   color: var(--color-ink);
   font-size: 0.88rem;
   line-height: 1.4;
 }
 
-.booked-next-step {
+.ask-screen .booked-next-step {
   margin: 8px 0 0;
   color: var(--color-ink-soft);
   font-size: 0.78rem;
   line-height: 1.4;
 }
 
-.booking-list .listing-card.is-booked {
+.ask-screen .booking-list .listing-card.is-booked {
   animation: booking-list-in 320ms var(--ease) both;
 }
 
-.booking-list .listing-card:nth-child(2) {
+.ask-screen .booking-list .listing-card:nth-child(2) {
   animation-delay: 70ms;
 }
 
-.booking-list .listing-card:nth-child(3) {
+.ask-screen .booking-list .listing-card:nth-child(3) {
   animation-delay: 140ms;
 }
 
-.booking-list .listing-card:nth-child(4) {
+.ask-screen .booking-list .listing-card:nth-child(4) {
   animation-delay: 210ms;
 }
 
-.booking-list .listing-card:nth-child(n + 5) {
+.ask-screen .booking-list .listing-card:nth-child(n + 5) {
   animation-delay: 280ms;
 }
 
@@ -914,7 +830,7 @@ button {
   }
 }
 
-.booking-list-empty {
+.ask-screen .booking-list-empty {
   margin: 0;
   padding: 12px 16px;
   border: 1px solid var(--hairline);
@@ -928,13 +844,14 @@ button {
 /* Secondary, text-weight actions on a settled card — deliberately lighter
    than the original Book button so a booked card doesn't compete with an
    unbooked one for attention. */
-.booked-actions {
+
+.ask-screen .booked-actions {
   display: flex;
   gap: 10px;
   margin-top: 12px;
 }
 
-.booked-action {
+.ask-screen .booked-action {
   min-height: 36px;
   padding: 7px 14px;
   border: 1px solid var(--hairline);
@@ -946,12 +863,12 @@ button {
   cursor: pointer;
 }
 
-.booked-action:hover {
+.ask-screen .booked-action:hover {
   border-color: var(--color-accent);
   color: var(--color-accent-text);
 }
 
-.booked-confirm {
+.ask-screen .booked-confirm {
   margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
@@ -959,22 +876,22 @@ button {
   gap: 10px;
 }
 
-.booked-confirm-actions {
+.ask-screen .booked-confirm-actions {
   display: flex;
   gap: 8px;
 }
 
-.booked-reschedule {
+.ask-screen .booked-reschedule {
   margin-top: 14px;
 }
 
-.booked-reschedule-label {
+.ask-screen .booked-reschedule-label {
   margin: 0 0 10px;
   font-size: 0.85rem;
   color: var(--color-ink-soft);
 }
 
-.booked-reschedule-back {
+.ask-screen .booked-reschedule-back {
   margin-top: 12px;
   width: 100%;
   min-height: 40px;
@@ -987,14 +904,14 @@ button {
   cursor: pointer;
 }
 
-.booked-reschedule-back:hover {
+.ask-screen .booked-reschedule-back:hover {
   border-color: var(--color-accent);
   color: var(--color-accent-text);
 }
 
 /* ---- Filter chips ---- */
 
-.filter-chips {
+.ask-screen .filter-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1004,7 +921,8 @@ button {
 /* A removable token: fully rounded pill, solid ink fill, carries an × .
    Deliberately not the accent — that is reserved for actions — and
    deliberately not the same shape as a slot button. */
-.filter-chip {
+
+.ask-screen .filter-chip {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -1018,7 +936,7 @@ button {
   animation: chip-in var(--duration-enter) var(--ease) both;
 }
 
-.filter-chip.removing {
+.ask-screen .filter-chip.removing {
   animation: chip-out var(--duration-enter) var(--ease) both;
 }
 
@@ -1045,7 +963,8 @@ button {
 }
 
 /* 44px hit area for thumbs; the visible circle inside stays chip-sized. */
-.filter-chip-remove {
+
+.ask-screen .filter-chip-remove {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1058,31 +977,31 @@ button {
   padding: 0;
 }
 
-.filter-chip-remove-glyph {
+.ask-screen .filter-chip-remove-glyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(18, 48, 40, 0.22);
+  background: color-mix(in srgb, var(--color-on-accent) 22%, transparent);
   font-size: 0.9rem;
   line-height: 1;
 }
 
-.filter-chip-remove:hover .filter-chip-remove-glyph {
-  background: rgba(18, 48, 40, 0.36);
+.ask-screen .filter-chip-remove:hover .filter-chip-remove-glyph {
+  background: color-mix(in srgb, var(--color-on-accent) 36%, transparent);
 }
 
 /* ---- Example chips ---- */
 
-.example-chips {
+.ask-screen .example-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.example-chip {
+.ask-screen .example-chip {
   min-height: 44px;
   padding: 10px 16px;
   border: 1px solid var(--hairline);
@@ -1094,8 +1013,8 @@ button {
   text-align: left;
 }
 
-.example-chip:hover {
-  background: rgba(135, 199, 188, 0.16);
+.ask-screen .example-chip:hover {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
   border-color: var(--color-accent);
 }
 
@@ -1104,7 +1023,8 @@ button {
 /* Floats above the thread rather than docking to it. Fixed, inset on all four
    sides, so every rounded corner clears the viewport edge instead of being
    clipped against it. Centred to match the shell's own max width. */
-.composer {
+
+.ask-screen .composer {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
@@ -1119,11 +1039,12 @@ button {
 }
 
 /* Chips sit above the field with breathing room between the two. */
-.composer .filter-chips {
+
+.ask-screen .composer .filter-chips {
   padding: 0 2px 10px;
 }
 
-.chat-input-bar {
+.ask-screen .chat-input-bar {
   display: flex;
   gap: 8px;
   padding: 0;
@@ -1131,7 +1052,7 @@ button {
   background: none;
 }
 
-.chat-input-bar input {
+.ask-screen .chat-input-bar input {
   flex: 1;
   min-height: 44px;
   padding: 0 16px;
@@ -1143,12 +1064,12 @@ button {
   font-family: var(--font-body);
 }
 
-.chat-input-bar input:focus {
+.ask-screen .chat-input-bar input:focus {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 
-.chat-input-bar button {
+.ask-screen .chat-input-bar button {
   min-width: 44px;
   min-height: 44px;
   border: none;
@@ -1161,13 +1082,14 @@ button {
   cursor: pointer;
 }
 
-.chat-input-bar button:hover:not(:disabled) {
+.ask-screen .chat-input-bar button:hover:not(:disabled) {
   background: var(--color-accent-strong);
 }
 
 /* Empty is the only disabled state, and it reads as an outline rather than a
    grey slab — grey fill on a warm ground looks broken, not inactive. */
-.chat-input-bar button:disabled {
+
+.ask-screen .chat-input-bar button:disabled {
   background: transparent;
   border: 1px solid var(--hairline);
   color: var(--color-ink-soft);
@@ -1180,38 +1102,63 @@ button {
 /* Every animation and transition above becomes an instant state change. The
    blanket selector is deliberate — anything added later is covered by default
    rather than needing to be remembered here. */
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+.ask-screen *::before,
+.ask-screen *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
-
-  .message-enter,
-  .listing-card,
-  .filter-chip,
-  .filter-chip.removing,
-  .empty-state,
-  .typing-indicator .dot {
+.ask-screen .message-enter,
+.ask-screen .listing-card,
+.ask-screen .filter-chip,
+.ask-screen .filter-chip.removing,
+.ask-screen .empty-state,
+.ask-screen .typing-indicator .dot {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
-
-  /* Open/closed must still be visually correct without the tween. */
-  .collapse {
+/* Open/closed must still be visually correct without the tween. */
+.ask-screen .collapse {
     transition: none !important;
   }
 }
 
 /* Distinguishes the two ratings in words, so a bare star never appears twice. */
-.rating-scope {
+
+.ask-screen .rating-scope {
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--color-ink-soft);
   white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 6 layout corrections.
+ *
+ * Product C's composer was `position: fixed; bottom: 14px` — correct when it
+ * was a whole app owning the viewport. As a tab, the bottom of the viewport
+ * now belongs to the tab bar, so the composer is lifted clear of it and the
+ * thread's bottom padding grows to match. Nothing else about the composer
+ * changes.
+ * ------------------------------------------------------------------------- */
+
+.ask-screen .composer {
+  /* 56px tab bar + its safe-area inset, then the original 14px gap. */
+  bottom: calc(56px + 14px + env(safe-area-inset-bottom));
+}
+
+.ask-screen .chat-thread {
+  /* Original 140px clearance for the composer, plus the tab bar beneath it. */
+  padding-bottom: calc(140px + 56px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 720px) {
+  .ask-screen .composer {
+    width: min(616px, calc(100% - 28px));
+  }
 }

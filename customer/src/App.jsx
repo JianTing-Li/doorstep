@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AppProvider, useApp } from "./AppContext.jsx";
 import { getListings, getProviders, getCustomers } from "./data/loadData.js";
+import { seedPromptFromBrowse } from "./lib/filterBridge.js";
 
 import Header from "./components/Header.jsx";
 import TabBar from "./components/TabBar.jsx";
@@ -14,6 +15,7 @@ import ConfirmationScreen from "./components/ConfirmationScreen.jsx";
 import BookingsScreen from "./components/BookingsScreen.jsx";
 import ProfileTab from "./components/ProfileTab.jsx";
 import AskScreen from "./components/AskScreen.jsx";
+import FirstVisitStrip from "./components/FirstVisitStrip.jsx";
 import ProviderChatModal from "./components/ProviderChatModal.jsx";
 import ReportModal from "./components/ReportModal.jsx";
 import ReviewModal from "./components/ReviewModal.jsx";
@@ -27,8 +29,18 @@ export default function App() {
   );
 }
 
+// /chat redirects to /customer/?tab=ask (Phase 6), so honour that on load.
+function initialTab() {
+  try {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return ["browse", "ask", "bookings", "profile"].includes(t) ? t : "browse";
+  } catch {
+    return "browse";
+  }
+}
+
 function Shell() {
-  const [tab, setTab] = useState("browse");
+  const [tab, setTab] = useState(initialTab);
   // Browse tab's own nested navigation — dashboard is its home; drilling
   // into a listing moves through profile -> checkout -> confirmation
   // without leaving the tab. Mirrors his own single-container navigate().
@@ -36,6 +48,11 @@ function Shell() {
   const [browseParams, setBrowseParams] = useState({});
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+  // Filter hand-off, both directions (Phase 6). askSeed carries a Browse
+  // narrowing into Ask as an opening sentence; browseFilterOverride carries a
+  // parsed Ask request back into Browse. See lib/filterBridge.js.
+  const [askSeed, setAskSeed] = useState(null);
+  const [browseFilterOverride, setBrowseFilterOverride] = useState(null);
 
   const {
     bookings, reports, providerChat, closeProviderChat,
@@ -72,9 +89,15 @@ function Shell() {
           <ListingFeed
             listings={listings}
             providersById={providersById}
-            initialFilters={{ category: browseParams.category, searchQuery: browseParams.search }}
+            initialFilters={
+              browseFilterOverride ?? { category: browseParams.category, searchQuery: browseParams.search }
+            }
             onOpenListing={openListing}
             onBack={() => goBrowse("dashboard")}
+            onDescribeInstead={(currentFilters) => {
+              setAskSeed(seedPromptFromBrowse(currentFilters));
+              setTab("ask");
+            }}
           />
         );
       case "profile":
@@ -148,9 +171,20 @@ function Shell() {
     <div className="app-shell">
       <Header onLogoClick={goHome} onBookingsClick={() => setTab("bookings")} />
 
+      <FirstVisitStrip />
+
       <main className="app-main">
         {tab === "browse" && renderBrowse()}
-        {tab === "ask" && <AskScreen />}
+        {tab === "ask" && (
+          <AskScreen
+            seedPrompt={askSeed}
+            onSeeMoreLikeThis={(browseFilters) => {
+              setBrowseFilterOverride(browseFilters);
+              setAskSeed(null);
+              goBrowse("feed", {});
+            }}
+          />
+        )}
         {tab === "bookings" && <BookingsScreen />}
         {tab === "profile" && (
           <ProfileTab bookings={bookings} reports={reports} onSwitchPersona={openPersonaModal} />

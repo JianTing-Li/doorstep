@@ -1,6 +1,8 @@
 import { createRecord, mergeCollection } from "../../../shared/demo-store.js";
 
+import exampleQueries from "../../../mock-data/example-queries.json" with { type: "json" };
 import listings from "../../../mock-data/listings.json" with { type: "json" };
+import neighborhoods from "../../../mock-data/neighborhoods.json" with { type: "json" };
 import providers from "../../../mock-data/providers.json" with { type: "json" };
 import customers from "../../../mock-data/customers.json" with { type: "json" };
 import reviews from "../../../mock-data/reviews.json" with { type: "json" };
@@ -34,6 +36,15 @@ export function getReports() {
 
 export function getServiceTypes() {
   return serviceTypes;
+}
+
+// Static reference tables used by the Ask tab (Phase 6) — no overlay.
+export function getExampleQueries() {
+  return exampleQueries;
+}
+
+export function getNeighborhoods() {
+  return neighborhoods;
 }
 
 export function getMeta() {

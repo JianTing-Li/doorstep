@@ -36,6 +36,7 @@ export default function ResultsList({
           return (
             <ListingCard
               key={listing.listing_id}
+              variant="ask"
               transitionName={transitionNameFor(key)}
               listing={listing}
               state={stateFor(key)}

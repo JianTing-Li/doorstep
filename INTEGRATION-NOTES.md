@@ -1192,3 +1192,195 @@ convergence Phase 2 said would happen here. No new dependency.
 - His persona switcher's own `localStorage` keys (`doorstep_bookings_*`, `doorstep_messages_*`,
   `doorstep_reports_*`) — messages have no shared-collection equivalent, so they stay app-local exactly as
   designed; bookings and reports also write to the shared store, as documented in Phase 3/5.
+
+---
+
+## Phase 6 — Fuse Product C into the customer app
+
+Product C is now the **Ask** tab. Every file moved with `git mv`, so `git blame` still attributes the
+matching, parsing, and booking logic to Jian Ting Li.
+
+### What moved where
+
+| From | To | Note |
+|---|---|---|
+| `chat/src/App.jsx` | `customer/src/components/AskScreen.jsx` | shell stripped, logic untouched |
+| `chat/src/components/*` (12 files) | `customer/src/components/` | flat, so their `../lib/` and `../data/` imports stayed valid |
+| `chat/src/lib/*` (6 files + `__tests__/`) | `customer/src/lib/` | **the test file needed zero edits** — see below |
+| `chat/src/data/listings.js` | `customer/src/data/listings.js` | selector layer |
+| `chat/src/styles.css` | `customer/src/ask.css` | scoped, see below |
+
+**Deleted rather than moved:** `chat/src/components/ListingCard.jsx` (unified — see below),
+`chat/src/components/HeaderActions.jsx` and `chat/src/lib/theme.js` (Ask is a tab now; the customer app's
+header and the shared switcher own branding and theme).
+
+**`chat/` still exists** and holds `api/chat.js` — the root `api/chat.js` re-export is unchanged, and the
+Gemini key stays server-side, never `VITE_`-prefixed. `chat/` is simply no longer a build target.
+
+### The test file needed zero edits
+
+Predicted at the pre-phase check and it held: `matching.test.js` imports by relative path (`../parseJob.js`,
+`../../data/loadData.js`). Moving `chat/src/lib/` → `customer/src/lib/` and `chat/src/data/listings.js` →
+`customer/src/data/listings.js` kept every one of those paths correct. The only thing required was adding
+`getExampleQueries` and `getNeighborhoods` to `customer/src/data/loadData.js` — purely additive.
+
+**Result: booking 49/49, parseJob 20/25 — byte-identical to every gate since Phase 0, with the test file
+untouched.** No "stop and ask" was needed.
+
+### One ListingCard, rendered by Browse and Ask
+
+`customer/src/components/ListingCard.jsx` is now the single card, with a `variant` prop:
+
+- `compact` — Dashboard's Top-Rated strip
+- `dense` — Browse feed
+- `ask` — Ask results, adding the collapsed → expanded → booking → booked progression Product C owned
+
+The **head markup is literally shared** across all three — same avatar, provider name, verified check,
+location, price, title, rating. A chatbot result and a browse result are identical because they are the same
+JSX, not because two components were tuned to match.
+
+### Filter hand-off, both directions — `customer/src/lib/filterBridge.js`
+
+The two screens describe a search differently and neither is wrong for its own context:
+
+```
+Browse  { category, searchQuery, maxPrice, minRating, sortBy }
+Ask     { service_types[], max_price, neighborhood, urgency }
+```
+
+Ask's shape is the canonical one — strictly more expressive (N codes rather than one category, plus
+neighborhood and urgency). `filterBridge.js` converts both ways, and **documents its lossiness honestly**:
+
+- **Browse → Ask** (`toAskFilters` + `seedPromptFromBrowse`) loses nothing meaningful. `sortBy`/`minRating`
+  have no Ask equivalent, but Ask ranks by relevance anyway. A price ceiling only carries if the customer
+  actually moved it off the default, so Ask doesn't open pre-constrained for no reason.
+- **Ask → Browse** (`toBrowseFilters`) genuinely cannot carry `neighborhood` or `urgency` (Browse has no
+  control for either) and collapses N service codes to the one category containing the first. The original
+  sentence carries into `searchQuery` so the text isn't silently dropped.
+
+**Verified both directions in the running app:** Browse(Cleaning) → "Describe it instead" → Ask opened
+pre-seeded with *"I need help with cleaning"* and returned 5 results; "See more like this" → Browse with the
+Cleaning chip selected and the sentence in the search box.
+
+### One bookings list
+
+A booking made in Ask now runs the same path as one made from Browse — the customer app's own list plus the
+canonical record via `shared/demo-store.js`. Confirmed in the walkthrough: after booking once from each,
+**Upcoming Jobs (3)** (the seeded booking plus both new ones) and **provider incoming 3 → 5**.
+
+### `/chat` redirects, does not 404
+
+`chat/redirect.html` → `dist/chat/index.html`, redirecting to `/customer/?tab=ask` (both a `<meta refresh>`
+and `location.replace`, so it works with or without JS). `App.jsx` reads `?tab=` on load and opens the right
+tab. Verified: `/chat/` → `200` → lands on `/customer/?tab=ask` with the **Ask** tab active.
+
+### Scoping Product C's stylesheet
+
+`chat/src/styles.css` had **12 class-name collisions** with the customer app. Rather than rename anything in
+Product C's markup, every selector was mechanically prefixed with `.ask-screen` into `customer/src/ask.css`.
+Rules for the shell Ask no longer renders (`.app-shell`, `.app-header`, `.brand`, `.header-button`, the
+clear-chat confirm) and the global resets were dropped rather than scoped, since the customer app owns those.
+
+One real layout correction on top: Product C's composer was `position: fixed; bottom: 14px` — correct when it
+owned the viewport, wrong now that the tab bar owns the bottom. Lifted clear of the tab bar, with the
+thread's bottom padding grown to match. Caught by screenshot, not by reading the CSS.
+
+---
+
+## Consistency checklist (Gate 6)
+
+| # | Item | Result |
+|---|---|---|
+| 1 | Every color/size/space/radius resolves to a token | **PASS with two documented exceptions** |
+| 2 | One icon set, no leftover Font Awesome | **PASS** |
+| 3 | Buttons, inputs, badges, loading/empty/error identical everywhere | **PARTIAL FAIL** |
+| 4 | Dark mode in all four, survives navigation | **PASS** |
+| 5 | No product reads mock-data directly | **PASS** |
+| 6 | Usable at 390px, no horizontal scroll | **PASS — after fixing two real bugs** |
+| 7 | Same word for the same concept | **PASS with one minor note** |
+
+**1 — Tokens.** Fixed this phase: removed 5 redundant `--surface-overlay` literal fallbacks, tokenized the
+Leaflet popup's 4 colors, and tokenized **all 11** remaining `rgba()`/hex literals in Product C's stylesheet
+via `color-mix()`. `ask.css` now contains **zero** raw color literals. Two deliberate exceptions remain, both
+documented in-file: the **4 category-icon colors and the avatar gradient** in `customer/`, and Product A's
+**8-color category system** (Phase 4). Both exist so categories stay distinguishable at a glance, which one
+shared accent cannot do — that is wayfinding, not a missing token.
+
+**2 — Icons.** Zero Font Awesome outside `customer/legacy/` (the archived original, which isn't built or
+served). All four products use the shared inline-SVG convention.
+
+**3 — Interaction patterns. This one genuinely fails, and I'm not going to dress it up.**
+`shared/patterns.css` was written in Phase 2 and **is still imported by nothing**. Each product defines its
+own button primitive (customer 18 rules, provider 15, admin 6) and its own empty-state markup. The saving
+grace is that they all consume the same tokens, so they *look* consistent — same accent, radius, type scale —
+but the implementations are three parallel definitions, not one shared one. Wiring `patterns.css` in now
+would mean touching Provider's and Admin's CSS again late in the phase for a mostly-cosmetic gain, so I've
+left it and flagged it. **This is the one checklist item I'd fix given more time.**
+
+**4 — Dark mode.** Verified in all four with the theme persisted through navigation: `data-theme="dark"`
+survives `/customer/` → `/provider/` → `/admin/`, and the Ask tab renders correctly in dark (Product C's glass
+aesthetic intact). *Note for the record:* customer's `body` reports `backgroundColor: rgba(0,0,0,0)` because
+its background is a **gradient** (`background-image`), not a flat color — I checked `backgroundImage` before
+reporting this as a bug, and it is not one.
+
+**5 — Data access.** The four data modules are the only real readers. Every other `mock-data` hit across
+`customer/src`, `provider/src`, `admin/`, and `shared/` is a **comment** — verified file by file by grepping
+for actual `import`/`fetch`/`require` rather than trusting a filename match.
+
+**6 — 390px.** Now PASS on all four (`scrollWidth === clientWidth === 390`). This required fixing **two real
+bugs the check surfaced**:
+- **Mine.** `.listing-card-compact` was still laid out as a flex *row*, but unifying the card gave every
+  variant a stacked head — so the trailing "Chat" chip was pushed to `right: 433px`. Fixed by making compact
+  a column and letting the identity block shrink.
+- **Pre-existing in Product A.** `.dashboard-grid` collapses to `1fr` at ≤960px, but a grid item defaults to
+  `min-width: auto`, so a plain `1fr` track refuses to shrink below its content's min-content width — panels
+  measured 401px inside a 358px shell. Fixed with `minmax(0, 1fr)`. Confirmed pre-existing by diffing against
+  the `gate-1` commit: the `minmax(330px, …)` rule is identical there, so Phase 4 did not introduce it. The
+  fix is substrate-only and **provably changed nothing at desktop width** — Provider's full-page screenshot is
+  byte-identical to Phase 4.
+- Admin scrolls its queue inside its own container, which the checklist explicitly allows.
+
+**7 — Vocabulary.** "Booking" is used consistently (466 occurrences); **zero** uses of "Trips" or
+"Reservation". "Job" is used for *the work* ("Upcoming Jobs", "Job completed", "Job area") and "Booking" for
+*the record* — a real distinction, applied consistently, not a mismatch. One minor note: `ScheduleScreen`
+says "Available **Appointment** Slots" (Abheeshu's original copy, preserved verbatim). It refers to the slot
+rather than the booking record, so it isn't strictly a conflict — but it is the one place a third word
+appears. **Not rewriting a teammate's copy without asking.**
+
+### Gate 6 walkthrough — every step verified in the running build
+
+```
+1. Cold entry     /customer/ /provider/ /admin/  → all render, switcher present on each
+2. /chat          → 200 → /customer/?tab=ask, Ask tab active (no 404)
+3. Persona switch → 3 personas offered from all three products
+   BASELINE        provider incoming=3 · admin review=4 audit=9
+4. Book from Browse → ok
+5. Book from Ask    → ok   (2 canonical bookings written, source=customer_app)
+6. Both under Bookings → Upcoming Jobs (3)  [seed + Browse + Ask]
+7. Provider           → incoming 3 → 5
+8. Report from Ask/Browse → admin review 4 → 5
+9. Reset              → overlay null; provider 3, admin 4/9 — all back to pristine
+   page errors: none
+```
+
+### Tests
+
+`mock-data/validate.py` 104/104 · `admin/test.mjs` passes · matching **49/49 booking, 20/25 parseJob** —
+unchanged from Phase 0, test file never edited.
+
+### Secrets
+
+Clean. `GEMINI_API_KEY` is read only via `process.env` in `chat/api/chat.js` and the two dev-only Vite
+plugins. No `VITE_`-prefixed variable exists anywhere (every `VITE_` hit is a warning comment). Only
+`.env.example` is tracked.
+
+One real gap found and fixed: with dev now running from `customer/`, `loadEnv` would no longer have found the
+key in `chat/.env.local`. The dev plugin now checks `customer/`, the repo root, and `chat/` — so an existing
+local key keeps working without anyone moving a file.
+
+### Left alone
+
+- Product C's matching, parsing, intent, and booking logic — moved, not rewritten.
+- `shared/patterns.css` — still unconsumed (item 3 above).
+- Abheeshu's "Appointment Slots" copy.
+- `customer/legacy/` — his original vanilla build, archived and unbuilt.

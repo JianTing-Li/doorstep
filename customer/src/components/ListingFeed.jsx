@@ -3,10 +3,11 @@ import Icon from "./Icon.jsx";
 import ListingCard from "./ListingCard.jsx";
 import FilterPanel from "./FilterPanel.jsx";
 import { applyFilters, CATEGORIES, DEFAULT_FILTERS } from "../lib/filters.js";
+import { browseHasActiveFilters } from "../lib/filterBridge.js";
 
 // Browse feed — his getFeedHTML(), ported. Sticky search+filter header,
 // horizontal category chips, listing list, empty state with a filter reset.
-export default function ListingFeed({ listings, providersById, initialFilters, onOpenListing, onBack }) {
+export default function ListingFeed({ listings, providersById, initialFilters, onOpenListing, onBack, onDescribeInstead }) {
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS, ...initialFilters });
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -56,6 +57,14 @@ export default function ListingFeed({ listings, providersById, initialFilters, o
         </div>
       </div>
 
+      {browseHasActiveFilters(filters) && onDescribeInstead && (
+        <button type="button" className="describe-instead" onClick={() => onDescribeInstead(filters)}>
+          <Icon name="sparkles" size={14} />
+          <span>Can&rsquo;t find it? <strong>Describe it instead</strong></span>
+          <Icon name="chevronRight" size={13} />
+        </button>
+      )}
+
       <div className="feed-list">
         {results.length === 0 ? (
           <div className="empty-panel">
@@ -72,8 +81,8 @@ export default function ListingFeed({ listings, providersById, initialFilters, o
               key={listing.listing_id}
               listing={listing}
               provider={providersById.get(listing.provider_id) || {}}
+              variant="dense"
               onOpen={() => onOpenListing(listing.listing_id)}
-              dense
             />
           ))
         )}

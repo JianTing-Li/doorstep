@@ -119,6 +119,7 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
               key={listing.listing_id}
               listing={listing}
               provider={providersById.get(listing.provider_id) || {}}
+              variant="compact"
               onOpen={() => onOpenListing(listing.listing_id)}
             />
           ))}

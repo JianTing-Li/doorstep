@@ -1537,7 +1537,11 @@ summary {
   }
 
   .dashboard-grid {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr), not 1fr: a grid item defaults to min-width:auto, so a
+       plain 1fr track refuses to shrink below its content's min-content
+       width and the panel overflows the viewport at phone widths. Surfaced
+       by Gate 6's 390px check; pre-existing, not introduced by the merge. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
