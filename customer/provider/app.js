@@ -5,7 +5,7 @@ const SERVICE_NEED_PROFILES = [
     key: "routine_home_cleaning",
     prompt: "Keep a home routinely clean",
     helper: "Recurring or one-time upkeep for lived-in homes.",
-    icon: "?",
+    icon: "\u2728",
     service_type: "cleaning_standard",
     service_label: "Home Cleaning",
     listing_title: "Routine Home Cleaning",
@@ -22,7 +22,7 @@ const SERVICE_NEED_PROFILES = [
     key: "deep_home_reset",
     prompt: "Deep clean or reset a space",
     helper: "Move-in, move-out, appliance, or post-project cleaning.",
-    icon: "??",
+    icon: "\uD83E\uDDF9",
     service_type: "cleaning_deep",
     service_label: "Deep Cleaning",
     listing_title: "Deep Home Cleaning",
@@ -39,7 +39,7 @@ const SERVICE_NEED_PROFILES = [
     key: "repairs_and_installation",
     prompt: "Fix or install things at home",
     helper: "Assembly, mounting, patching, doors, and locks.",
-    icon: "??",
+    icon: "\uD83D\uDD28",
     service_type: "handyman_general",
     service_label: "Handyman",
     listing_title: "Home Repairs & Installation",
@@ -56,7 +56,7 @@ const SERVICE_NEED_PROFILES = [
     key: "water_and_drains",
     prompt: "Resolve a water or drain issue",
     helper: "Faucets, toilets, leaks, drains, and under-sink work.",
-    icon: "??",
+    icon: "\uD83D\uDCA7",
     service_type: "plumbing",
     service_label: "Plumbing",
     listing_title: "Plumbing Repair",
@@ -73,7 +73,7 @@ const SERVICE_NEED_PROFILES = [
     key: "lights_and_power",
     prompt: "Install or repair lights and power",
     helper: "Fixtures, fans, outlets, switches, and small electrical jobs.",
-    icon: "??",
+    icon: "\uD83D\uDCA1",
     service_type: "electrical",
     service_label: "Electrical",
     listing_title: "Electrical Installation & Repair",
@@ -90,7 +90,7 @@ const SERVICE_NEED_PROFILES = [
     key: "move_belongings",
     prompt: "Move belongings or furniture",
     helper: "Loading, unloading, in-building moves, and item hauling.",
-    icon: "??",
+    icon: "\uD83D\uDCE6",
     service_type: "moving_help",
     service_label: "Moving Help",
     listing_title: "Moving & Loading Help",
@@ -107,7 +107,7 @@ const SERVICE_NEED_PROFILES = [
     key: "remove_unwanted_items",
     prompt: "Remove unwanted items",
     helper: "Furniture, boxes, appliances, and room clear-outs.",
-    icon: "??",
+    icon: "\uD83D\uDE9A",
     service_type: "junk_removal",
     service_label: "Junk Removal",
     listing_title: "Junk Removal & Clear-Out",
@@ -124,7 +124,7 @@ const SERVICE_NEED_PROFILES = [
     key: "care_for_outdoor_space",
     prompt: "Care for a yard or outdoor space",
     helper: "Lawns, leaves, gutters, patios, and seasonal cleanup.",
-    icon: "??",
+    icon: "\uD83C\uDF3F",
     service_type: "yard_outdoor",
     service_label: "Yard & Outdoor",
     listing_title: "Yard & Outdoor Care",
@@ -171,11 +171,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       await window.initData();
     } catch (e) {
-      console.warn("initData failed, using fallback mock data:", e);
+      console.warn("initData fallback:", e);
     }
   }
 
-  // If DB_PROVIDERS is available, ensure activeProviderId exists
   if (typeof DB_PROVIDERS !== "undefined" && DB_PROVIDERS.length > 0) {
     const exists = DB_PROVIDERS.find(p => p.provider_id === providerState.activeProviderId);
     if (!exists) providerState.activeProviderId = DB_PROVIDERS[0].provider_id;
@@ -274,7 +273,7 @@ function handleListingSubmit(e) {
     DB_LISTINGS.unshift(newListing);
   }
 
-  providerState.successMessage = `?${newListing.title}? was built and published to ${matched.service_label}!`;
+  providerState.successMessage = `\u201C${newListing.title}\u201D was built and published to ${matched.service_label}!`;
   providerState.form = { need_key: "", included_tasks: [], price_per_day: "" };
   providerState.errors = {};
   renderDashboard();
@@ -343,13 +342,13 @@ function renderDashboard() {
         <div style="display: flex; align-items: center; gap: 8px;">
           <div class="suite-menu-container">
             <button class="suite-btn" id="suite-btn" onclick="toggleSuiteMenu()">
-              <span>Products Suite</span> ?
+              <span>Products Suite</span> \u25BE
             </button>
             <div class="suite-dropdown hidden" id="suite-dropdown">
-              <a href="./" style="font-weight: 700; color: var(--forest);">?? Product A (Provider)</a>
-              <a href="../">?? Product B (Customer App)</a>
-              <a href="../chat/">?? Product C (AI Matcher)</a>
-              <a href="../admin/">?? Product D (Safety Ops)</a>
+              <a href="./" style="font-weight: 700; color: var(--forest);">\uD83D\uDEE0 Product A (Provider)</a>
+              <a href="../">\uD83D\uDECD Product B (Customer App)</a>
+              <a href="../chat/">\uD83E\uDD16 Product C (AI Matcher)</a>
+              <a href="../admin/">\uD83D\uDEE1 Product D (Safety Ops)</a>
             </div>
           </div>
 
@@ -378,60 +377,60 @@ function renderDashboard() {
             your independent business in one place.
           </p>
           <div class="trust-row">
-            <span>? Verified profile</span>
-            ${currentProvider.location ? `<span>? ${currentProvider.location}</span>` : ''}
-            <span>? ${(currentProvider.rating || 5.0).toFixed(1)} provider rating</span>
+            <span>\u2713 Verified profile</span>
+            ${currentProvider.location ? `<span>\u2316 ${currentProvider.location}</span>` : ''}
+            <span>\u2605 ${(currentProvider.rating || 5.0).toFixed(1)} provider rating</span>
           </div>
         </div>
         <div class="hero-service" aria-hidden="true">
-          <span>??</span>
-          <span class="hero-tool">?</span>
+          <span>\uD83C\uDFE0</span>
+          <span class="hero-tool">\u2713</span>
         </div>
         <p class="reference-date">
-          <span aria-hidden="true">?</span> August 31, 2026
+          <span aria-hidden="true">\u2600</span> August 31, 2026
         </p>
       </header>
 
       <section class="stats-grid" aria-label="Booking summary">
         <a class="stat-card stat-orange" href="#incoming-bookings">
-          <span class="stat-icon" aria-hidden="true">?</span>
+          <span class="stat-icon" aria-hidden="true">\u23F3</span>
           <span class="stat-content">
             <span class="stat-value">${counts.pending}</span>
             <span class="stat-label">Pending</span>
           </span>
-          <span class="stat-arrow" aria-hidden="true">?</span>
+          <span class="stat-arrow" aria-hidden="true">\u2192</span>
         </a>
         <a class="stat-card stat-blue" href="#incoming-bookings">
-          <span class="stat-icon" aria-hidden="true">??</span>
+          <span class="stat-icon" aria-hidden="true">\uD83E\uDD1D</span>
           <span class="stat-content">
             <span class="stat-value">${counts.confirmed}</span>
             <span class="stat-label">Confirmed</span>
           </span>
-          <span class="stat-arrow" aria-hidden="true">?</span>
+          <span class="stat-arrow" aria-hidden="true">\u2192</span>
         </a>
         <a class="stat-card stat-green" href="#past-bookings">
-          <span class="stat-icon" aria-hidden="true">?</span>
+          <span class="stat-icon" aria-hidden="true">\u2713</span>
           <span class="stat-content">
             <span class="stat-value">${counts.completed}</span>
             <span class="stat-label">Completed</span>
           </span>
-          <span class="stat-arrow" aria-hidden="true">?</span>
+          <span class="stat-arrow" aria-hidden="true">\u2192</span>
         </a>
         <a class="stat-card stat-red" href="#past-bookings">
-          <span class="stat-icon" aria-hidden="true">?</span>
+          <span class="stat-icon" aria-hidden="true">\u21A9</span>
           <span class="stat-content">
             <span class="stat-value">${counts.cancelled}</span>
             <span class="stat-label">Cancelled</span>
           </span>
-          <span class="stat-arrow" aria-hidden="true">?</span>
+          <span class="stat-arrow" aria-hidden="true">\u2192</span>
         </a>
         <a class="stat-card stat-purple" href="#my-listings">
-          <span class="stat-icon" aria-hidden="true">?</span>
+          <span class="stat-icon" aria-hidden="true">\u2726</span>
           <span class="stat-content">
             <span class="stat-value">${activeCount}</span>
             <span class="stat-label">Active Listings</span>
           </span>
-          <span class="stat-arrow" aria-hidden="true">?</span>
+          <span class="stat-arrow" aria-hidden="true">\u2192</span>
         </a>
       </section>
 
@@ -439,7 +438,7 @@ function renderDashboard() {
         <section class="panel form-panel" id="create-listing">
           <form onsubmit="handleListingSubmit(event)" class="listing-form" noValidate>
             <div class="form-heading">
-              <span class="section-icon" aria-hidden="true">?</span>
+              <span class="section-icon" aria-hidden="true">\u2726</span>
               <div>
                 <p class="eyebrow">Guided service builder</p>
                 <h3>What can you help with?</h3>
@@ -452,7 +451,7 @@ function renderDashboard() {
 
             ${providerState.successMessage ? `
               <div class="success-message" role="status">
-                <span aria-hidden="true">?</span>
+                <span aria-hidden="true">\u2713</span>
                 <div>
                   <strong>Service built successfully</strong>
                   <p>${providerState.successMessage}</p>
@@ -480,7 +479,7 @@ function renderDashboard() {
                         <small>${profile.helper}</small>
                       </span>
                       <span class="need-option-check" aria-hidden="true">
-                        ${isSelected ? '?' : '?'}
+                        ${isSelected ? '\u2713' : '\u2192'}
                       </span>
                     </button>
                   `;
@@ -493,7 +492,7 @@ function renderDashboard() {
 
             ${providerState.showNoMatch ? `
               <div class="no-match-message" role="status">
-                <span aria-hidden="true">??</span>
+                <span aria-hidden="true">\uD83D\uDCAC</span>
                 <div>
                   <strong>This service is not supported yet</strong>
                   <p>
@@ -511,7 +510,7 @@ function renderDashboard() {
                 <div class="match-copy">
                   <span class="match-kicker">TaskLocal matched your service</span>
                   <strong>${matchedProfile.service_label}</strong>
-                  <small>Customers will see ?${matchedProfile.listing_title}?</small>
+                  <small>Customers will see \u201C${matchedProfile.listing_title}\u201D</small>
                 </div>
                 <span class="auto-badge">Auto-assigned</span>
               </div>
@@ -526,7 +525,7 @@ function renderDashboard() {
                     const isChecked = providerState.form.included_tasks.includes(task);
                     return `
                       <label class="task-option ${isChecked ? 'task-option-selected' : ''}" onclick="toggleTask('${task}')">
-                        <span aria-hidden="true">${isChecked ? '?' : ''}</span>
+                        <span aria-hidden="true">${isChecked ? '\u2713' : ''}</span>
                         ${task}
                       </label>
                     `;
@@ -551,7 +550,7 @@ function renderDashboard() {
                   <span>flat price</span>
                 </div>
                 <small class="field-hint">
-                  Customers see this exact price before they book?no hidden estimate.
+                  Customers see this exact price before they book\u2014no hidden estimate.
                 </small>
               </label>
 
@@ -570,19 +569,19 @@ function renderDashboard() {
                 </p>
                 <div class="preview-meta">
                   <span>${matchedProfile.icon} ${matchedProfile.service_label}</span>
-                  <span>? Scope shown before booking</span>
+                  <span>\u2713 Scope shown before booking</span>
                 </div>
               </section>
 
               <button type="submit" class="btn btn-primary btn-publish">
                 <span>Build & Publish Service</span>
-                <span aria-hidden="true">?</span>
+                <span aria-hidden="true">\u2192</span>
               </button>
             ` : ''}
 
             <p class="form-footnote">
-              <span aria-hidden="true">??</span> TaskLocal uses only your selections to
-              build the service?nothing is invented.
+              <span aria-hidden="true">\uD83D\uDD12</span> TaskLocal uses only your selections to
+              build the service\u2014nothing is invented.
             </p>
           </form>
         </section>
@@ -593,18 +592,18 @@ function renderDashboard() {
               <p class="eyebrow">What local customers can book</p>
               <h3>My Listings <span class="count-pill">${providerListings.length}</span></h3>
             </div>
-            <span class="section-illustration" aria-hidden="true">??</span>
+            <span class="section-illustration" aria-hidden="true">\uD83C\uDFE1</span>
           </div>
           <p class="hint status-summary">
-            <span class="status-dot status-dot-active" /> ${activeCount} active
-            <span class="status-divider">?</span>
+            <span class="status-dot status-dot-active"></span> ${activeCount} active
+            <span class="status-divider">\u2022</span>
             ${providerListings.length - activeCount} other
           </p>
 
           <ul class="listings-list">
             ${providerListings.map(listing => `
               <li class="listing-item">
-                <div class="listing-icon" aria-hidden="true">??</div>
+                <div class="listing-icon" aria-hidden="true">\uD83D\uDEE0</div>
                 <div class="listing-content">
                   <div class="listing-item-main">
                     <strong>${listing.title}</strong>
@@ -618,14 +617,14 @@ function renderDashboard() {
                   </div>
                   ${(listing.included_tasks && listing.included_tasks.length > 0) ? `
                     <p class="listing-includes">
-                      <strong>Includes:</strong> ${listing.included_tasks.join(' ? ')}
+                      <strong>Includes:</strong> ${listing.included_tasks.join(' \u2022 ')}
                     </p>
                   ` : ''}
                 </div>
               </li>
             `).join('')}
             ${providerListings.length === 0 ? `
-              <li class="empty-state">No listings yet ? create your first one using the builder on the left.</li>
+              <li class="empty-state">No listings yet \u2014 create your first one using the builder on the left.</li>
             ` : ''}
           </ul>
         </section>
@@ -637,7 +636,7 @@ function renderDashboard() {
             <p class="eyebrow">Needs your attention</p>
             <h3>Incoming Bookings <span class="count-pill">${upcomingBookings.length}</span></h3>
           </div>
-          <span class="section-illustration" aria-hidden="true">??</span>
+          <span class="section-illustration" aria-hidden="true">\uD83D\uDC8C</span>
         </div>
         ${upcomingBookings.length === 0 ? `
           <p class="empty-state">No pending or confirmed bookings right now.</p>
@@ -656,7 +655,7 @@ function renderDashboard() {
                       </div>
                     </div>
                     <span class="badge badge-${b.status === 'confirmed' ? 'blue' : 'orange'}">
-                      <span class="badge-dot" aria-hidden="true" />
+                      <span class="badge-dot" aria-hidden="true"></span>
                       ${b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
                     </span>
                   </div>
@@ -665,21 +664,21 @@ function renderDashboard() {
 
                   <div class="booking-card-details">
                     <p class="booking-detail">
-                      <span class="detail-icon" aria-hidden="true">??</span>
+                      <span class="detail-icon" aria-hidden="true">\uD83D\uDCC5</span>
                       <span>
                         <small>Service date</small>
                         <strong>${formatDate(b.scheduled_slot)}</strong>
                       </span>
                     </p>
                     <p class="booking-detail">
-                      <span class="detail-icon" aria-hidden="true">??</span>
+                      <span class="detail-icon" aria-hidden="true">\uD83D\uDCB3</span>
                       <span>
                         <small>Escrow total</small>
                         <strong>$${b.total_amount || listing.price || 60} [Held]</strong>
                       </span>
                     </p>
                     <p class="booking-detail booking-address">
-                      <span class="detail-icon" aria-hidden="true">?</span>
+                      <span class="detail-icon" aria-hidden="true">\u2316</span>
                       <span>
                         <small>Service location</small>
                         <strong>${cust.location || 'Portland, OR'}</strong>
@@ -690,11 +689,11 @@ function renderDashboard() {
                   <div class="booking-card-actions">
                     ${b.status === 'pending' ? `
                       <button type="button" class="btn btn-accept" onclick="updateBookingStatus('${b.booking_id}', 'confirmed')">
-                        <span aria-hidden="true">?</span> Accept Request
+                        <span aria-hidden="true">\u2713</span> Accept Request
                       </button>
                     ` : `
                       <button type="button" class="btn btn-complete" onclick="updateBookingStatus('${b.booking_id}', 'completed')">
-                        <span aria-hidden="true">?</span> Mark Completed
+                        <span aria-hidden="true">\u2713</span> Mark Completed
                       </button>
                     `}
                     <button type="button" class="btn btn-cancel" onclick="updateBookingStatus('${b.booking_id}', 'cancelled')">
@@ -714,7 +713,7 @@ function renderDashboard() {
             <p class="eyebrow">Your service history</p>
             <h3>Past Bookings <span class="count-pill">${pastBookings.length}</span></h3>
           </div>
-          <span class="section-illustration" aria-hidden="true">??</span>
+          <span class="section-illustration" aria-hidden="true">\uD83C\uDF3F</span>
         </div>
         ${pastBookings.length === 0 ? `
           <p class="empty-state">No past bookings yet.</p>
@@ -733,7 +732,7 @@ function renderDashboard() {
                       </div>
                     </div>
                     <span class="badge badge-${b.status === 'completed' ? 'green' : 'red'}">
-                      <span class="badge-dot" aria-hidden="true" />
+                      <span class="badge-dot" aria-hidden="true"></span>
                       ${b.status === 'completed' ? 'Completed' : 'Cancelled'}
                     </span>
                   </div>
@@ -742,21 +741,21 @@ function renderDashboard() {
 
                   <div class="booking-card-details">
                     <p class="booking-detail">
-                      <span class="detail-icon" aria-hidden="true">??</span>
+                      <span class="detail-icon" aria-hidden="true">\uD83D\uDCC5</span>
                       <span>
                         <small>Service date</small>
                         <strong>${formatDate(b.scheduled_slot)}</strong>
                       </span>
                     </p>
                     <p class="booking-detail">
-                      <span class="detail-icon" aria-hidden="true">??</span>
+                      <span class="detail-icon" aria-hidden="true">\uD83D\uDCB3</span>
                       <span>
                         <small>Total amount</small>
                         <strong>$${b.total_amount || listing.price || 60}</strong>
                       </span>
                     </p>
                     <p class="booking-detail booking-address">
-                      <span class="detail-icon" aria-hidden="true">?</span>
+                      <span class="detail-icon" aria-hidden="true">\u2316</span>
                       <span>
                         <small>Service location</small>
                         <strong>${cust.location || 'Portland, OR'}</strong>
