@@ -8,10 +8,22 @@
       content="Doorstep Product D: a trust and safety operations dashboard backed by the shared GitHub mock dataset."
     />
     <title>Doorstep Safety Operations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- styles.css imports shared/tokens.css itself (Phase 4), so it isn't
+         linked separately here. -->
     <link rel="stylesheet" href="./styles.css" />
+    <!-- Doorstep shared shell (Phase 2) -->
+    <link rel="stylesheet" href="/shared/switcher.css" />
+    <script type="module" src="/shared/switcher.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#case-review">Skip to case review</a>
+    <div id="doorstep-switcher"></div>
 
     <header class="topbar">
       <div class="brand-lockup">

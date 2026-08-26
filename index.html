@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Doorstep — a Portland home services marketplace, built as four connected products." />
+    <meta name="theme-color" content="#eff6ff" />
+    <title>Doorstep</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --grad-page: linear-gradient(170deg, #eff6ff 0%, #dbeafe 45%, #e0f2fe 100%);
+        --grad-primary: linear-gradient(135deg, #1d4ed8 0%, #0369a1 100%);
+        --grad-primary-strong: linear-gradient(135deg, #1e3a8a 0%, #075985 100%);
+        --grad-brand: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+        --color-ink: #0f2744;
+        --color-ink-soft: #4a6180;
+        --color-surface: #ffffff;
+        --color-line: #c3dcf7;
+        --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+        --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: var(--grad-page);
+        background-attachment: fixed;
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        width: 100%;
+        max-width: 900px;
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 7vw, 3.5rem);
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.05;
+        background: var(--grad-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        width: fit-content;
+      }
+
+      .tagline {
+        font-family: var(--font-display);
+        font-style: italic;
+        font-size: 1.2rem;
+        color: var(--color-ink-soft);
+        margin: 10px 0 8px;
+        line-height: 1.4;
+      }
+
+      .demo-note {
+        font-size: 0.88rem;
+        color: var(--color-ink-soft);
+        margin: 0 0 32px;
+        max-width: 60ch;
+      }
+
+      .doors {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 16px;
+      }
+
+      .door {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 20px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 150ms ease, box-shadow 150ms ease;
+      }
+
+      .door:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(15, 39, 68, 0.1);
+      }
+
+      .door:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 3px;
+      }
+
+      .door-eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #1d4ed8;
+        margin: 0 0 6px;
+      }
+
+      .door h2 {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+
+      .door p {
+        margin: 0 0 20px;
+        color: var(--color-ink-soft);
+        line-height: 1.5;
+        font-size: 0.92rem;
+        flex: 1;
+      }
+
+      .door-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 999px;
+        background: var(--grad-primary);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+
+      .door:hover .door-cta {
+        background: var(--grad-primary-strong);
+      }
+
+      .door-credit {
+        margin: 14px 0 0;
+        font-size: 0.78rem;
+        color: var(--color-ink-soft);
+      }
+
+      @media (forced-colors: active) {
+        h1 {
+          background: none;
+          color: CanvasText;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Doorstep</h1>
+      <p class="tagline">Portland home services, matched to the job you describe.</p>
+      <p class="demo-note">
+        This is a concept demo running on mock data — no real bookings, payments, or accounts.
+        Pick the door that matches who you are.
+      </p>
+
+      <div class="doors">
+        <a class="door" href="/customer/">
+          <p class="door-eyebrow">I need something done</p>
+          <h2>Customer</h2>
+          <p>Browse local providers, filter services, manage bookings, and get help around the house.</p>
+          <span class="door-cta">Enter as Customer</span>
+          <p class="door-credit">Built by Abheeshu Dhungana</p>
+        </a>
+
+        <a class="door" href="/chat/">
+          <p class="door-eyebrow">I need help finding a match</p>
+          <h2>Matching Chatbot</h2>
+          <p>Describe a job in plain language and compare active providers that fit what you need.</p>
+          <span class="door-cta">Ask Doorstep</span>
+          <p class="door-credit">Built by Jian Ting Li</p>
+        </a>
+
+        <a class="door" href="/provider/">
+          <p class="door-eyebrow">I offer a service</p>
+          <h2>Provider</h2>
+          <p>Create listings for cleaning, repairs, or moving help, and manage the bookings that come in.</p>
+          <span class="door-cta">Enter as Provider</span>
+          <p class="door-credit">Built by Kamal Mohamed</p>
+        </a>
+
+        <a class="door" href="/admin/">
+          <p class="door-eyebrow">I keep the marketplace safe</p>
+          <h2>Admin</h2>
+          <p>Review reports, prioritize risky cases, and record trust &amp; safety decisions with an audit trail.</p>
+          <span class="door-cta">Enter as Admin</span>
+          <p class="door-credit">Built by Ibtisam Hossain</p>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

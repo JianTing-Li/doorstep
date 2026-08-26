@@ -50,18 +50,6 @@ Historical reference: the earlier spreadsheet draft,
 It used a different schema (single-value `service_category`, prices in cents, a separate audit log) and has
 been superseded by `mock-data/`.
 
-## Product D build
-
-Ibtisam's [Trust & Safety Dashboard](admin/) implements the full Product D workflow against
-`mock-data/`: prioritized report queue → connected evidence review → human action → audit history.
-A suspend decision changes the demo listing status to `suspended`, proving why Products B and C must
-exclude it from customer-facing results. The shared JSON fixtures remain read-only; demo decisions are
-kept in browser-local state.
-
-Run `python3 -m http.server 4173` from the repository root, then open
-`http://localhost:4173/admin/`. Run `node admin/test.mjs` to verify queue priority and the
-marketplace visibility rule.
-
 ## Repo Rules
 
 1. Each product lives in its own folder and never imports from another product folder.
@@ -75,9 +63,35 @@ marketplace visibility rule.
 
 ## Local Development
 
-There is no root `package.json`, no workspaces, and no monorepo tooling. Each product is a standalone
-app with its own stack and dependencies, and runs independently from inside its own folder — see that
-product's own README/setup instructions once its owner has added them.
+There are no workspaces and no monorepo tooling. Each product remains a standalone app with its own stack
+and dependencies. Run a product from its folder using that product's README. To exercise the integrated
+site, build and serve the unified output from the repository root:
+
+```bash
+bash build.sh
+python3 -m http.server 4173 -d dist
+```
+
+Then open `http://localhost:4173/` and use the landing page or shared product switcher to move between apps.
+The root `package.json` is **not** a workspace root and does not own the product dependencies. It exists so
+Vercel can install dependencies for serverless functions in `/api`; product dependencies remain in each
+product's own `package.json`.
+
+## Deployment
+
+The repo deploys as one Vercel project, configured by `vercel.json` and assembled by `build.sh`:
+
+- `/` — unified product landing page
+- `/customer/` — Customer App (React/Vite)
+- `/chat/` — Matching Chatbot (React/Vite)
+- `/provider/` — Provider App (React/Vite)
+- `/admin/` — Trust & Safety Dashboard (static ES modules)
+- `/shared/` — common design tokens, role/theme switcher, and demo-state overlay
+- `/mock-data/` — canonical connected synthetic dataset used by every product
+- `/api/*` — serverless functions; each file re-exports the handler from its product folder
+
+`/api/chat` needs a `GEMINI_API_KEY` environment variable set in the Vercel project. It is read
+server-side only — never expose it to a client bundle, and never prefix it with `VITE_`.
 
 ## Developers
 
