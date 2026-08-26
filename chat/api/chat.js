@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import Anthropic from "@anthropic-ai/sdk";
 import { getNeighborhoods, getServiceTypes } from "../src/data/loadData.js";
 
 // The build spec named gemini-2.5-flash, but every 2.5-era model 404s for new
@@ -12,6 +13,24 @@ import { getNeighborhoods, getServiceTypes } from "../src/data/loadData.js";
 // Pinned rather than using the `gemini-flash-lite-latest` alias, which would
 // change models underneath us and make the test pass rate unreproducible.
 const MODEL = "gemini-3.5-flash-lite";
+
+// Fallback tier, tried only when Gemini errors, times out, or returns
+// something that fails schema validation — never on a low-confidence but
+// otherwise valid Gemini read (see isValidExtraction / extractFilters below).
+// Haiku is the right size here: this is enum-constrained classification, not
+// open-ended reasoning, and this tier only fires on Gemini outages, so its
+// speed/cost profile matters more than raw capability.
+const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
+
+// The client aborts the whole request at 8000ms (getFilters.js) to keep a
+// hard ceiling on how long a customer waits. These two budgets are sized to
+// fit inside that with room to spare even in the worst case (both tiers time
+// out back to back: 3500 + 4000 = 7500ms), rather than each independently
+// being "generous" and the pair together blowing past what the client will
+// still be listening for.
+const GEMINI_TIMEOUT_MS = 3500;
+const CLAUDE_TIMEOUT_MS = 4000;
+
 const URGENCY_VALUES = ["urgent", "today", "tomorrow", "this_week"];
 
 // Ordered most-specific first. Where a message could plausibly be read as more
@@ -173,25 +192,122 @@ function normalize(raw) {
   };
 }
 
+// A response that parses as JSON but doesn't actually carry the shape we
+// asked for (missing intent, service_types not an array, an intent outside
+// the enum) is a failure to escalate on, same as a thrown error — this is
+// what "fails schema validation" means for the Gemini -> Claude trigger.
+// Confidence is never part of this check: a low-confidence-but-well-formed
+// read from either model is a legitimate result, not a failure.
+function isValidExtraction(raw) {
+  return (
+    raw != null &&
+    typeof raw === "object" &&
+    INTENTS.includes(raw.intent) &&
+    Array.isArray(raw.service_types)
+  );
+}
+
+function withTimeout(promise, label, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// Claude has no equivalent of Gemini's enforced responseSchema, so the "return
+// ONLY JSON" instruction has to be explicit here — it does not carry over
+// from the Gemini prompt automatically. A defensive fence-strip in case it
+// wraps the JSON in ```json anyway despite the instruction.
+function stripCodeFence(text) {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return fenced ? fenced[1] : trimmed;
+}
+
 // Reads the key from the environment at call time and never returns, logs, or
 // embeds it anywhere in the response.
-async function extractFilters(text) {
+async function extractFiltersGemini(text) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Gemini is not configured");
 
   const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: text,
-    config: {
-      temperature: 0,
-      responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA,
-      systemInstruction: buildSystemInstruction(),
-    },
-  });
+  const response = await withTimeout(
+    ai.models.generateContent({
+      model: MODEL,
+      contents: text,
+      config: {
+        temperature: 0,
+        responseMimeType: "application/json",
+        responseSchema: RESPONSE_SCHEMA,
+        systemInstruction: buildSystemInstruction(),
+      },
+    }),
+    "Gemini",
+    GEMINI_TIMEOUT_MS,
+  );
 
-  return normalize(JSON.parse(response.text));
+  const raw = JSON.parse(response.text);
+  if (!isValidExtraction(raw)) throw new Error("Gemini response failed schema validation");
+  return normalize(raw);
+}
+
+// Same prompt as Gemini, adapted to Claude's message format: the system
+// instruction moves to the `system` param instead of `systemInstruction`,
+// and — since there is no responseSchema to enforce shape — the prompt gets
+// an explicit "JSON only" instruction Gemini doesn't need.
+async function extractFiltersClaude(text) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("Claude is not configured");
+
+  const anthropic = new Anthropic({ apiKey });
+  const system =
+    buildSystemInstruction() +
+    "\n\nRespond with ONLY the JSON object described above — no preamble, no markdown code fence, no explanation.";
+
+  const message = await withTimeout(
+    anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 300,
+      temperature: 0,
+      system,
+      messages: [{ role: "user", content: text }],
+    }),
+    "Claude",
+    CLAUDE_TIMEOUT_MS,
+  );
+
+  const block = message.content?.find((c) => c.type === "text");
+  if (!block?.text) throw new Error("Claude response had no text content");
+
+  const raw = JSON.parse(stripCodeFence(block.text));
+  if (!isValidExtraction(raw)) throw new Error("Claude response failed schema validation");
+  return normalize(raw);
+}
+
+// Gemini -> Claude -> (caller's existing non-200 path, which the client
+// already turns into its own keyword parseJob fallback — see getFilters.js).
+// Escalates only on a thrown error (API error, timeout, or the schema-
+// validation throws above) — never on confidence, so a legitimate
+// low-confidence-but-valid Gemini read is used as-is and never reaches
+// Claude. The tier that actually served the request is logged (not the
+// content of the response or either key) so fallback frequency is visible.
+async function extractFilters(text) {
+  try {
+    const result = await extractFiltersGemini(text);
+    console.log("chat/api/chat: served by gemini");
+    return result;
+  } catch (geminiError) {
+    console.log("chat/api/chat: gemini unavailable, trying claude —", geminiError.message);
+    try {
+      const result = await extractFiltersClaude(text);
+      console.log("chat/api/chat: served by claude");
+      return result;
+    } catch (claudeError) {
+      console.log("chat/api/chat: claude also unavailable —", claudeError.message);
+      throw claudeError;
+    }
+  }
 }
 
 export default async function handler(request, response) {
@@ -203,12 +319,11 @@ export default async function handler(request, response) {
   const text = typeof request.body?.text === "string" ? request.body.text.trim() : "";
   if (!text) return response.status(400).json({ error: "Missing text" });
 
-  // A missing key is a plain non-200 with no detail. The client falls back to
-  // parseJob on its own; it is never told why.
-  if (!process.env.GEMINI_API_KEY) {
-    return response.status(503).json({ error: "Unavailable" });
-  }
-
+  // A missing Gemini key now routes through the same try/catch as any other
+  // Gemini failure (extractFiltersGemini throws on it) and gets the same
+  // shot at Claude, rather than short-circuiting straight to a 503. Either
+  // way the response is a plain non-200 with no detail — the client falls
+  // back to parseJob on its own; it is never told why.
   try {
     return response.status(200).json(await extractFilters(text));
   } catch (error) {

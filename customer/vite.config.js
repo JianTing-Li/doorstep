@@ -57,9 +57,14 @@ function devApi() {
         fileURLToPath(new URL("../chat", import.meta.url)),
       ];
       for (const dir of roots) {
-        if (process.env.GEMINI_API_KEY) break;
         const env = loadEnv(server.config.mode, dir, "");
-        if (env.GEMINI_API_KEY) process.env.GEMINI_API_KEY = env.GEMINI_API_KEY;
+        if (env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY) {
+          process.env.GEMINI_API_KEY = env.GEMINI_API_KEY;
+        }
+        if (env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+          process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
+        }
+        if (process.env.GEMINI_API_KEY && process.env.ANTHROPIC_API_KEY) break;
       }
 
       server.middlewares.use("/api/chat", async (req, res, next) => {

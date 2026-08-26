@@ -1,7 +1,11 @@
 import { getNeighborhoods, getServiceTypes } from "../data/loadData.js";
 import { parseJob } from "./parseJob.js";
 
-const TIMEOUT_MS = 5000;
+// The server now tries Gemini, then Claude, before giving up — worst case is
+// two back-to-back timeouts (3500ms + 4000ms server-side, see chat/api/chat.js)
+// plus network/parse overhead. 5000ms was sized for a single-tier call and
+// would abort before Claude ever got a chance to answer.
+const TIMEOUT_MS = 8000;
 import { INTENT_PRIORITY, detectLocalIntent } from "./intents.js";
 
 const VALID_INTENTS = new Set(INTENT_PRIORITY);

@@ -48,6 +48,9 @@ function devApi() {
       if (env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY) {
         process.env.GEMINI_API_KEY = env.GEMINI_API_KEY;
       }
+      if (env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+        process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
+      }
 
       server.middlewares.use("/api/chat", async (req, res, next) => {
         let handler;
