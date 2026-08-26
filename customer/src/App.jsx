@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { AppProvider, useApp } from "./AppContext.jsx";
 import { getListings, getProviders, getCustomers } from "./data/loadData.js";
 import { seedPromptFromBrowse } from "./lib/filterBridge.js";
+import { withPageTransition } from "./lib/viewTransition.js";
 
 import Header from "./components/Header.jsx";
 import TabBar, { TopNav } from "./components/TabBar.jsx";
@@ -41,6 +42,12 @@ function initialTab() {
 
 function Shell() {
   const [tab, setTab] = useState(initialTab);
+  // Every top-level page swap (Browse/Ask/Bookings/Profile) goes through
+  // this instead of setTab directly, so the switch always crossfades rather
+  // than the content just flashing to the next screen.
+  function changeTab(next) {
+    withPageTransition(() => setTab(next));
+  }
   // Browse tab's own nested navigation — dashboard is its home; drilling
   // into a listing moves through profile -> checkout -> confirmation
   // without leaving the tab. Mirrors his own single-container navigate().
@@ -66,7 +73,7 @@ function Shell() {
   const providersById = useMemo(() => new Map(providersList.map((p) => [p.provider_id, p])), [providersList]);
 
   function goBrowse(view, params = {}) {
-    setTab("browse");
+    changeTab("browse");
     setBrowseView(view);
     setBrowseParams(params);
     // Checkout and confirmation are downstream of profile/schedule for the
@@ -96,7 +103,7 @@ function Shell() {
             onBack={() => goBrowse("dashboard")}
             onDescribeInstead={(currentFilters) => {
               setAskSeed(seedPromptFromBrowse(currentFilters));
-              setTab("ask");
+              changeTab("ask");
             }}
           />
         );
@@ -143,7 +150,7 @@ function Shell() {
         return (
           <ConfirmationScreen
             booking={confirmedBooking}
-            onViewBookings={() => setTab("bookings")}
+            onViewBookings={() => changeTab("bookings")}
             onHome={() => goBrowse("dashboard")}
           />
         );
@@ -157,7 +164,7 @@ function Shell() {
             onOpenListing={openListing}
             onOpenAsk={(prefill) => {
               if (prefill) setAskSeed(prefill);
-              setTab("ask");
+              changeTab("ask");
             }}
           />
         );
@@ -165,16 +172,16 @@ function Shell() {
   }
 
   function goHome() {
-    setTab("browse");
+    changeTab("browse");
     setBrowseView("dashboard");
     setBrowseParams({});
   }
 
   return (
     <div className="app-shell">
-      <Header onLogoClick={goHome} onBookingsClick={() => setTab("bookings")} />
+      <Header onLogoClick={goHome} onBookingsClick={() => changeTab("bookings")} />
 
-      <TopNav active={tab} onSelect={setTab} />
+      <TopNav active={tab} onSelect={changeTab} />
 
       <FirstVisitStrip />
 
@@ -196,7 +203,7 @@ function Shell() {
         )}
       </main>
 
-      <TabBar active={tab} onSelect={setTab} />
+      <TabBar active={tab} onSelect={changeTab} />
       <Toast />
 
       {providerChat && (

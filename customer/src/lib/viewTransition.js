@@ -20,6 +20,43 @@ export function withGridTransition(update) {
   document.startViewTransition(() => flushSync(update));
 }
 
+// Matches the CSS fallback's own transition length (index.css .page-fade-*).
+const PAGE_FADE_MS = 160;
+
+// Top-level page swap (Browse/Ask/Bookings/Profile) — previously an instant
+// DOM replacement with no transition at all, which reads as the page
+// flashing rather than navigating. View Transitions API gives a crossfade
+// for free (its default root animation, no per-element setup needed); where
+// it isn't supported, .page-fade-out/-in step through the same shape by
+// hand: fade the outgoing content down, swap during the gap, fade the new
+// content up. Either path is skipped for prefers-reduced-motion.
+export function withPageTransition(update) {
+  const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (reduced || typeof document === "undefined") {
+    update();
+    return;
+  }
+
+  if (document.startViewTransition) {
+    document.startViewTransition(() => flushSync(update));
+    return;
+  }
+
+  const root = document.querySelector(".app-main");
+  if (!root) {
+    update();
+    return;
+  }
+  // One class, toggled twice: adding it transitions the outgoing page out;
+  // swapping content while still hidden; removing it (still on the far side
+  // of the swap) transitions the new page in over the same duration.
+  root.classList.add("page-fade-hidden");
+  setTimeout(() => {
+    flushSync(update);
+    root.classList.remove("page-fade-hidden");
+  }, PAGE_FADE_MS);
+}
+
 // Cards need a stable, CSS-ident-safe name so the browser can match the same
 // card across the two snapshots and morph it rather than cross-fading.
 export function transitionNameFor(key) {

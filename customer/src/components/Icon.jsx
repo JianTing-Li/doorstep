@@ -41,6 +41,7 @@ const PATHS = {
   wrench: <path d="M14.7 6.3a4 4 0 0 0-5.4 5l-6 6 2.4 2.4 6-6a4 4 0 0 0 5-5.4l-2.5 2.5-2-2Z" />,
   home: <><path d="M4 11l8-7 8 7" /><path d="M6 10v10h12V10" /></>,
   clipboard: <><rect x="5" y="4" width="14" height="17" rx="2" /><rect x="9" y="2.5" width="6" height="3" rx="1" /><path d="M8.5 12l2.2 2.2L15.5 10" /></>,
+  trash: <><path d="M4 7h16" /><path d="M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7" /><path d="M6.5 7l1 12.5a2 2 0 0 0 2 1.8h5a2 2 0 0 0 2-1.8L17.5 7" /><path d="M10 11v6M14 11v6" /></>,
 };
 
 export default function Icon({ name, className, size = 16, ...rest }) {

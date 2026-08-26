@@ -74,6 +74,21 @@ textarea { resize: vertical; }
    Phase 2/3 already flagged as a problem in his original vanilla build). */
 .app-main {
   background: var(--glass-fill);
+  /* Only exercised by .page-fade-hidden below (the View Transitions API
+     fallback in lib/viewTransition.js withPageTransition) — harmless the
+     rest of the time since nothing else changes this element's opacity or
+     transform. */
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+/* Added to fade the outgoing page out, removed (after the DOM swap, while
+   still invisible) to fade the new one in — one class, two transitions,
+   matching PAGE_FADE_MS in viewTransition.js. Browsers with the View
+   Transitions API skip this path entirely and get its default root
+   crossfade instead. */
+.app-main.page-fade-hidden {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 .screen-pad {
@@ -1008,8 +1023,19 @@ input[type="range"] { width: 100%; accent-color: var(--color-accent); }
     padding-right: var(--space-8);
   }
   .feed-list { grid-template-columns: repeat(3, 1fr); }
-  .dashboard { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--space-6); align-items: start; }
+  /* Categories and Top-Rated Providers no longer split into two side-by-side
+     columns — that left a wall of empty space under the 4-card categories
+     grid (one short row, nothing to grow into) while Providers kept
+     scrolling in the other column. Both now stack full-width instead
+     (dropping the split rather than padding or capping either column, since
+     there is no real second data source to fill that gap with). */
+  .dashboard { display: grid; grid-template-columns: 1fr; gap: var(--space-6); align-items: start; }
   .dashboard-hero, .search-bar { grid-column: 1 / -1; }
+  .dashboard-providers .listing-stack {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+  }
   .profile-screen { max-width: 720px; margin: 0 auto; width: 100%; }
   .sub-screen { max-width: 640px; margin: 0 auto; width: 100%; }
 
@@ -1021,7 +1047,7 @@ input[type="range"] { width: 100%; accent-color: var(--color-accent); }
   .top-nav {
     display: flex;
     justify-content: center;
-    padding: var(--space-3) var(--space-8) 0;
+    padding: var(--space-3) var(--space-8);
   }
   .top-nav-pill {
     display: inline-flex;

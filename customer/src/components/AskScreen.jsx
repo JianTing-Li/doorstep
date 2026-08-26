@@ -14,7 +14,7 @@ import {
   remainingCodes,
   rescheduleBooking,
 } from "../lib/booking.js";
-import { revealExpandedCard, withGridTransition } from "../lib/viewTransition.js";
+import { revealExpandedCard, transitionNameFor, withGridTransition } from "../lib/viewTransition.js";
 import { activeListings } from "../data/listings.js";
 import { getMeta, getNeighborhoods, getProviders, getReviews, getServiceTypes } from "../data/loadData.js";
 import { toBrowseFilters } from "../lib/filterBridge.js";
@@ -162,6 +162,11 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
   const [messages, setMessages] = useState([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [isTyping, setIsTyping] = useState(false);
+  // Restores the confirm step Product C originally had for this
+  // (chat/src/components/HeaderActions.jsx's "Clear chat?") — the icon alone
+  // reads as refresh/reload, not "wipe the whole conversation," and that
+  // confirm step didn't come across in the Phase 6 merge.
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   // Booking lives on the card, not in the thread. openKey is the one expanded
   // card, bookingKey the one showing its slots, and bookings records the
@@ -539,11 +544,16 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
       [key]: { ...nextBookings[key], displayBookingId: displayBooking.id },
     };
     bookingsRef.current = linkedBookings;
-    // The card shrinks from full-row back into a grid cell, so this reflows too.
+    // The booked card leaves the results grid and its confirmation appears as
+    // a new message at the bottom of the thread instead (see ChatThread.jsx
+    // and ListingCard.jsx) — same transitionName on both, one view transition,
+    // so the browser has a chance to morph the card into its new spot rather
+    // than a hard cut.
     withGridTransition(() => {
       setBookings(linkedBookings);
       setBookingKey(null);
       setOpenKey(null);
+      appendMessage({ type: "booking_confirmation", key, listing, transitionName: transitionNameFor(key) });
     });
     setCustomerBookings((prev) => [displayBooking, ...prev]);
     recordCanonicalBooking(displayBooking, customerId);
@@ -818,8 +828,7 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
   // conversion (and what it can and cannot carry) is defined in
   // lib/filterBridge.js.
   function handleSeeMoreLikeThis() {
-    const rawQuery = conversationRef.current.request?.description ?? conversationRef.current.jobText ?? "";
-    onSeeMoreLikeThis?.(toBrowseFilters(filtersRef.current, rawQuery));
+    onSeeMoreLikeThis?.(toBrowseFilters(filtersRef.current));
   }
 
   const hasResults = messages.some((m) => m.type === "results");
@@ -831,15 +840,38 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
           <Icon name="sparkles" size={14} /> Describe the job
         </span>
         <div className="ask-toolbar-actions">
-          {hasResults && (
+          {hasResults && !confirmingClear && (
             <button type="button" className="link-button" onClick={handleSeeMoreLikeThis}>
               See more like this <Icon name="arrowRight" size={11} />
             </button>
           )}
-          {hasStarted && (
-            <button type="button" className="icon-button" onClick={handleClearChat} title="Clear conversation">
-              <Icon name="undo" size={14} />
+          {hasStarted && !confirmingClear && (
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setConfirmingClear(true)}
+              title="Clear conversation"
+            >
+              <Icon name="trash" size={14} />
             </button>
+          )}
+          {hasStarted && confirmingClear && (
+            <div className="ds-confirm-inline">
+              <span className="ds-confirm-inline-label">Clear this conversation?</span>
+              <button
+                type="button"
+                className="ds-confirm-inline-danger"
+                onClick={() => {
+                  setConfirmingClear(false);
+                  handleClearChat();
+                }}
+              >
+                Clear
+              </button>
+              <button type="button" className="ds-confirm-inline-cancel" onClick={() => setConfirmingClear(false)}>
+                Keep it
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -860,6 +892,8 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
         onAction={handleAction}
         onExampleSelect={handleExampleChip}
         completedRequestIds={completedRequestIds}
+        filters={filters}
+        onRemoveFilter={handleRemoveFilter}
         emptyState={
           <div className="empty-state">
             <p className="empty-prompt">Tell me what needs doing around the house.</p>
@@ -868,10 +902,7 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
         }
       />
 
-      {/* Chips and field share one raised surface so the filters read as part
-          of what you are about to send, not as a separate strip. */}
       <div className="composer">
-        {hasStarted && <FilterChips filters={filters} onRemove={handleRemoveFilter} />}
         <ChatInput onSubmit={handleUserText} />
       </div>
     </div>

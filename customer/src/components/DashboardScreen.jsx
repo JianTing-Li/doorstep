@@ -78,7 +78,7 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
         )}
       </div>
 
-      <section>
+      <section className="dashboard-categories">
         <div className="section-heading">
           <h2>Popular Categories</h2>
           <button type="button" className="link-button" onClick={() => onOpenFeed({ category: "All", search: "" })}>
@@ -105,7 +105,7 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
         </div>
       </section>
 
-      <section>
+      <section className="dashboard-providers">
         <div className="section-heading">
           <h2>Top-Rated Providers</h2>
           <button type="button" className="link-button" onClick={() => onOpenFeed({ category: "All" })}>

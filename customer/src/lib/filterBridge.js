@@ -64,8 +64,19 @@ export function seedPromptFromBrowse(browseFilters) {
   return parts.join(" ").trim();
 }
 
-/** Ask -> Browse. Used by "See more like this." */
-export function toBrowseFilters(askFilters, rawQuery = "") {
+/** Ask -> Browse. Used by "See more like this."
+ *
+ * Deliberately does not carry the raw sentence into Browse's search box:
+ * that field does keyword/title matching, not natural-language parsing, so
+ * "Looking for someone to come every other week and clean my one bedroom"
+ * matches nothing there even though Ask just found 6 providers for it
+ * seconds earlier — a full sentence in a keyword box reads as broken, not
+ * as "0 results, try different words." The category filter alone (already
+ * derived from the same service_types Ask matched on) finds the same
+ * providers without that trap. Keyword extraction from the sentence was
+ * considered and skipped — not worth the complexity for what it buys here.
+ */
+export function toBrowseFilters(askFilters) {
   const firstCode = (askFilters.service_types ?? [])[0];
   let category = "All";
   if (firstCode) {
@@ -77,7 +88,7 @@ export function toBrowseFilters(askFilters, rawQuery = "") {
   return {
     ...DEFAULT_FILTERS,
     category,
-    searchQuery: rawQuery || "",
+    searchQuery: "",
     maxPrice: askFilters.max_price ?? DEFAULT_MAX_PRICE,
   };
 }

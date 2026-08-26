@@ -1,4 +1,5 @@
 import ListingCard from "./ListingCard.jsx";
+import FilterChips from "./FilterChips.jsx";
 import { transitionNameFor } from "../lib/viewTransition.js";
 
 export default function ResultsList({
@@ -18,6 +19,8 @@ export default function ResultsList({
   onSkip,
   requestCompleted,
   onReopen,
+  filters,
+  onRemoveFilter,
 }) {
   if (listings.length === 0) return null;
 
@@ -30,7 +33,12 @@ export default function ResultsList({
 
   return (
     <div className="message-row from-bot message-enter">
-      <div className="results-list">
+      <div className="results-block">
+        {/* Was a floating chip pinned to the composer, unattached to anything
+            and partially covering whichever card happened to sit under it —
+            inline here instead, next to the results it actually describes. */}
+        {filters && <FilterChips filters={filters} onRemove={onRemoveFilter} />}
+        <div className="results-list">
         {listings.map((listing) => {
           const key = `${messageId}:${listing.listing_id}`;
           return (
@@ -63,6 +71,7 @@ export default function ResultsList({
             <button type="button" onClick={onReopen}>Reopen options</button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

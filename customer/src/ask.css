@@ -390,7 +390,6 @@
 }
 
 .ask-screen .results-list .listing-card.is-open,
-.ask-screen .results-list .listing-card.is-booked,
 .ask-screen .results-list .skip-button,
 .ask-screen .results-list .request-complete-state {
   grid-column: 1 / -1;
@@ -751,8 +750,23 @@
 
 /* ---- Booked card (compact record) ---- */
 
+/* Own message row now, not a grid slot (see ChatThread.jsx) — capped to
+   roughly one results-grid column's width on wider screens so it reads as
+   "one card," not a banner, and left full-width below the 640px breakpoint
+   where the results grid itself is one column too. A soft accent glow marks
+   it as the thing that just happened, replacing the plain muted-gray border
+   this had when it lived inline among the still-open match cards. */
 .ask-screen .listing-card.is-booked {
-  border-color: color-mix(in srgb, var(--color-ink-soft) 42%, transparent);
+  max-width: 100%;
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent),
+    0 8px 28px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+@media (min-width: 640px) {
+  .ask-screen .listing-card.is-booked {
+    max-width: calc(50% - 5px);
+  }
 }
 
 .ask-screen .booked-marker {
@@ -918,6 +932,14 @@
   padding: 10px 16px 0;
 }
 
+/* Inline above the results grid (ResultsList.jsx) rather than inside the
+   composer — .chat-thread already insets its content 16px, so the chip
+   row's own side padding would double up; bottom spacing replaces top since
+   there's no input field directly beneath it to separate from anymore. */
+.ask-screen .results-block .filter-chips {
+  padding: 0 0 10px;
+}
+
 /* A removable token: fully rounded pill, solid ink fill, carries an × .
    Deliberately not the accent — that is reserved for actions — and
    deliberately not the same shape as a slot button. */
@@ -1038,12 +1060,6 @@
   box-shadow: var(--shadow-lift);
 }
 
-/* Chips sit above the field with breathing room between the two. */
-
-.ask-screen .composer .filter-chips {
-  padding: 0 2px 10px;
-}
-
 .ask-screen .chat-input-bar {
   display: flex;
   gap: 8px;
@@ -1160,5 +1176,28 @@
 @media (min-width: 720px) {
   .ask-screen .composer {
     width: min(616px, calc(100% - 28px));
+  }
+}
+
+/* The composer is fixed to the viewport bottom only because the mobile nav
+ * also docks there (see Phase 6 note above) — the two were always meant to
+ * anchor to the same edge. Above the 1080px breakpoint the nav moves to a
+ * top pill bar (index.css .top-nav) and stops owning the bottom of the
+ * viewport, so pinning the composer there independently just leaves a dead
+ * gap between the last message and the input. From here it flows in
+ * document order instead, at the bottom of the actual chat content.
+ */
+@media (min-width: 1080px) {
+  .ask-screen .composer {
+    position: static;
+    left: auto;
+    transform: none;
+    width: min(616px, 100%);
+    margin: 16px auto 0;
+  }
+
+  .ask-screen .chat-thread {
+    /* No floating composer to clear anymore — back to ordinary spacing. */
+    padding-bottom: 24px;
   }
 }

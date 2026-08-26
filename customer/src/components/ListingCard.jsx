@@ -1,7 +1,6 @@
 import Icon from "./Icon.jsx";
 import DetailMessage from "./DetailMessage.jsx";
 import SlotPicker from "./SlotPicker.jsx";
-import ConfirmationMessage from "./ConfirmationMessage.jsx";
 import { initial, priceLabel, ratingLabel } from "../lib/format.js";
 import { availabilityLabel } from "../lib/booking.js";
 import { useApp } from "../AppContext.jsx";
@@ -50,20 +49,16 @@ export default function ListingCard({
   const { openProviderChat } = useApp();
   const resolvedProvider = provider ?? listing.provider ?? {};
 
-  // A booked card in Ask is replaced by its confirmation, which owns the
-  // reschedule/cancel affordances.
+  // A booked card no longer renders its confirmation in place — that used to
+  // span the full results-grid row (grid-column: 1 / -1) here, breaking the
+  // 2-column rhythm mid-scroll. AskScreen now appends a "booking_confirmation"
+  // message instead, so the confirmation reads as the next chronological
+  // thing that happened (request -> matches -> booking), one grid slot wide,
+  // at the bottom of the thread — see ChatThread.jsx. The booked listing
+  // simply leaves the results grid; CSS grid reflows the remaining cards on
+  // its own, same as it already does when a card is filtered out.
   if (variant === "ask" && state === "booked") {
-    return (
-      <ConfirmationMessage
-        booking={booking}
-        listing={listing}
-        transitionName={transitionName}
-        isRescheduling={isRescheduling}
-        onCancel={onCancelBooking}
-        onReschedule={onToggleReschedule}
-        onChooseSlot={onChooseReschedule}
-      />
-    );
+    return null;
   }
 
   // ---- The shared head. Identical markup in every variant. ----
