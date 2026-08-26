@@ -97,6 +97,10 @@ a {
 .skip-link:focus {
   transform: translateY(0);
 }
+.skip-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
 
 .topbar {
   position: sticky;
@@ -405,6 +409,12 @@ textarea:focus {
   max-height: 640px;
   overflow-y: auto;
   padding: 0.55rem;
+}
+
+.queue-item:focus-visible,
+.decision-button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .queue-item {

@@ -220,7 +220,12 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-a:focus-visible {
+a:focus-visible,
+/* Covers custom role="button" elements (e.g. ListingCard's compact/dense
+   variants) — this selector only matches real form/interactive tags, so a
+   div or article standing in for a button via ARIA fell through to the
+   browser's own default outline instead of the app's focus ring. */
+[role="button"]:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

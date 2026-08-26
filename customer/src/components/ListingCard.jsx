@@ -6,6 +6,19 @@ import { initial, priceLabel, ratingLabel } from "../lib/format.js";
 import { availabilityLabel } from "../lib/booking.js";
 import { useApp } from "../AppContext.jsx";
 
+// role="button" on a <div>/<article> gets tab focus for free but not
+// keyboard activation — a real <button> responds to Enter and Space
+// natively; this doesn't, so the compact and dense variants below were
+// focusable but silently did nothing on either key. The "ask" variant's own
+// onKeyDown already covered this; these two just never got it.
+function activateOnKey(onActivate) {
+  return (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onActivate();
+  };
+}
+
 // THE listing card — one component, rendered by Browse and by Ask (Phase 6).
 // A result from the chatbot and a result from the feed are visually identical
 // because they are literally the same head markup; only the affordances below
@@ -94,7 +107,13 @@ export default function ListingCard({
   // ---- compact: Dashboard strip ----
   if (variant === "compact") {
     return (
-      <article className="listing-card listing-card-compact" onClick={onOpen} role="button" tabIndex={0}>
+      <article
+        className="listing-card listing-card-compact"
+        onClick={onOpen}
+        onKeyDown={activateOnKey(onOpen)}
+        role="button"
+        tabIndex={0}
+      >
         {head}
         <button
           type="button"
@@ -112,7 +131,7 @@ export default function ListingCard({
   if (variant === "dense") {
     return (
       <article className="listing-card listing-card-dense">
-        <div onClick={onOpen} role="button" tabIndex={0}>
+        <div onClick={onOpen} onKeyDown={activateOnKey(onOpen)} role="button" tabIndex={0}>
           {head}
           <p className="listing-card-desc">{listing.listing_description}</p>
         </div>
