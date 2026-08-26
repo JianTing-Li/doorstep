@@ -176,10 +176,11 @@ const EMPTY_CONVERSATION = {
 // those now — but every bit of the matching, booking, and conversation logic
 // below is unchanged.
 export default function AskScreen({ seedPrompt }) {
-  const { customerId, bookings: customerBookings, setBookings: setCustomerBookings, showToast } = useApp();
+  const { customerId, bookings: customerBookings, setBookings: setCustomerBookings } = useApp();
   const [messages, setMessages] = useState([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [isTyping, setIsTyping] = useState(false);
+  const [bookingNotice, setBookingNotice] = useState(null);
   // Restores the confirm step Product C originally had for this
   // (chat/src/components/HeaderActions.jsx's "Clear chat?") — the icon alone
   // reads as refresh/reload, not "wipe the whole conversation," and that
@@ -218,6 +219,18 @@ export default function AskScreen({ seedPrompt }) {
   // booking comes in — any amount of time later — remove it and re-append a
   // fresh copy at the end, rather than leaving the old one where it was.
   const activeWrapupRef = useRef(null); // { id, requestId } | null
+  const bookingNoticeTimerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(bookingNoticeTimerRef.current), []);
+
+  function showBookingNotice(message) {
+    clearTimeout(bookingNoticeTimerRef.current);
+    const id = makeId();
+    setBookingNotice({ id, message });
+    bookingNoticeTimerRef.current = setTimeout(() => {
+      setBookingNotice((current) => (current?.id === id ? null : current));
+    }, 3200);
+  }
 
   function appendMessage(message) {
     const withId = { id: makeId(), ...message };
@@ -695,7 +708,7 @@ export default function AskScreen({ seedPrompt }) {
 
     setCustomerBookings((prev) => [displayBooking, ...prev]);
     recordCanonicalBooking(displayBooking, customerId);
-    showToast("Booked — added to your Bookings", "checkCircle");
+    showBookingNotice("Booked — added to your Bookings");
   }
 
   function handleAction(action, requestId = null) {
@@ -988,6 +1001,7 @@ export default function AskScreen({ seedPrompt }) {
       <ChatThread
         messages={messages}
         isTyping={isTyping}
+        notice={bookingNotice}
         openKey={openKey}
         bookingKey={bookingKey}
         bookings={bookings}

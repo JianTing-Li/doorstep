@@ -6,12 +6,14 @@ import ExampleChips from "./ExampleChips.jsx";
 import BookingList from "./BookingList.jsx";
 import RequestSummary from "./RequestSummary.jsx";
 import ConfirmationMessage from "./ConfirmationMessage.jsx";
+import Icon from "./Icon.jsx";
 
 const NEAR_BOTTOM_THRESHOLD = 80;
 
 export default function ChatThread({
   messages,
   isTyping,
+  notice,
   emptyState,
   openKey,
   bookingKey,
@@ -61,7 +63,7 @@ export default function ChatThread({
     if (!el || !stickToBottomRef.current) return;
     const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     el.scrollIntoView({ block: "end", behavior: reduced ? "auto" : "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, notice]);
 
   if (messages.length === 0 && !isTyping) {
     return (
@@ -181,6 +183,14 @@ export default function ChatThread({
             return null;
         }
       })}
+      {notice && (
+        <div key={notice.id} className="message-row from-bot chat-notice-row" role="status">
+          <div className="chat-booking-notice">
+            <Icon name="checkCircle" size={16} />
+            <span>{notice.message}</span>
+          </div>
+        </div>
+      )}
       {/* Stays mounted so it can fade and collapse out rather than vanishing. */}
       <div className={`collapse ${isTyping ? "is-open" : ""}`} aria-hidden={!isTyping}>
         <div className="collapse-inner">

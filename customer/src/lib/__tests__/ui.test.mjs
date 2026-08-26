@@ -158,6 +158,13 @@ const bookedByTapTitle = await bookFirstAvailable(page.locator(".results-list").
 const bookedCard = page.locator(".listing-card.is-booked").filter({ hasText: bookedByTapTitle ?? "" });
 await bookedCard.waitFor({ timeout: 5000 });
 
+const chatBookingNotice = page.locator(".chat-thread .chat-booking-notice");
+check(
+  "Ask booking notification stays inside the chat thread",
+  (await chatBookingNotice.count()) === 1 && (await page.locator(".app-shell > .toast").count()) === 0,
+  (await chatBookingNotice.count()) === 1 ? await chatBookingNotice.innerText() : "missing inline booking notice",
+);
+
 const readSharedBooking = async (title) => page.evaluate((bookingTitle) => {
   const local = JSON.parse(localStorage.getItem("doorstep_bookings_cst_001") || "[]");
   const display = local.find((item) => item.title === bookingTitle && item.canonical);
