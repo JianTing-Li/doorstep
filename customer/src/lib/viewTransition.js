@@ -3,6 +3,15 @@ import { flushSync } from "react-dom";
 // Mirrors --duration-collapse in styles.css.
 const COLLAPSE_MS = 220;
 
+function settleTransition(transition) {
+  // A rapid second interaction can invalidate an in-flight transition. That is
+  // a visual enhancement failing, not an application failure, so consume all
+  // of the API's rejection surfaces and leave the state update intact.
+  transition?.ready?.catch(() => {});
+  transition?.updateCallbackDone?.catch(() => {});
+  transition?.finished?.catch(() => {});
+}
+
 // Grid reflow cannot be animated with CSS — when a card expands to span the row,
 // its siblings jump to new cells. The View Transitions API is the only way to
 // tween that, so state changes that reshape the grid run inside one.
@@ -17,7 +26,7 @@ export function withGridTransition(update) {
     return;
   }
 
-  document.startViewTransition(() => flushSync(update));
+  settleTransition(document.startViewTransition(() => flushSync(update)));
 }
 
 // Matches the CSS fallback's own transition length (index.css .page-fade-*).
@@ -38,7 +47,7 @@ export function withPageTransition(update) {
   }
 
   if (document.startViewTransition) {
-    document.startViewTransition(() => flushSync(update));
+    settleTransition(document.startViewTransition(() => flushSync(update)));
     return;
   }
 

@@ -2,6 +2,7 @@ import { getExampleQueries, getListings, getMeta, getNeighborhoods } from "../..
 import { activeListings } from "../../data/listings.js";
 import { parseJob } from "../parseJob.js";
 import { matchListings } from "../matchListings.js";
+import { getFilters } from "../getFilters.js";
 import { applyBooking, availabilityLabel, cancelBookingByKey, findBundle, priceLabel, remainingCodes, rescheduleBooking } from "../booking.js";
 import {
   INTENT_PRIORITY,
@@ -9,6 +10,7 @@ import {
   describeFilterChange,
   detailsAnswer,
   detectLocalIntent,
+  detectFilterClears,
   findBookingMatch,
   mergeFilters,
   requestsAllBookings,
@@ -277,6 +279,23 @@ function check(label, condition, detail = "") {
     dropped.service_types.length === 1 && dropped.service_types[0] === "handyman_general",
     describeFilterChange(current, dropped),
   );
+  const cleared = mergeFilters(current, {
+    service_types: [],
+    max_price: null,
+    neighborhood: null,
+    urgency: null,
+    clear_filters: ["max_price", "neighborhood", "urgency"],
+  });
+  check(
+    "change_filters can explicitly clear constraints without dropping services",
+    cleared.max_price === null && cleared.neighborhood === null && cleared.urgency === null && cleared.service_types.length === 2,
+    JSON.stringify(cleared),
+  );
+  check(
+    "plain-language filter removal produces explicit clear operations",
+    detectFilterClears("Any neighborhood is fine and timing doesn't matter").join(",") === "neighborhood,urgency",
+    detectFilterClears("Any neighborhood is fine and timing doesn't matter").join(","),
+  );
 
   // more_details answers from real fields only, and never matches.
   const detail = detailsAnswer(a, "how long does that take");
@@ -295,8 +314,8 @@ function check(label, condition, detail = "") {
   // compare states facts across visible listings, and never matches.
   const comparison = compareListings([a, b], "which one's cheaper");
   check(
-    "compare states each listing's real price",
-    comparison.includes(String(a.price)) && comparison.includes(String(b.price)),
+    "compare answers the question directly and states each listing's real price",
+    comparison.includes("lowest-priced option") && comparison.includes(String(a.price)) && comparison.includes(String(b.price)),
     comparison.slice(0, 90),
   );
 
@@ -408,6 +427,61 @@ function check(label, condition, detail = "") {
     rankingOutcomes.every(Boolean),
     `${rankingOutcomes.filter(Boolean).length}/${rankingOutcomes.length} expected top matches`,
   );
+}
+
+// ---- state-aware extraction and fallback ----
+{
+  const originalFetch = globalThis.fetch;
+  const activeContext = {
+    active_request: { description: "I need a plumber", serviceTypes: ["plumbing"] },
+    active_filters: { service_types: ["plumbing"], max_price: null, neighborhood: null, urgency: null },
+    visible_listings: [{ listing_id: "lst_019", title: "Faucet Replacement" }],
+    focused_listing: { listing_id: "lst_019", title: "Faucet Replacement" },
+    bookings: [],
+    recent_messages: [{ role: "user", text: "I need a plumber" }],
+  };
+
+  let posted = null;
+  globalThis.fetch = async (_url, options) => {
+    posted = JSON.parse(options.body);
+    return {
+      ok: true,
+      json: async () => ({
+        intent: "unclear",
+        service_types: ["cleaning_standard", "plumbing"],
+        max_price: null,
+        neighborhood: null,
+        urgency: null,
+        clear_filters: [],
+        confidence: "low",
+        clarification_question: "Does the sink need cleaning or a plumbing repair?",
+        referenced_listing_id: null,
+        route: "gemini",
+      }),
+    };
+  };
+
+  const ambiguous = await getFilters("My sink is a mess", activeContext);
+  check(
+    "vague single-code reads escalate instead of becoming confident keyword matches",
+    ambiguous.intent === "unclear" && ambiguous.source === "llm" && ambiguous.confidence === "low",
+    JSON.stringify(ambiguous),
+  );
+  check(
+    "the extraction request includes compact conversation state",
+    posted?.context?.active_request?.serviceTypes?.[0] === "plumbing" && posted.context.focused_listing.listing_id === "lst_019",
+    JSON.stringify(posted?.context),
+  );
+
+  globalThis.fetch = async () => ({ ok: false });
+  const preserved = await getFilters("Please keep it under $100", activeContext);
+  check(
+    "model failure treats a parsed constraint as an update to the active request",
+    preserved.intent === "change_filters" && preserved.max_price === 100 && preserved.source === "fallback",
+    JSON.stringify(preserved),
+  );
+
+  globalThis.fetch = originalFetch;
 }
 
 console.log("--- booking / routing ---");

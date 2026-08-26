@@ -28,10 +28,38 @@ const LOCAL_INTENT_PATTERNS = [
   ["unsupported_service", /\b(paint(?:ed|ing)?|roof(?:ing)?|roofer|pest control|exterminator|childcare|babysitt(?:er|ing)|pet care|dog walk(?:er|ing))\b/i],
 ];
 
-export function detectLocalIntent(text) {
-  const found = LOCAL_INTENT_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(([intent]) => intent);
+const CONTEXTUAL_INTENT_PATTERNS = [
+  ["change_filters", /\b(actually|instead|make it|switch to|change|different|remove|drop|clear|any neighborhood|any area|no budget|timing doesn'?t matter)\b/i],
+  ["more_details", /\b(what(?:'s| is) included|how long does (?:that|it) take|does (?:that|this|the) (?:provider|listing)|tell me more about (?:that|this|it))\b/i],
+  ["compare", /\b(compare|which (?:one )?(?:is )?(?:cheaper|better|faster|closer|higher rated)|what(?:'s| is) the difference)\b/i],
+];
+
+export function detectLocalIntent(text, context = null) {
+  const patterns = [...LOCAL_INTENT_PATTERNS];
+  if (context?.active_request) patterns.push(CONTEXTUAL_INTENT_PATTERNS[0]);
+  if (context?.focused_listing || context?.visible_listings?.length > 0) patterns.push(CONTEXTUAL_INTENT_PATTERNS[1]);
+  if (context?.visible_listings?.length > 1) patterns.push(CONTEXTUAL_INTENT_PATTERNS[2]);
+  const found = patterns.filter(([, pattern]) => pattern.test(text)).map(([intent]) => intent);
   if (found.length === 0) return null;
   return INTENT_PRIORITY.find((intent) => found.includes(intent)) ?? found[0];
+}
+
+export function detectFilterClears(text) {
+  const value = String(text ?? "");
+  const cleared = [];
+  if (/\b(remove|drop|clear|forget|no) (?:the )?(?:budget|price limit|price cap)\b|\bany (?:price|budget)\b/i.test(value)) {
+    cleared.push("max_price");
+  }
+  if (/\b(remove|drop|clear|forget) (?:the )?(?:neighborhood|area|location)\b|\bany (?:neighborhood|area|location)\b/i.test(value)) {
+    cleared.push("neighborhood");
+  }
+  if (/\b(remove|drop|clear|forget) (?:the )?(?:timing|urgency|date)\b|\b(?:timing|date) doesn'?t matter\b|\bany time\b/i.test(value)) {
+    cleared.push("urgency");
+  }
+  if (/\b(remove|drop|clear) (?:the )?(?:service|job type|category)\b/i.test(value)) {
+    cleared.push("service_types");
+  }
+  return cleared;
 }
 
 const STOP = new Set(["the", "one", "that", "this", "and", "for", "with", "booking", "cancel", "undo", "never", "mind", "want", "anymore", "my", "on", "it", "a", "an"]);
@@ -78,6 +106,10 @@ export function requestsAllBookings(message) {
 // stated parts are merged in.
 export function mergeFilters(current, change) {
   const merged = { ...current };
+  for (const key of change.clear_filters ?? []) {
+    if (key === "service_types") merged.service_types = [];
+    else if (["max_price", "neighborhood", "urgency"].includes(key)) merged[key] = null;
+  }
   if (change.max_price != null) merged.max_price = change.max_price;
   if (change.neighborhood) merged.neighborhood = change.neighborhood;
   if (change.urgency) merged.urgency = change.urgency;
@@ -95,7 +127,11 @@ export function describeFilterChange(previous, next) {
     const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
     parts.push(next.service_types.map((code) => labelByCode[code] ?? code).join(" and "));
   }
-  return parts.length ? `Updated to ${parts.join(", ")}.` : "Updated your filters.";
+  if (before !== after && !next.service_types?.length) parts.push("without a service category");
+  if (previous.max_price != null && next.max_price == null) parts.push("without a budget limit");
+  if (previous.neighborhood && !next.neighborhood) parts.push("in any neighborhood");
+  if (previous.urgency && !next.urgency) parts.push("with any timing");
+  return parts.length ? `I updated your search: ${parts.join(", ")}.` : "I kept the rest of your search the same.";
 }
 
 // Answers only from fields present on the record. Anything not in the data is
@@ -126,8 +162,11 @@ export function compareListings(listings, message) {
   const ask = String(message ?? "").toLowerCase();
   const named = listings.slice(0, 3);
 
-  if (/\b(cheap|price|cost|expensive)\b/.test(ask)) {
-    return named.map((l) => `${l.title} is ${priceLabel(l)}`).join("; ") + ".";
+  if (/\b(cheap(?:er|est)?|price|cost|expensive)\b/.test(ask)) {
+    const byMinimum = [...named].sort((a, b) => minimumSpend(a) - minimumSpend(b));
+    const [cheapest, ...others] = byMinimum;
+    const rest = others.map((l) => `${l.title} is ${priceLabel(l)}`).join("; ");
+    return `${cheapest.title} is the lowest-priced option at ${priceLabel(cheapest)}${rest ? `. ${rest}.` : "."}`;
   }
   if (/\b(rating|rated|better|review)\b/.test(ask)) {
     return (
@@ -140,6 +179,10 @@ export function compareListings(listings, message) {
     return named.map((l) => `${l.title} is about ${l.duration_estimate_minutes} minutes`).join("; ") + ".";
   }
   return named.map((l) => `${l.title}: ${priceLabel(l)}, about ${l.duration_estimate_minutes} minutes`).join("; ") + ".";
+}
+
+function minimumSpend(listing) {
+  return listing.price * (listing.minimum_quantity ?? 1);
 }
 
 export function summariseBookings(entries) {

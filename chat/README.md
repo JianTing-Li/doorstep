@@ -1,7 +1,7 @@
 # Doorstep Matching Chatbot (Product C)
 
 Product C's interface, matching modules, and tests now live in `customer/src/` as the Customer app's Ask
-tab. This folder retains the server-side Gemini handler, environment example, historical package metadata,
+tab. This folder retains the server-side Gemini/Claude handler, environment example, historical package metadata,
 and the compatibility redirect used by `/chat/`.
 
 Describe a household job in plain language and the chatbot turns it into a compact
@@ -17,8 +17,7 @@ marketplace.
 
 1. The customer describes the problem in their own words.
 2. Doorstep extracts service types and any stated budget, job area, or timing.
-3. A visible service-request summary preserves the original description and exposes
-   the structured interpretation for correction.
+3. One concise response states the structured interpretation before presenting matches.
 4. Active listings are filtered and ranked against the request.
 5. Collapsed cards make the next opening visible immediately. Expanded cards also
    show match reasons, honest price minimums, provider background, service area,
@@ -38,17 +37,18 @@ follow-up such as `both`, `the yard one`, `first`, or `never mind` resolves in c
 
 ## How intake works
 
-`parseJob` reads the message with keywords first; it is right 17 times out of 18
-when it lands on a single service type. When it finds **no** codes or **two or
-more** — the shapes it gets wrong — `getFilters` escalates to Gemini through
-`api/chat.js`. Returned codes, intents, and neighborhoods are validated against the
-real mock-data vocabulary. Any failure, non-200 response, or 5-second timeout falls
-back to the keyword interpretation with hedged customer-facing copy.
+`parseJob` reads the message with keywords first. Confident single-service reads and
+high-signal workflow commands stay local. Empty, mixed, or potentially ambiguous reads
+go to Gemini through `api/chat.js`; Claude receives the same structured contract if
+Gemini fails. The request includes a compact view of the active search, visible listings,
+bookings, and recent conversational turns so follow-ups can be resolved without handing
+marketplace decisions to either model. Returned codes, operations, references, confidence,
+and neighborhoods are validated against the real vocabulary. If both models fail, the
+keyword interpretation preserves the active request and uses transparent fallback copy.
 
-This inverts the original brief ("LLM first"): the free tier allows 20 requests per
-day per model, so calling it for every message would cap the app at 20 messages.
-Escalating only unreliable reads sends roughly 28% of messages to the model while
-keeping the deterministic path fast.
+This keeps obvious interactions fast and conserves model quota without treating a
+vague single-keyword hit as certain. Claude is a compatibility fallback, not a second
+customer-facing personality; both routes feed the same response composer.
 
 Unsupported home services such as painting are distinct from off-topic messages.
 Ambiguous requests can show all plausible service options instead of forcing the
@@ -86,13 +86,14 @@ The Customer dev server serves the Ask tab at `/customer/?tab=ask` and runs `/ap
 the repository-root API entry. `vercel dev` is not required. Without a key the app still runs; every message
 uses the keyword path. The deployed `/chat/` URL redirects to the Ask tab.
 
-Tests: `node customer/src/lib/__tests__/matching.test.js` and
-`node customer/src/lib/__tests__/ui.test.mjs` (with the Customer dev server running).
+Tests: `node customer/src/lib/__tests__/matching.test.js`,
+`node customer/src/lib/__tests__/conversation.test.mjs`, and
+`node customer/src/lib/__tests__/ui.test.mjs` (the browser tests need the Customer dev server running).
 (add `CHAT_API_BASE=http://localhost:5199` to include the live LLM path).
 
 ## The key
 
-`GEMINI_API_KEY` is read server-side only, in `api/chat.js`. Never commit `.env.local`,
+`GEMINI_API_KEY` and `ANTHROPIC_API_KEY` are read server-side only, in `api/chat.js`. Never commit `.env.local`,
 and never rename it to a `VITE_` prefix — Vite inlines those into the client bundle,
 publishing the key to anyone who opens devtools.
 

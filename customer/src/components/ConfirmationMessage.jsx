@@ -23,14 +23,14 @@ export default function ConfirmationMessage({
       className="listing-card is-booked"
       style={transitionName ? { viewTransitionName: transitionName } : undefined}
     >
-      <p className="booked-marker">Request prepared</p>
+      <p className="booked-marker">Time selected</p>
       <p className="booked-title">
         {listing.title} <span className="booked-provider">· {listing.provider?.name ?? "Doorstep provider"}</span>
       </p>
       <p className="booked-line">{formatSlot(booking.slot)}</p>
       <p className="booked-line">{priceLabel(listing)}</p>
       {booking.request?.description && <p className="booked-request">“{booking.request.description}”</p>}
-      <p className="booked-next-step">Demo only · in a live marketplace, {listing.provider?.name ?? "the provider"} would confirm next.</p>
+      <p className="booked-next-step">Demo preview · {listing.provider?.name ?? "the provider"} would confirm this request next.</p>
 
       {/* Kept mounted so each panel can animate open and closed, same as the
           card body and slot picker elsewhere. */}

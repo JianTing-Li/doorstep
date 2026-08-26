@@ -85,8 +85,9 @@ The repo deploys as one Vercel project, configured by `vercel.json` at the root:
 - `/chat/` — compatibility redirect to `/customer/?tab=ask`
 - `/api/*` — serverless functions; each file re-exports the handler from its product folder
 
-`/api/chat` needs a `GEMINI_API_KEY` environment variable set in the Vercel project. It is read
-server-side only — never expose it to a client bundle, and never prefix it with `VITE_`.
+`/api/chat` uses `GEMINI_API_KEY` as its primary structured-language interpreter and
+`ANTHROPIC_API_KEY` as the fallback. Both are read server-side only — never expose them
+to a client bundle, and never prefix them with `VITE_`.
 
 ## Developers
 

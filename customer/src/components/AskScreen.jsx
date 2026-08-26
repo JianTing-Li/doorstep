@@ -42,8 +42,8 @@ const MAX_UNCLEAR_TURNS = 2;
 const EMPTY_FILTERS = { service_types: [], max_price: null, neighborhood: null, urgency: null };
 
 const OFF_TOPIC_REPLIES = [
-  "I can only help you find home services. Try describing a job you need done.",
-  "That one's outside what I do. What needs fixing, cleaning, or moving?",
+  "I can help with jobs around the home. What needs fixing, cleaning, moving, or clearing?",
+  "That’s outside Doorstep’s home-service search. What job can I help you find someone for?",
 ];
 
 const EMPTY_NUDGE = "Tell me what needs doing and I'll find someone. A job, a room, or a mess all work.";
@@ -102,19 +102,38 @@ function enrichResults(rankedListings, filters, query = "") {
   });
 }
 
-function botReplyFor(totalCount, shownCount, source) {
-  // The keyword path reads intent less reliably, so the copy says less and
-  // points at the chips the customer can correct.
-  if (source === "fallback") {
-    const lead =
-      totalCount > shownCount
-        ? `Here are ${shownCount} that look close.`
-        : `Here ${totalCount === 1 ? "is one that looks" : `are ${totalCount} that look`} close.`;
-    return `${lead} Adjust the filters below if I read that wrong.`;
+function searchUnderstanding(filters) {
+  const parts = [];
+  if (filters.service_types?.length) parts.push(joinLabels(filters.service_types).toLowerCase());
+  if (filters.max_price != null) parts.push(`under $${filters.max_price}`);
+  if (filters.neighborhood) parts.push(`in ${filters.neighborhood}`);
+  if (filters.urgency) {
+    const timing = { urgent: "as soon as possible", today: "today", tomorrow: "tomorrow", this_week: "this week" };
+    parts.push(timing[filters.urgency] ?? filters.urgency);
+  }
+  return parts.join(", ");
+}
+
+function botReplyFor({ totalCount, shownCount, source, filters, completeCount = totalCount, bundleName = null }) {
+  const understood = searchUnderstanding(filters);
+  const opening = source === "fallback"
+    ? `I may have read that as ${understood || "a home-service search"}.`
+    : `I read that as ${understood || "a home-service search"}.`;
+
+  if ((filters.service_types?.length ?? 0) > 1 && completeCount < totalCount) {
+    const complete = `${completeCount} complete match${completeCount === 1 ? "" : "es"}`;
+    const partialCount = totalCount - completeCount;
+    const partial = `${partialCount} partial option${partialCount === 1 ? "" : "s"}`;
+    const bundle = bundleName ? ` ${bundleName} can handle the whole job in one visit.` : "";
+    const display = totalCount > shownCount ? ` Here are the closest ${shownCount}.` : "";
+    return `${opening}${bundle} I found ${complete} and ${partial}.${display}`;
   }
 
-  if (totalCount > shownCount) return `Found ${totalCount} matches — here are the closest ${shownCount}.`;
-  return `Found ${totalCount} match${totalCount === 1 ? "" : "es"} for that.`;
+  const found = totalCount > shownCount
+    ? `I found ${totalCount} options; here are the closest ${shownCount}.`
+    : `I found ${totalCount} option${totalCount === 1 ? "" : "s"}.`;
+  const check = source === "fallback" ? " You can adjust the filters if that isn’t what you meant." : "";
+  return `${opening} ${found}${check}`;
 }
 
 // Typed text wins over an active chip; this explains the change in one line.
@@ -222,6 +241,41 @@ export default function AskScreen({ seedPrompt }) {
     };
   }
 
+  function buildModelContext() {
+    const focused = currentListing();
+    return {
+      active_request: conversationRef.current.request,
+      active_filters: filtersRef.current,
+      visible_listings: conversationRef.current.visibleListings.map((listing) => ({
+        listing_id: listing.listing_id,
+        title: listing.title,
+        provider: listing.provider?.name ?? null,
+        price: listing.price,
+        price_unit: listing.price_unit,
+        service_types: listing.service_type,
+      })),
+      focused_listing: focused
+        ? { listing_id: focused.listing_id, title: focused.title, provider: focused.provider?.name ?? null }
+        : null,
+      bookings: bookedEntries().map(({ booking, listing }) => ({
+        booking_id: booking.booking_id,
+        listing_id: listing.listing_id,
+        title: listing.title,
+        provider: listing.provider?.name ?? null,
+      })),
+      pending_clarification: conversationRef.current.clarifyCodes.length
+        ? labelsFor(conversationRef.current.clarifyCodes)
+        : null,
+      recent_messages: messages
+        .filter((message) => message.type === "user_text" || message.type === "bot_text")
+        .slice(-6)
+        .map((message) => ({
+          role: message.type === "user_text" ? "user" : "assistant",
+          text: message.text,
+        })),
+    };
+  }
+
   function buildRequest(description, nextFilters) {
     const current = conversationRef.current.request;
     return {
@@ -262,20 +316,24 @@ export default function AskScreen({ seedPrompt }) {
 
   // ---- results ----
 
-  function showResults(nextFilters, source, originalText) {
+  function showResults(nextFilters, source, originalText, options = {}) {
     const previous = filtersRef.current;
     applyFilters(nextFilters);
     setIsTyping(false);
 
     const note = conflictNote(previous, nextFilters);
-    if (note) appendMessage({ type: "bot_text", text: note });
+    const acknowledgement = [options.acknowledgement, note].filter(Boolean).join(" ");
 
     const requested = nextFilters.service_types ?? [];
     const hasConstraint = nextFilters.max_price != null || nextFilters.neighborhood != null || nextFilters.urgency != null;
 
     // Nothing to go on at all — nudge rather than error.
     if (requested.length === 0 && !hasConstraint) {
-      appendMessage({ type: "bot_text", text: EMPTY_NUDGE, showExamples: true });
+      appendMessage({
+        type: "bot_text",
+        text: acknowledgement ? `${acknowledgement} ${EMPTY_NUDGE}` : EMPTY_NUDGE,
+        showExamples: true,
+      });
       return;
     }
 
@@ -284,19 +342,19 @@ export default function AskScreen({ seedPrompt }) {
 
     // A confident-looking model answer that matches nothing is worth one retry
     // through the keyword reader before giving up.
-    if (ranked.length === 0 && source === "llm" && originalText) {
+    if (ranked.length === 0 && source === "llm" && originalText && options.allowKeywordRetry !== false) {
       const retry = { ...parseJob(originalText) };
       const retryRanked = matchListings(retry, activeListings(), matchingOptions(requestText));
       if (retryRanked.length > 0) {
         applyFilters(retry);
         ranked = retryRanked;
         nextFilters = retry;
+        source = "fallback";
       }
     }
 
     const request = buildRequest(requestText, nextFilters);
     updateConversation({ request });
-    appendMessage({ type: "request_summary", request });
 
     // Relax one explicit constraint at a time and keep the requested service
     // intact. An unrelated highly rated listing is not a useful alternative.
@@ -307,7 +365,7 @@ export default function AskScreen({ seedPrompt }) {
         if (alternatives.length > 0) {
           appendMessage({
             type: "bot_text",
-            text: `No matching provider has an opening for that timing. Here are the same services with later availability.`,
+            text: `${acknowledgement ? `${acknowledgement} ` : ""}I kept ${searchUnderstanding(nextFilters)}. No matching provider has that timing, so here are the same services with later availability.`,
           });
           appendResults(enrichResults(alternatives, relaxed, requestText));
           return;
@@ -319,7 +377,7 @@ export default function AskScreen({ seedPrompt }) {
         if (alternatives.length > 0) {
           appendMessage({
             type: "bot_text",
-            text: `Nothing matching that service is available under $${nextFilters.max_price}. These relevant options are over budget.`,
+            text: `${acknowledgement ? `${acknowledgement} ` : ""}I kept ${joinLabels(requested).toLowerCase()} in the search, but nothing is available under $${nextFilters.max_price}. These are the closest relevant options over budget.`,
           });
           appendResults(enrichResults(alternatives, relaxed, requestText));
           return;
@@ -327,9 +385,9 @@ export default function AskScreen({ seedPrompt }) {
       }
       appendMessage({
         type: "bot_text",
-        text: nextFilters.neighborhood
+        text: `${acknowledgement ? `${acknowledgement} ` : ""}${nextFilters.neighborhood
           ? `No matching provider currently serves ${nextFilters.neighborhood}. Try another job area or remove that filter.`
-          : "Doorstep doesn't currently have a provider for that request. Try adding a little more detail or changing a filter.",
+          : "Doorstep doesn't currently have a provider for that request. Try adding a little more detail or changing a filter."}`,
       });
       return;
     }
@@ -340,19 +398,30 @@ export default function AskScreen({ seedPrompt }) {
     const bundle = requested.length > 1
       ? ranked.find((listing) => requested.every((code) => listing.service_type.includes(code))) ?? null
       : null;
+    let bundleName = null;
     if (bundle && !conversationRef.current.bundleOffered) {
       const providersById = new Map(getProviders().map((p) => [p.provider_id, p]));
-      const name = providersById.get(bundle.provider_id)?.name ?? "One provider";
+      bundleName = providersById.get(bundle.provider_id)?.name ?? "One provider";
       updateConversation({ bundleOffered: true });
-      appendMessage({
-        type: "bot_text",
-        text: `${name} can cover ${joinLabels(requested)} in one visit.`,
-      });
     }
 
     const results = enrichResults(ranked, nextFilters, requestText);
     updateConversation({ visibleListings: results });
-    appendMessage({ type: "bot_text", text: botReplyFor(ranked.length, results.length, source) });
+    const completeCount = requested.length > 1
+      ? ranked.filter((listing) => requested.every((code) => listing.service_type.includes(code))).length
+      : ranked.length;
+    const reply = botReplyFor({
+      totalCount: ranked.length,
+      shownCount: results.length,
+      source,
+      filters: nextFilters,
+      completeCount,
+      bundleName,
+    });
+    appendMessage({
+      type: "bot_text",
+      text: acknowledgement ? `${acknowledgement} ${reply}` : reply,
+    });
     appendResults(results);
   }
 
@@ -369,7 +438,10 @@ export default function AskScreen({ seedPrompt }) {
 
     setIsTyping(true);
 
-    const result = await getFilters(text);
+    let result = await getFilters(text, buildModelContext());
+    if (result.intent === "job" && result.confidence === "low") {
+      result = { ...result, intent: "unclear" };
+    }
 
     if (result.intent === "off_topic") {
       const { offTopicIndex } = conversationRef.current;
@@ -385,7 +457,7 @@ export default function AskScreen({ seedPrompt }) {
 
     if (result.intent === "greeting") {
       setIsTyping(false);
-      appendMessage({ type: "bot_text", text: "Hey! What job can I help you get done?", showExamples: true });
+      appendMessage({ type: "bot_text", text: "Hi—what job do you need help with?", showExamples: true });
       return;
     }
 
@@ -393,7 +465,7 @@ export default function AskScreen({ seedPrompt }) {
       setIsTyping(false);
       appendMessage({
         type: "bot_text",
-        text: "Describe a job in plain language and I'll turn it into a service request, match relevant providers, and help you choose a preferred time.",
+        text: "Describe the job in your own words. I’ll find relevant providers and help you choose a time.",
         showExamples: true,
       });
       return;
@@ -403,7 +475,7 @@ export default function AskScreen({ seedPrompt }) {
       setIsTyping(false);
       appendMessage({
         type: "bot_text",
-        text: "That is a home-service request, but Doorstep doesn't currently have providers for it. I can help with cleaning, handyman work, plumbing, electrical, moving, junk removal, or yard work.",
+        text: "Doorstep doesn’t have providers for that service yet. I can help with cleaning, handyman work, plumbing, electrical, moving, junk removal, or yard work.",
         showExamples: true,
       });
       return;
@@ -424,14 +496,21 @@ export default function AskScreen({ seedPrompt }) {
     if (result.intent === "change_filters") {
       const merged = mergeFilters(filtersRef.current, result);
       setIsTyping(false);
-      appendMessage({ type: "bot_text", text: describeFilterChange(filtersRef.current, merged) });
-      showResults(merged, result.source, conversationRef.current.request?.description ?? text);
+      const change = describeFilterChange(filtersRef.current, merged);
+      const changeDetail = change.replace(/^I updated your search(?::| to) /, "").replace(/\.$/, "");
+      const acknowledgement = result.source === "fallback"
+        ? `I couldn’t verify the wording, but I kept your current service and applied this change: ${changeDetail}.`
+        : change;
+      showResults(merged, result.source, conversationRef.current.request?.description ?? text, {
+        acknowledgement,
+        allowKeywordRetry: false,
+      });
       return;
     }
 
     if (result.intent === "more_details") {
       setIsTyping(false);
-      const listing = currentListing();
+      const listing = listingById(result.referenced_listing_id) ?? currentListing();
       if (!listing) {
         appendMessage({ type: "bot_text", text: "Which listing do you mean? Open one and ask again." });
         return;
@@ -462,12 +541,12 @@ export default function AskScreen({ seedPrompt }) {
         return;
       }
 
-      const maybe = result.service_types.length > 0 ? ` Is it ${joinLabels(result.service_types)}?` : "";
+      const maybe = result.service_types.length > 0 ? `Is this ${joinLabels(result.service_types).toLowerCase()}?` : "What needs doing?";
       updateConversation({ clarifyCodes: result.service_types, request: null });
       appendMessage({
         type: "bot_text",
-        text: `I want to get this right.${maybe || " What needs doing?"}`,
-        actions: [{ action: "skip_clarify", label: "Show both options" }],
+        text: result.clarification_question || `I want to make sure I understood. ${maybe}`,
+        actions: result.service_types.length > 0 ? [{ action: "skip_clarify", label: "Show these options" }] : [],
       });
       return;
     }
@@ -492,13 +571,11 @@ export default function AskScreen({ seedPrompt }) {
         ? { ...current, service_types: current.service_types.filter((code) => code !== value) }
         : { ...current, [key]: null };
 
-    applyFilters(nextFilters);
     const query = conversationRef.current.request?.description ?? conversationRef.current.jobText;
-    const ranked = matchListings(nextFilters, activeListings(), matchingOptions(query));
-    const request = buildRequest(query, nextFilters);
-    updateConversation({ request });
-    appendMessage({ type: "request_summary", request });
-    appendResults(enrichResults(ranked, nextFilters, query));
+    showResults(nextFilters, "keyword", query, {
+      acknowledgement: describeFilterChange(current, nextFilters),
+      allowKeywordRetry: false,
+    });
   }
 
   // ---- booking ----
@@ -583,7 +660,11 @@ export default function AskScreen({ seedPrompt }) {
       setBookings(linkedBookings);
       setBookingKey(null);
       setOpenKey(null);
-      appendMessage({ type: "booking_confirmation", key, listing, transitionName: transitionNameFor(key) });
+      const confirmationId = makeId();
+      setMessages((current) => [
+        ...current.filter((message) => !(message.type === "booking_confirmation" && message.key === key)),
+        { id: confirmationId, type: "booking_confirmation", key, listing, transitionName: transitionNameFor(key) },
+      ]);
 
       if (remaining.length === 0) {
         const requestId = booking.request?.id ?? conversationRef.current.request?.id;
@@ -599,7 +680,7 @@ export default function AskScreen({ seedPrompt }) {
           {
             id: wrapupId,
             type: "bot_text",
-            text: "Request prepared. In a live marketplace, the provider would confirm this time next. Anything else?",
+            text: "That covers this request. Do you need help with anything else?",
             actions: [{ action: "skip_remaining", label: "I'm done", requestId }],
           },
         ]);
@@ -705,6 +786,13 @@ export default function AskScreen({ seedPrompt }) {
     return conversationRef.current.lastListing ?? entries.at(-1)?.listing ?? conversationRef.current.visibleListings[0] ?? null;
   }
 
+  function listingById(listingId) {
+    if (!listingId) return null;
+    return conversationRef.current.visibleListings.find((listing) => listing.listing_id === listingId)
+      ?? bookedEntries().find(({ listing }) => listing.listing_id === listingId)?.listing
+      ?? null;
+  }
+
   function showBookings() {
     const entries = bookedEntries();
     if (entries.length === 0) {
@@ -752,13 +840,14 @@ export default function AskScreen({ seedPrompt }) {
   // it was triggered.
   function finishCancel(cancelled = []) {
     const lead = cancelled.length > 1 ? `Cancelled ${cancelled.length} requests.` : "Cancelled.";
-    appendMessage({ type: "bot_text", text: `${lead} Let me know if you'd like to find someone else.` });
 
     const remaining = remainingCodes(conversationRef.current.requestedCodes, conversationRef.current.coveredCodes);
     if (remaining.length > 0) {
-      appendMessage({ type: "bot_text", text: `Still open: ${joinLabels(remaining)}.` });
+      appendMessage({ type: "bot_text", text: `${lead} You still need ${joinLabels(remaining).toLowerCase()}, so here are the relevant options.` });
       appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
+      return;
     }
+    appendMessage({ type: "bot_text", text: `${lead} Would you like me to find another option?` });
   }
 
   function cancelBooking(text) {
