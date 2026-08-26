@@ -60,6 +60,17 @@ function joinLabels(codes) {
   return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
 }
 
+// Generic connectors that are fine to score on (matchListings.js's own
+// stop-word list is deliberately narrow so a shared word like "and" can
+// still break a ranking tie) but read as meaningless when surfaced verbatim
+// as "the reason this matched" — "Matches details about for, every, and."
+// Filtered here, at display time only, so this has zero effect on ranking.
+const DISPLAY_FILLER_WORDS = new Set([
+  "all", "and", "are", "but", "can", "come", "every", "for", "her", "here", "him",
+  "his", "its", "may", "not", "one", "our", "she", "the", "too", "was", "were",
+  "where", "will", "you",
+]);
+
 function enrichResults(rankedListings, filters, query = "") {
   const providersById = new Map(getProviders().map((provider) => [provider.provider_id, provider]));
   const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
@@ -71,9 +82,10 @@ function enrichResults(rankedListings, filters, query = "") {
       .map((code) => labelByCode[code]);
 
     const { matchedTerms } = listingRelevance(query, listing);
+    const displayTerms = matchedTerms.filter((term) => !DISPLAY_FILLER_WORDS.has(term.toLowerCase()));
     const distance = listingDistanceFromNeighborhood(listing, filters.neighborhood, getNeighborhoods());
-    const relevanceReason = matchedTerms.length > 0
-      ? `Matches details about ${matchedTerms.slice(0, 3).join(", ")}`
+    const relevanceReason = displayTerms.length > 0
+      ? `Matches details about ${displayTerms.slice(0, 3).join(", ")}`
       : matchedLabels.length > 0
         ? `Covers ${matchedLabels.join(" and ")}`
         : "Available in the Doorstep catalogue";

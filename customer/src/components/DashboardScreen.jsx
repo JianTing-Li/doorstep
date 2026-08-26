@@ -9,7 +9,25 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
   const { customer } = useApp();
   const [query, setQuery] = useState("");
   const active = useMemo(() => activeListings(listings), [listings]);
-  const featured = active.slice(0, 3);
+  // One card per provider, not one per listing: "Top-Rated Providers" was
+  // just active.slice(0, 3), so whichever provider happened to have the
+  // first several listings in mock-data filled every slot — Marisol Vega's
+  // first three listings, back to back, rather than three different
+  // top-rated providers. Pick each provider's own best-rated listing, then
+  // rank providers by their provider-level rating (the thing the section
+  // title actually promises), highest first.
+  const featured = useMemo(() => {
+    const bestListingByProvider = new Map();
+    for (const listing of active) {
+      const current = bestListingByProvider.get(listing.provider_id);
+      if (!current || (listing.rating || 0) > (current.rating || 0)) {
+        bestListingByProvider.set(listing.provider_id, listing);
+      }
+    }
+    return [...bestListingByProvider.values()]
+      .sort((a, b) => (providersById.get(b.provider_id)?.rating || 0) - (providersById.get(a.provider_id)?.rating || 0))
+      .slice(0, 3);
+  }, [active, providersById]);
   const categories = CATEGORIES.filter((c) => c !== "All");
 
   function runSearch() {

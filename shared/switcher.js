@@ -46,12 +46,21 @@ function icon(name) {
 }
 
 function readPersona() {
-  const stored = localStorage.getItem(PERSONA_KEY);
-  if (stored && PERSONAS[stored]) return stored;
+  // The route is ground truth, not localStorage: this switcher is mounted
+  // once per page load, on a page that IS one of the three products, so
+  // "which persona" and "which product am I on" can never legitimately
+  // differ. Reading stored state first (the previous order) meant a fresh
+  // navigation showed whichever persona was last selected in another tab
+  // or session until the user manually toggled it — self-correcting only
+  // because the toggle happens to overwrite the same stale value it read.
   const path = window.location.pathname;
   if (path.startsWith("/provider")) return "provider";
   if (path.startsWith("/admin")) return "admin";
-  return "customer";
+  if (path.startsWith("/customer")) return "customer";
+  // Not one of the three product paths (shouldn't happen in practice) —
+  // fall back to whatever was last chosen, then default to customer.
+  const stored = localStorage.getItem(PERSONA_KEY);
+  return stored && PERSONAS[stored] ? stored : "customer";
 }
 
 function readTheme() {

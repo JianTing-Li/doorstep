@@ -18,7 +18,13 @@
          must resolve these or the page loses all colour and type. -->
     <link rel="stylesheet" href="/shared/tokens.css" />
     <link rel="stylesheet" href="/shared/patterns.css" />
-    <link rel="stylesheet" href="./styles.css" />
+    <!-- Absolute, not "./styles.css": Vercel serves /admin (no trailing
+         slash) with a 200 and does NOT redirect to /admin/, so the document
+         base stays "/" and a relative path resolves to /styles.css, which
+         404s. Every link into this app (including the landing page's own
+         doors) uses the no-slash form, so this reproduced on effectively
+         every cold visit, not intermittently. -->
+    <link rel="stylesheet" href="/admin/styles.css" />
     <!-- Doorstep shared shell (Phase 2) -->
     <link rel="stylesheet" href="/shared/switcher.css" />
     <link rel="stylesheet" href="/shared/header.css" />
@@ -218,6 +224,7 @@
       </button>
     </template>
 
-    <script type="module" src="./app.mjs"></script>
+    <!-- Absolute for the same reason as styles.css above. -->
+    <script type="module" src="/admin/app.mjs"></script>
   </body>
 </html>
