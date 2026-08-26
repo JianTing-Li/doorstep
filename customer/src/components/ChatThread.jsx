@@ -33,6 +33,25 @@ export default function ChatThread({
 }) {
   const scrollRef = useRef(null);
   const stickToBottomRef = useRef(true);
+  const lastMessageCountRef = useRef(messages.length);
+
+  // Reading old messages should not get yanked back to the bottom by
+  // something arriving unprompted — that's what stickToBottomRef is for. But
+  // nothing in this thread arrives unprompted: every message here (a sent
+  // text, a booking confirmation, a cancel, a reschedule, an action-button
+  // reply) is the direct result of something the reader just did, so a new
+  // message showing up is itself the signal to resume following the
+  // conversation, scrolled up or not — this used to only check for
+  // type === "user_text", which covered sending a message but missed
+  // booking a slot (a "booking_confirmation" message appended from
+  // handleChooseSlot) and every other action-triggered reply. Done as a
+  // plain during-render comparison (not an effect) so it lands before the
+  // ResizeObserver below ever gets a chance to observe this message's resize
+  // and check the flag.
+  if (messages.length > lastMessageCountRef.current) {
+    stickToBottomRef.current = true;
+    lastMessageCountRef.current = messages.length;
+  }
 
   // Same root cause as the auto-scroll effect below: this used to listen via
   // onScroll on .chat-thread itself, which can't fire a scroll event once
@@ -58,12 +77,35 @@ export default function ChatThread({
   // and clientHeight are equal, so there's nothing to scroll on this element.
   // The window is the real scroll surface now, same fix as
   // revealExpandedCard in lib/viewTransition.js.
+  //
+  // This used to be a discrete effect keyed on [messages, isTyping, notice],
+  // computing document.documentElement.scrollHeight once per state change and
+  // scrolling to it. That target is stale the instant it's read: the typing
+  // indicator's wrapper is a .collapse element whose height is an animated
+  // grid-template-rows (var(--duration-collapse), 220ms), not an instant
+  // resize, so the effect fired before that transition had grown the page to
+  // its real height — every time, not occasionally. The scroll landed short,
+  // the listener above measured that shortfall against NEAR_BOTTOM_THRESHOLD
+  // and latched stickToBottomRef to false, and autoscroll silently stopped
+  // following the conversation for the rest of the session (the composer
+  // flowing after .chat-thread rather than inside it, on the >=1080px
+  // desktop layout, made the very first shortfall large enough to guarantee
+  // this on every session).
+  //
+  // A ResizeObserver on the page body sidesteps the timing problem instead of
+  // trying to out-guess it: it fires on every real layout change, including
+  // the ones mid-CSS-transition, so it keeps re-issuing the scroll on each
+  // frame the page's actual height changes rather than computing a target
+  // once and hoping nothing grows after.
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || !stickToBottomRef.current) return;
-    const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    el.scrollIntoView({ block: "end", behavior: reduced ? "auto" : "smooth" });
-  }, [messages, isTyping, notice]);
+    function chase() {
+      if (!stickToBottomRef.current) return;
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "auto" });
+    }
+    const observer = new ResizeObserver(chase);
+    observer.observe(document.body);
+    return () => observer.disconnect();
+  }, []);
 
   if (messages.length === 0 && !isTyping) {
     return (

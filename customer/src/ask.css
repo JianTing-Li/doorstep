@@ -156,6 +156,22 @@
   animation: message-in var(--duration-enter) var(--ease) both;
 }
 
+.ask-screen .message-bubble.bot .reveal-word {
+  display: inline-block;
+  animation: reveal-word-in 260ms var(--ease) both;
+}
+
+@keyframes reveal-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .ask-screen .message-row.from-bot.chat-notice-row {
   position: fixed;
   left: 50%;
@@ -367,44 +383,19 @@
   background: var(--glass-fill);
 }
 
-.ask-screen .request-summary-kicker {
-  margin: 0;
-  color: var(--color-ink-soft);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .ask-screen .request-summary-description {
-  margin: 7px 0 0;
+  margin: 0;
   color: var(--color-ink);
   font-family: var(--font-display);
   font-size: 1.02rem;
   line-height: 1.4;
 }
 
-.ask-screen .request-summary-details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 20px;
-  margin: 14px 0 0;
-}
-
-.ask-screen .request-summary-details div {
-  min-width: 120px;
-}
-
-.ask-screen .request-summary-details dt {
+.ask-screen .request-summary-sentence {
+  margin: 10px 0 0;
   color: var(--color-ink-soft);
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.ask-screen .request-summary-details dd {
-  margin: 2px 0 0;
-  color: var(--color-ink);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .ask-screen .request-summary-help {
@@ -1197,7 +1188,8 @@
 .ask-screen .filter-chip,
 .ask-screen .filter-chip.removing,
 .ask-screen .empty-state,
-.ask-screen .typing-indicator .dot {
+.ask-screen .typing-indicator .dot,
+.ask-screen .reveal-word {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
