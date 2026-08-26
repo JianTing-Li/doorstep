@@ -1,10 +1,10 @@
 import { getNeighborhoods, getServiceTypes } from "../data/loadData.js";
 import { parseJob } from "./parseJob.js";
 
-// The server now tries Gemini, then Claude, before giving up — worst case is
-// two back-to-back timeouts (3500ms + 4000ms server-side, see chat/api/chat.js)
+// The server tries Claude, then Gemini, before giving up — worst case is
+// two back-to-back timeouts (4000ms + 3500ms server-side, see chat/api/chat.js)
 // plus network/parse overhead. 5000ms was sized for a single-tier call and
-// would abort before Claude ever got a chance to answer.
+// would abort before Gemini ever got a chance to answer.
 const TIMEOUT_MS = 8000;
 import { INTENT_PRIORITY, detectFilterClears, detectLocalIntent } from "./intents.js";
 
@@ -35,6 +35,7 @@ function sanitize(payload) {
     clarification_question: typeof payload.clarification_question === "string"
       ? payload.clarification_question.trim().slice(0, 180)
       : null,
+    reply: typeof payload.reply === "string" ? payload.reply.trim().slice(0, 160) : null,
     route: payload.route === "gemini" || payload.route === "claude" ? payload.route : "unknown",
   };
 }
@@ -74,6 +75,7 @@ export async function getFilters(text, context = null) {
       confidence: "high",
       referenced_listing_id: null,
       clarification_question: null,
+      reply: null,
     };
   }
 
@@ -87,6 +89,7 @@ export async function getFilters(text, context = null) {
       confidence: "high",
       referenced_listing_id: null,
       clarification_question: null,
+      reply: null,
     };
   }
 
@@ -108,6 +111,7 @@ export async function getFilters(text, context = null) {
     confidence: "low",
     referenced_listing_id: null,
     clarification_question: null,
+    reply: null,
   };
 
   try {

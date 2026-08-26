@@ -153,12 +153,20 @@ function searchUnderstanding(filters) {
   return parts.join(", ");
 }
 
-function botReplyFor({ totalCount, shownCount, source, filters, completeCount = totalCount, bundleName = null }) {
+function botReplyFor({ totalCount, shownCount, source, filters, completeCount = totalCount, bundleName = null, modelReply = null }) {
   const understood = searchUnderstanding(filters);
   const subject = understood || "a home-service search";
-  const opening = source === "fallback"
+  // A model-authored reply (only ever set when source is "llm" — see the
+  // handleUserText call site) replaces the templated restatement below with
+  // something actually written for this message, in the same voice already
+  // calibrated for clarification_question. Everything after it (counts, the
+  // bundle mention, the "adjust the filters" hedge) stays templated
+  // regardless of this: those are facts about the real match results,
+  // computed after this function is called from data the model never saw,
+  // not something safe to let it improvise.
+  const opening = modelReply || (source === "fallback"
     ? pick([`I may have read that as ${subject}.`, `Sounds like ${subject}, though I'm not fully sure.`, `I think that's ${subject}.`])
-    : pick([`I read that as ${subject}.`, `Got it — ${subject}.`, `Looking for ${subject}.`]);
+    : pick([`I read that as ${subject}.`, `Got it — ${subject}.`, `Looking for ${subject}.`]));
 
   if ((filters.service_types?.length ?? 0) > 1 && completeCount < totalCount) {
     const complete = `${completeCount} complete match${completeCount === 1 ? "" : "es"}`;
@@ -529,6 +537,7 @@ export default function AskScreen({ seedPrompt }) {
       filters: nextFilters,
       completeCount,
       bundleName,
+      modelReply: options.modelReply ?? null,
     });
     appendMessage({
       type: "bot_text",
@@ -670,7 +679,10 @@ export default function AskScreen({ seedPrompt }) {
 
     updateConversation({ unclearTurns: 0 });
     updateConversation({ request: null });
-    showResults(result, result.source, text);
+    // change_filters (above) already has its own acknowledgement built from
+    // the actual filter diff, so only the plain-search path forwards the
+    // model's reply — stacking both here would restate the same thing twice.
+    showResults(result, result.source, text, { modelReply: result.reply });
   }
 
   function handleExampleChip(example) {
