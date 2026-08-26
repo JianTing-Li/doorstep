@@ -4,7 +4,7 @@ import { getListings, getProviders, getCustomers } from "./data/loadData.js";
 import { seedPromptFromBrowse } from "./lib/filterBridge.js";
 
 import Header from "./components/Header.jsx";
-import TabBar from "./components/TabBar.jsx";
+import TabBar, { TopNav } from "./components/TabBar.jsx";
 import Toast from "./components/Toast.jsx";
 import DashboardScreen from "./components/DashboardScreen.jsx";
 import ListingFeed from "./components/ListingFeed.jsx";
@@ -155,7 +155,10 @@ function Shell() {
             providersById={providersById}
             onOpenFeed={(params) => goBrowse("feed", params)}
             onOpenListing={openListing}
-            onOpenAsk={() => setTab("ask")}
+            onOpenAsk={(prefill) => {
+              if (prefill) setAskSeed(prefill);
+              setTab("ask");
+            }}
           />
         );
     }
@@ -170,6 +173,8 @@ function Shell() {
   return (
     <div className="app-shell">
       <Header onLogoClick={goHome} onBookingsClick={() => setTab("bookings")} />
+
+      <TopNav active={tab} onSelect={setTab} />
 
       <FirstVisitStrip />
 

@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import Icon from "./Icon.jsx";
 import ListingCard from "./ListingCard.jsx";
-import ServiceMap from "./ServiceMap.jsx";
-import { activeListings, CATEGORIES, CATEGORY_ICON, countInCategory } from "../lib/filters.js";
+import { activeListings, CATEGORIES, CATEGORY_ICON, countInCategory, dashboardSearchDestination } from "../lib/filters.js";
 import { useApp } from "../AppContext.jsx";
 
 export default function DashboardScreen({ listings, providersById, onOpenFeed, onOpenListing, onOpenAsk }) {
@@ -33,10 +32,16 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
   function runSearch() {
     const trimmed = query.trim();
     if (!trimmed) return;
-    // His original branched 3+ word / natural-language-shaped queries to the
-    // AI chatbot modal. That destination doesn't exist this phase (the FAB
-    // is removed; Ask has no matching logic until Phase 6) — see
-    // INTEGRATION-NOTES.md. Every dashboard search goes to Browse for now.
+    // A short, keyword-shaped search ("plumbing," "IKEA assembly") filters
+    // the catalogue, same as always. Anything long enough to read as an
+    // actual job description routes into Ask instead — this box is now the
+    // single entry point for both, replacing the separate "AI Matcher" card
+    // that sat directly underneath it doing the same "describe what you
+    // need" job with its own example bubbles.
+    if (dashboardSearchDestination(trimmed) === "ask") {
+      onOpenAsk(trimmed);
+      return;
+    }
     onOpenFeed({ search: trimmed, category: "All" });
   }
 
@@ -53,11 +58,11 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
         <p className="dashboard-subtitle">Book background-checked independent neighbors in Portland, OR.</p>
       </div>
 
-      <div className="search-bar">
-        <Icon name="search" size={15} className="search-bar-icon" />
+      <div className="search-bar search-bar-unified">
+        <Icon name="sparkles" size={15} className="search-bar-icon" />
         <input
           type="text"
-          placeholder="Search e.g. clean, IKEA assembly, plumbing..."
+          placeholder="Search a category, or describe the job — &ldquo;leaking pipe under the sink&rdquo;"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && runSearch()}
@@ -72,18 +77,6 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
           </button>
         )}
       </div>
-
-      <button type="button" className="ai-matcher-banner" onClick={onOpenAsk}>
-        <span className="ai-matcher-icon"><Icon name="sparkles" size={18} /></span>
-        <span className="ai-matcher-copy">
-          <span className="ai-matcher-kicker">
-            Doorstep AI Matcher <em>Instant</em>
-          </span>
-          <span className="ai-matcher-title">Describe your task in plain English</span>
-          <span className="ai-matcher-examples">&ldquo;Leaking pipe under sink&rdquo; &bull; &ldquo;Clean 2BR apartment&rdquo;</span>
-        </span>
-        <span className="ai-matcher-arrow"><Icon name="chevronRight" size={14} /></span>
-      </button>
 
       <section>
         <div className="section-heading">
@@ -109,18 +102,6 @@ export default function DashboardScreen({ listings, providersById, onOpenFeed, o
               </span>
             </button>
           ))}
-        </div>
-      </section>
-
-      <section>
-        <div className="section-heading">
-          <span className="section-heading-live">
-            <span className="live-dot" /> Nearby Service Map
-          </span>
-          <span className="section-heading-note">Portland, OR Metro</span>
-        </div>
-        <div className="map-frame">
-          <ServiceMap listings={active} providersById={providersById} onOpenListing={onOpenListing} />
         </div>
       </section>
 

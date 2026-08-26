@@ -78,12 +78,18 @@ export function applyFilters(listings, filters, providersById) {
   return result;
 }
 
-// Dashboard search branching. His original also routed 3+ word / natural-
-// language-shaped queries to the AI chatbot modal — that destination no
-// longer exists (the FAB is removed; Ask is a stub this phase, with no
-// matching logic until Phase 6), so every dashboard search now goes to
-// Browse. Documented in INTEGRATION-NOTES.md as a deliberate simplification,
-// not a silent drop.
-export function dashboardSearchDestination() {
-  return "browse";
+// Dashboard search branching, restored now that Ask has real matching logic
+// (Phase 6) — the destination his original branch needed didn't exist until
+// then. One search bar handles both a short keyword ("plumbing") and a full
+// job description ("my kitchen faucet won't stop dripping"): short input
+// filters the catalogue by category, the same way it always has; anything
+// long enough to actually describe a job routes into Ask, where parseJob can
+// do something with it. Word count is a coarse proxy for "sentence-shaped,"
+// but a reliable one here — every example prompt in the catalogue runs 8+
+// words, and every category/keyword search in practice is 1-3.
+const SENTENCE_WORD_THRESHOLD = 4;
+
+export function dashboardSearchDestination(query) {
+  const wordCount = String(query ?? "").trim().split(/\s+/).filter(Boolean).length;
+  return wordCount >= SENTENCE_WORD_THRESHOLD ? "ask" : "browse";
 }
