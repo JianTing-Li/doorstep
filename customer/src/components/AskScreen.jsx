@@ -36,7 +36,6 @@ import {
 } from "../lib/intents.js";
 
 const RESULTS_DISPLAY_CAP = 5;
-const THINKING_DELAY_MS = 450;
 const MAX_INPUT_LENGTH = 500;
 const MAX_UNCLEAR_TURNS = 2;
 
@@ -47,7 +46,46 @@ const OFF_TOPIC_REPLIES = [
   "That’s outside Doorstep’s home-service search. What job can I help you find someone for?",
 ];
 
-const EMPTY_NUDGE = "Tell me what needs doing and I'll find someone. A job, a room, or a mess all work.";
+const EMPTY_NUDGES = [
+  "Tell me what needs doing and I'll find someone. A job, a room, or a mess all work.",
+  "What's the job? A sentence is plenty — a room, a task, or what's broken.",
+];
+
+// Picks a phrasing at random rather than always the first one. Every one of
+// these carries the exact same information as its siblings — this is purely
+// about not answering with the identical sentence shape every single time,
+// which is one of the clearest tells that a reply is templated rather than
+// composed. Not deterministic rotation like OFF_TOPIC_REPLIES below (which
+// specifically guarantees no immediate repeat for a small, fixed set shown
+// to every stalled visitor) — there's no natural sequence counter for a
+// per-search reply the way there is for repeated off-topic messages, and a
+// little real randomness here is fine since nothing tests the exact string.
+function pick(options) {
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+// The keyword-only path through getFilters (no network call at all) can
+// resolve in single-digit milliseconds — faster than a person could read the
+// message, let alone reply to it. isTyping used to turn off the instant the
+// result arrived, so a fast reply flashed the three-dot indicator for less
+// than a frame, and a slow one held it exactly as long as the network took —
+// implausibly instant, or implausibly exact, never a natural "thinking"
+// pause. This floors the wait rather than fixing it to one number: real
+// latency past the floor still shows through untouched (Promise.all takes
+// whichever finishes last), so a genuinely slow model call doesn't get an
+// extra artificial delay stacked on top of it.
+function minDelay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+// Upper bound matters more than it looks: customer/src/lib/__tests__/
+// conversation.test.mjs and ui.test.mjs wait a fixed 700ms after sending
+// before reading the reply back out — not a spec, just a "surely long
+// enough" test convenience written against the old near-instant behavior.
+// The floor needs real margin under that same number or it starts racing
+// the test's own wait, which is exactly what happened at [550, 850]: intermittent
+// "0 bot bubbles" failures from replies that were correct, just not
+// finished landing yet.
+const TYPING_FLOOR_MS = [300, 500];
 
 function labelsFor(codes) {
   const labelByCode = Object.fromEntries(getServiceTypes().map(({ code, label }) => [code, label]));
@@ -117,9 +155,10 @@ function searchUnderstanding(filters) {
 
 function botReplyFor({ totalCount, shownCount, source, filters, completeCount = totalCount, bundleName = null }) {
   const understood = searchUnderstanding(filters);
+  const subject = understood || "a home-service search";
   const opening = source === "fallback"
-    ? `I may have read that as ${understood || "a home-service search"}.`
-    : `I read that as ${understood || "a home-service search"}.`;
+    ? pick([`I may have read that as ${subject}.`, `Sounds like ${subject}, though I'm not fully sure.`, `I think that's ${subject}.`])
+    : pick([`I read that as ${subject}.`, `Got it — ${subject}.`, `Looking for ${subject}.`]);
 
   if ((filters.service_types?.length ?? 0) > 1 && completeCount < totalCount) {
     const complete = `${completeCount} complete match${completeCount === 1 ? "" : "es"}`;
@@ -131,9 +170,16 @@ function botReplyFor({ totalCount, shownCount, source, filters, completeCount = 
   }
 
   const found = totalCount > shownCount
-    ? `I found ${totalCount} options; here are the closest ${shownCount}.`
-    : `I found ${totalCount} option${totalCount === 1 ? "" : "s"}.`;
-  const check = source === "fallback" ? " You can adjust the filters if that isn’t what you meant." : "";
+    ? pick([
+        `I found ${totalCount} options; here are the closest ${shownCount}.`,
+        `${totalCount} came up — here are the closest ${shownCount}.`,
+        `Found ${totalCount}; showing the closest ${shownCount}.`,
+      ])
+    : pick([
+        `I found ${totalCount} option${totalCount === 1 ? "" : "s"}.`,
+        `${totalCount} option${totalCount === 1 ? "" : "s"} came up.`,
+      ]);
+  const check = source === "fallback" ? pick([" You can adjust the filters if that isn’t what you meant.", " Let me know if that's not quite right."]) : "";
   return `${opening} ${found}${check}`;
 }
 
@@ -202,7 +248,12 @@ function askStorageKey(customerId, name) {
 }
 
 export default function AskScreen({ seedPrompt }) {
-  const { customerId, bookings: customerBookings, setBookings: setCustomerBookings } = useApp();
+  const { customerId, customer, bookings: customerBookings, setBookings: setCustomerBookings } = useApp();
+  // usePersonaState.js falls back to a customer object literally named
+  // "Guest" when a persona has no record — using that in a greeting would
+  // read as a template placeholder ("Hi Guest—") rather than the near-miss
+  // it's meant to sidestep, so it's excluded here specifically.
+  const name = customer?.name && customer.name !== "Guest" ? customer.name.split(" ")[0] : null;
   const [messages, setMessages] = useState(() => readJSON(askStorageKey(customerId, "messages"), []));
   const [filters, setFilters] = useState(() => readJSON(askStorageKey(customerId, "filters"), EMPTY_FILTERS));
   const [isTyping, setIsTyping] = useState(false);
@@ -392,7 +443,7 @@ export default function AskScreen({ seedPrompt }) {
     if (requested.length === 0 && !hasConstraint) {
       appendMessage({
         type: "bot_text",
-        text: acknowledgement ? `${acknowledgement} ${EMPTY_NUDGE}` : EMPTY_NUDGE,
+        text: acknowledgement ? `${acknowledgement} ${pick(EMPTY_NUDGES)}` : pick(EMPTY_NUDGES),
         showExamples: true,
       });
       return;
@@ -499,7 +550,8 @@ export default function AskScreen({ seedPrompt }) {
 
     setIsTyping(true);
 
-    let result = await getFilters(text, buildModelContext());
+    const floor = TYPING_FLOOR_MS[0] + Math.random() * (TYPING_FLOOR_MS[1] - TYPING_FLOOR_MS[0]);
+    let [result] = await Promise.all([getFilters(text, buildModelContext()), minDelay(floor)]);
     if (result.intent === "job" && result.confidence === "low") {
       result = { ...result, intent: "unclear" };
     }
@@ -518,7 +570,11 @@ export default function AskScreen({ seedPrompt }) {
 
     if (result.intent === "greeting") {
       setIsTyping(false);
-      appendMessage({ type: "bot_text", text: "Hi—what job do you need help with?", showExamples: true });
+      appendMessage({
+        type: "bot_text",
+        text: name ? `Hi ${name}—what job do you need help with?` : "Hi—what job do you need help with?",
+        showExamples: true,
+      });
       return;
     }
 
@@ -598,7 +654,7 @@ export default function AskScreen({ seedPrompt }) {
 
       if (turns > MAX_UNCLEAR_TURNS) {
         updateConversation({ unclearTurns: 0 });
-        appendMessage({ type: "bot_text", text: EMPTY_NUDGE, showExamples: true });
+        appendMessage({ type: "bot_text", text: pick(EMPTY_NUDGES), showExamples: true });
         return;
       }
 
@@ -621,8 +677,11 @@ export default function AskScreen({ seedPrompt }) {
     appendMessage({ type: "user_text", text: example.text });
     updateConversation({ jobText: example.text, request: null });
     setIsTyping(true);
-    // Chips carry their own filters, so they skip both the model and parseJob.
-    setTimeout(() => showResults(example.filters, "chip", example.text), THINKING_DELAY_MS);
+    // Chips carry their own filters, so they skip both the model and parseJob
+    // — nothing to await, so the same floor used elsewhere is applied
+    // directly as a delay instead of racing it against a real call.
+    const floor = TYPING_FLOOR_MS[0] + Math.random() * (TYPING_FLOOR_MS[1] - TYPING_FLOOR_MS[0]);
+    setTimeout(() => showResults(example.filters, "chip", example.text), floor);
   }
 
   function handleRemoveFilter(key, value) {
@@ -741,7 +800,7 @@ export default function AskScreen({ seedPrompt }) {
           {
             id: wrapupId,
             type: "bot_text",
-            text: "That covers this request. Do you need help with anything else?",
+            text: name ? `That covers it, ${name}. Anything else?` : "That covers this request. Do you need help with anything else?",
             actions: [{ action: "skip_remaining", label: "I'm done", requestId }],
           },
         ]);
@@ -781,7 +840,7 @@ export default function AskScreen({ seedPrompt }) {
       if (codes.length > 0) {
         showResults({ ...filtersRef.current, service_types: codes }, "fallback", conversationRef.current.jobText);
       } else {
-        appendMessage({ type: "bot_text", text: EMPTY_NUDGE, showExamples: true });
+        appendMessage({ type: "bot_text", text: pick(EMPTY_NUDGES), showExamples: true });
       }
     }
   }
