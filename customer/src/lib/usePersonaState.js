@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCustomers, getMeta } from "../data/loadData.js";
+import { readJSON } from "./persist.js";
 
 // Per-persona local state: bookings, provider messages, safety reports.
 // Same localStorage keys and seeded demo content as Abheeshu's original
@@ -82,15 +83,6 @@ const SEED_REPORTS = {
     },
   ],
 };
-
-function readJSON(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 export function usePersonaState() {
   const [customerId, setCustomerId] = useState(

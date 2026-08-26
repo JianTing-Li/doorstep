@@ -23,6 +23,7 @@ import {
   recordCanonicalBooking,
   rescheduleCanonicalBooking,
 } from "../lib/bookings.js";
+import { readJSON, writeJSON } from "../lib/persist.js";
 import { useApp } from "../AppContext.jsx";
 import {
   compareListings,
@@ -175,10 +176,35 @@ const EMPTY_CONVERSATION = {
 // toggle) is gone — the customer app's Header and the shared switcher own
 // those now — but every bit of the matching, booking, and conversation logic
 // below is unchanged.
+// AskScreen unmounts completely on tab switch (App.jsx renders it only
+// while tab === "ask"), which tears down every useState here — a real
+// conversation, its filters and any booking made in it, gone the moment you
+// tap Bookings and back. Persisted per customer, same proven pattern
+// usePersonaState.js already uses for bookings/messages/reports: a lazy
+// useState initializer reads localStorage synchronously at mount (no
+// hydration race — there's no window where state is briefly empty before
+// the persisted value loads), and a useEffect writes back on every change
+// (fires for every update that produced it, not just specific call sites,
+// so nothing can go stale by only being saved on some of them).
+//
+// Deliberately NOT persisted: isTyping, bookingNotice, confirmingClear,
+// openKey/bookingKey/reschedulingKey, and conversationRef's own bookkeeping
+// (requestedCodes, coveredCodes, etc.). Those are either purely transient UI
+// (a typing indicator, a card mid-expand) that should default closed on
+// restore, or — for conversationRef, a ref rather than state — don't have a
+// natural change-triggered hook the way state does. The visible thread,
+// active filters, and any booking already made in it (what the report
+// actually asks for) survive; the very next message after a restore may not
+// carry forward mid-conversation follow-up context the way it would have
+// without the tab switch.
+function askStorageKey(customerId, name) {
+  return `doorstep_ask_${name}_${customerId}`;
+}
+
 export default function AskScreen({ seedPrompt }) {
   const { customerId, bookings: customerBookings, setBookings: setCustomerBookings } = useApp();
-  const [messages, setMessages] = useState([]);
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [messages, setMessages] = useState(() => readJSON(askStorageKey(customerId, "messages"), []));
+  const [filters, setFilters] = useState(() => readJSON(askStorageKey(customerId, "filters"), EMPTY_FILTERS));
   const [isTyping, setIsTyping] = useState(false);
   const [bookingNotice, setBookingNotice] = useState(null);
   // Restores the confirm step Product C originally had for this
@@ -196,13 +222,35 @@ export default function AskScreen({ seedPrompt }) {
   // bookingKey (an unbooked card choosing its first slot) — the card must
   // stay in booked state throughout, never revert to collapsed.
   const [reschedulingKey, setReschedulingKey] = useState(null);
-  const [bookings, setBookings] = useState({});
-  const [completedRequestIds, setCompletedRequestIds] = useState(() => new Set());
-  const bookingsRef = useRef({});
+  const [bookings, setBookings] = useState(() => readJSON(askStorageKey(customerId, "bookings"), {}));
+  const [completedRequestIds, setCompletedRequestIds] = useState(
+    () => new Set(readJSON(askStorageKey(customerId, "completed"), [])),
+  );
+  // Seeded from the same hydrated value as `bookings` state above (useRef's
+  // argument is only read on the very first render) — without this, a
+  // restored conversation would show its booked cards correctly from state
+  // while every handler that reads bookingsRef.current for a synchronous,
+  // stale-closure-proof check (double-booking guards, cancel/reschedule
+  // lookups) saw an empty object until the next write.
+  const bookingsRef = useRef(bookings);
+
+  useEffect(() => {
+    writeJSON(askStorageKey(customerId, "messages"), messages);
+  }, [customerId, messages]);
+  useEffect(() => {
+    writeJSON(askStorageKey(customerId, "filters"), filters);
+  }, [customerId, filters]);
+  useEffect(() => {
+    writeJSON(askStorageKey(customerId, "bookings"), bookings);
+  }, [customerId, bookings]);
+  useEffect(() => {
+    writeJSON(askStorageKey(customerId, "completed"), [...completedRequestIds]);
+  }, [customerId, completedRequestIds]);
 
   // Chip removal and booking taps run after the state that produced them was
-  // captured, so these reads come from refs rather than stale closures.
-  const filtersRef = useRef(EMPTY_FILTERS);
+  // captured, so these reads come from refs rather than stale closures. Same
+  // hydration-seeding reasoning as bookingsRef above.
+  const filtersRef = useRef(filters);
   const conversationRef = useRef(EMPTY_CONVERSATION);
   // Booking a request's last remaining code fires the "Request prepared...
   // Anything else?" wrap-up. Appending it the instant that happens is what
@@ -963,9 +1011,16 @@ export default function AskScreen({ seedPrompt }) {
   return (
     <div className="ask-screen">
       <div className="ask-toolbar">
-        <span className="ask-toolbar-title">
-          <Icon name="sparkles" size={14} /> Describe the job
-        </span>
+        {/* Hidden rather than just shrunk while confirming: at narrow widths
+            "Describe the job," "Clear this conversation?," and two buttons
+            all fighting for one row wrapped every label to two lines and
+            collided. Nothing is lost by hiding it — the confirm text itself
+            says what screen this still is. */}
+        {!confirmingClear && (
+          <span className="ask-toolbar-title">
+            <Icon name="sparkles" size={14} /> Describe the job
+          </span>
+        )}
         <div className="ask-toolbar-actions">
           {hasStarted && !confirmingClear && (
             <button

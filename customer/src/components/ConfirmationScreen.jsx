@@ -1,5 +1,5 @@
 import Icon from "./Icon.jsx";
-import { formatDateShort, formatMoney } from "../lib/format.js";
+import { escrowBreakdown, formatDateShort, formatMoney } from "../lib/format.js";
 
 export default function ConfirmationScreen({ booking, onViewBookings, onHome }) {
   return (
@@ -22,7 +22,12 @@ export default function ConfirmationScreen({ booking, onViewBookings, onHome }) 
           <strong>{formatDateShort(booking.timeSlot)}</strong>
         </div>
         <div className="confirmation-row">
-          <span>Escrow Total</span>
+          <span>
+            Escrow Total
+            <small className="confirmation-row-note">
+              {formatMoney(escrowBreakdown(booking).pricePaid)} service + {escrowBreakdown(booking).ratePercent}% platform fee
+            </small>
+          </span>
           <strong className="confirmation-total">{formatMoney(booking.total)}</strong>
         </div>
       </div>

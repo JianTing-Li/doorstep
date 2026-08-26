@@ -1,5 +1,5 @@
 import Icon from "./Icon.jsx";
-import { formatMoney, formatSlotFull } from "../lib/format.js";
+import { escrowBreakdown, formatMoney, formatSlotFull } from "../lib/format.js";
 import { useApp } from "../AppContext.jsx";
 import { completeCanonicalBooking } from "../lib/bookings.js";
 
@@ -44,7 +44,12 @@ export default function BookingsScreen() {
                     <h4>{b.provider_name}</h4>
                     <p>{b.title}</p>
                   </div>
-                  <span className="booking-amount">{formatMoney(b.total)} Escrow</span>
+                  <span className="booking-amount">
+                    {formatMoney(b.total)} Escrow
+                    <small className="booking-amount-breakdown">
+                      {formatMoney(escrowBreakdown(b).pricePaid)} service + {escrowBreakdown(b).ratePercent}% fee
+                    </small>
+                  </span>
                 </div>
                 <div className="booking-card-meta">
                   <div><Icon name="clock" size={12} /> {formatSlotFull(b.timeSlot)}</div>
@@ -82,7 +87,12 @@ export default function BookingsScreen() {
                     <h4>{b.provider_name}</h4>
                     <p>{b.title}</p>
                   </div>
-                  <span className="booking-amount-neutral">Paid {formatMoney(b.total)}</span>
+                  <span className="booking-amount-neutral">
+                    Paid {formatMoney(b.total)}
+                    <small className="booking-amount-breakdown">
+                      {formatMoney(escrowBreakdown(b).pricePaid)} service + {escrowBreakdown(b).ratePercent}% fee
+                    </small>
+                  </span>
                 </div>
                 {b.rating ? (
                   <div className="review-recap">
