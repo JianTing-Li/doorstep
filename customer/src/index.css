@@ -1134,7 +1134,6 @@ input[type="range"] { width: 100%; accent-color: var(--color-accent); }
 }
 .ask-toolbar-title svg { color: var(--color-accent-text); }
 .ask-toolbar-actions { display: flex; align-items: center; gap: var(--space-2); }
-.ask-toolbar-actions .link-button { display: inline-flex; align-items: center; gap: 4px; }
 
 /* "Can't find it? Describe it instead" — Browse -> Ask hand-off. */
 .describe-instead {

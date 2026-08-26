@@ -55,11 +55,13 @@ function Shell() {
   const [browseParams, setBrowseParams] = useState({});
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
-  // Filter hand-off, both directions (Phase 6). askSeed carries a Browse
-  // narrowing into Ask as an opening sentence; browseFilterOverride carries a
-  // parsed Ask request back into Browse. See lib/filterBridge.js.
+  // Browse -> Ask hand-off (Phase 6): askSeed carries a Browse narrowing
+  // into Ask as an opening sentence. See lib/filterBridge.js. The reverse
+  // direction ("See more like this," Ask -> Browse) was removed — its
+  // query-passing dumped the raw natural-language sentence into Browse's
+  // keyword search box, which matched nothing there even when Ask had just
+  // found real results for the same text.
   const [askSeed, setAskSeed] = useState(null);
-  const [browseFilterOverride, setBrowseFilterOverride] = useState(null);
 
   const {
     bookings, reports, providerChat, closeProviderChat,
@@ -96,9 +98,7 @@ function Shell() {
           <ListingFeed
             listings={listings}
             providersById={providersById}
-            initialFilters={
-              browseFilterOverride ?? { category: browseParams.category, searchQuery: browseParams.search }
-            }
+            initialFilters={{ category: browseParams.category, searchQuery: browseParams.search }}
             onOpenListing={openListing}
             onBack={() => goBrowse("dashboard")}
             onDescribeInstead={(currentFilters) => {
@@ -188,14 +188,7 @@ function Shell() {
       <main className="app-main">
         {tab === "browse" && renderBrowse()}
         {tab === "ask" && (
-          <AskScreen
-            seedPrompt={askSeed}
-            onSeeMoreLikeThis={(browseFilters) => {
-              setBrowseFilterOverride(browseFilters);
-              setAskSeed(null);
-              goBrowse("feed", {});
-            }}
-          />
+          <AskScreen seedPrompt={askSeed} />
         )}
         {tab === "bookings" && <BookingsScreen />}
         {tab === "profile" && (

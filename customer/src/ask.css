@@ -752,21 +752,30 @@
 
 /* Own message row now, not a grid slot (see ChatThread.jsx) — capped to
    roughly one results-grid column's width on wider screens so it reads as
-   "one card," not a banner, and left full-width below the 640px breakpoint
-   where the results grid itself is one column too. A soft accent glow marks
-   it as the thing that just happened, replacing the plain muted-gray border
-   this had when it lived inline among the still-open match cards. */
-.ask-screen .listing-card.is-booked {
-  max-width: 100%;
-  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent),
-    0 8px 28px color-mix(in srgb, var(--color-accent) 22%, transparent);
+   "one card," not a banner. A single booking's group is one column, same
+   as .results-list below 640px; two or more booked back to back (same still-
+   open results, no new search) share a real 2-up grid instead of each
+   sitting alone at half width with empty space beside it. A soft accent
+   glow marks the card as the thing that just happened, replacing the plain
+   muted-gray border this had when it lived inline among the match cards. */
+.ask-screen .booking-confirmation-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  width: 100%;
 }
 
 @media (min-width: 640px) {
-  .ask-screen .listing-card.is-booked {
-    max-width: calc(50% - 5px);
+  .ask-screen .booking-confirmation-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.ask-screen .listing-card.is-booked {
+  width: 100%;
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent),
+    0 8px 28px color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
 .ask-screen .booked-marker {
@@ -1017,10 +1026,22 @@
 
 /* ---- Example chips ---- */
 
+/* Grid, not flex-wrap: flex-wrap let each chip's own text width decide row
+   shape, so rows landed inconsistently — one chip alone, then two of
+   different sizes — rather than reading as one set of suggestions. One
+   column on mobile, two even columns from 640px up (matching the results
+   grid's own breakpoint); a long chip wraps within its own cell instead of
+   resizing the row. */
 .ask-screen .example-chips {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .ask-screen .example-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .ask-screen .example-chip {
@@ -1193,7 +1214,12 @@
     left: auto;
     transform: none;
     width: min(616px, 100%);
-    margin: 16px auto 0;
+    /* Bottom margin, not just top: without it the composer's own edge was
+       the very last thing on the page (0px to the viewport/document
+       bottom) — flush against it rather than reading as a floating card
+       with room to breathe below, same shadow and rounded corners it
+       already had, now with somewhere to actually show them. */
+    margin: 16px auto 24px;
   }
 
   .ask-screen .chat-thread {

@@ -73,10 +73,54 @@ export default function ChatThread({
 
   const lastResultsId = messages.filter((m) => m.type === "results").at(-1)?.id;
 
+  // Consecutive booking_confirmation messages — booking two providers back
+  // to back from the same still-open results, no search in between — used
+  // to render as separate full-width rows, each only half filled, with
+  // nothing of substance in the other half: not "two cards side by side,"
+  // just two narrow boxes stacked with a gap. Grouped here into runs so
+  // they share one real grid instead, 2-up with a normal gap, reading as
+  // one batch rather than two unrelated bookings.
+  const renderItems = [];
+  for (const message of messages) {
+    if (message.type === "booking_confirmation") {
+      const last = renderItems.at(-1);
+      if (last?.type === "booking_confirmation_group") {
+        last.messages.push(message);
+        continue;
+      }
+      renderItems.push({ type: "booking_confirmation_group", key: message.id, messages: [message] });
+      continue;
+    }
+    renderItems.push(message);
+  }
+
   return (
     <div className="chat-thread" ref={scrollRef}>
-      {messages.map((message) => {
+      {renderItems.map((message) => {
         switch (message.type) {
+          case "booking_confirmation_group":
+            return (
+              <div key={message.key} className="message-row from-bot message-enter">
+                <div className="booking-confirmation-group">
+                  {message.messages.map((m) => {
+                    const booking = bookings[m.key];
+                    if (!booking) return null;
+                    return (
+                      <ConfirmationMessage
+                        key={m.id}
+                        booking={booking}
+                        listing={m.listing}
+                        transitionName={m.transitionName}
+                        isRescheduling={reschedulingKey === m.key}
+                        onCancel={() => onCancelBooking(m.key)}
+                        onReschedule={() => onToggleReschedule(m.key)}
+                        onChooseSlot={(_, slot) => onChooseReschedule(m.key, m.listing, slot)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
           case "user_text":
             return <MessageBubble key={message.id} from="user" text={message.text} />;
           case "bot_text":
@@ -133,29 +177,6 @@ export default function ChatThread({
             );
           case "request_summary":
             return <RequestSummary key={message.id} request={message.request} />;
-          case "booking_confirmation": {
-            // The booking this refers to lives in shared bookings state, keyed
-            // by message.key — not a snapshot on the message itself, so a
-            // reschedule (which updates that same state) shows up here for
-            // free. If the booking was since cancelled, bookings[message.key]
-            // is gone and the "Cancelled." bot_text right after it already
-            // says so — nothing to render here in that case.
-            const booking = bookings[message.key];
-            if (!booking) return null;
-            return (
-              <div key={message.id} className="message-row from-bot message-enter">
-                <ConfirmationMessage
-                  booking={booking}
-                  listing={message.listing}
-                  transitionName={message.transitionName}
-                  isRescheduling={reschedulingKey === message.key}
-                  onCancel={() => onCancelBooking(message.key)}
-                  onReschedule={() => onToggleReschedule(message.key)}
-                  onChooseSlot={(_, slot) => onChooseReschedule(message.key, message.listing, slot)}
-                />
-              </div>
-            );
-          }
           default:
             return null;
         }

@@ -17,7 +17,6 @@ import {
 import { revealExpandedCard, transitionNameFor, withGridTransition } from "../lib/viewTransition.js";
 import { activeListings } from "../data/listings.js";
 import { getMeta, getNeighborhoods, getProviders, getReviews, getServiceTypes } from "../data/loadData.js";
-import { toBrowseFilters } from "../lib/filterBridge.js";
 import {
   buildDisplayBooking,
   cancelCanonicalBooking,
@@ -157,7 +156,7 @@ const EMPTY_CONVERSATION = {
 // toggle) is gone — the customer app's Header and the shared switcher own
 // those now — but every bit of the matching, booking, and conversation logic
 // below is unchanged.
-export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
+export default function AskScreen({ seedPrompt }) {
   const { customerId, bookings: customerBookings, setBookings: setCustomerBookings, showToast } = useApp();
   const [messages, setMessages] = useState([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -185,6 +184,21 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
   // captured, so these reads come from refs rather than stale closures.
   const filtersRef = useRef(EMPTY_FILTERS);
   const conversationRef = useRef(EMPTY_CONVERSATION);
+  // Booking a request's last remaining code fires the "Request prepared...
+  // Anything else?" wrap-up. Appending it the instant that happens is what
+  // let it land BETWEEN two cards of the same batch: pick a listing that
+  // already fully covers the request, the wrap-up appends immediately, then
+  // a second listing booked afterward (same still-open results, no second
+  // search needed) lands its own card AFTER that text — reading as
+  // "finished, then restarted" rather than one batch. A debounce (wait a
+  // moment before appending, in case another booking follows) was tried and
+  // dropped: finding and booking a second listing routinely takes longer
+  // than any debounce short enough not to make the *common* single-booking
+  // case feel laggy, so it didn't hold up. Event-driven instead: track the
+  // wrap-up already on screen for this request, and if another qualifying
+  // booking comes in — any amount of time later — remove it and re-append a
+  // fresh copy at the end, rather than leaving the old one where it was.
+  const activeWrapupRef = useRef(null); // { id, requestId } | null
 
   function appendMessage(message) {
     const withId = { id: makeId(), ...message };
@@ -544,6 +558,22 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
       [key]: { ...nextBookings[key], displayBookingId: displayBooking.id },
     };
     bookingsRef.current = linkedBookings;
+
+    // Only now, once the card is genuinely booked, does the bot speak. This
+    // is computed before the view transition below, but every message-array
+    // mutation for this booking happens INSIDE that one transition, in the
+    // order written here — appendMessage/setMessages calls made after
+    // withGridTransition returns are not guaranteed to land after the ones
+    // inside it: the transition's callback is flushSync'd, but
+    // startViewTransition itself does not run that callback fully
+    // synchronously relative to the code that follows it, so anything
+    // appended out here could jump ahead of the confirmation card it was
+    // supposed to follow.
+    const { requestedCodes, coveredCodes } = conversationRef.current;
+    const nowCovered = [...new Set([...coveredCodes, ...listing.service_type])];
+    updateConversation({ coveredCodes: nowCovered });
+    const remaining = remainingCodes(requestedCodes, nowCovered);
+
     // The booked card leaves the results grid and its confirmation appears as
     // a new message at the bottom of the thread instead (see ChatThread.jsx
     // and ListingCard.jsx) — same transitionName on both, one view transition,
@@ -554,41 +584,44 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
       setBookingKey(null);
       setOpenKey(null);
       appendMessage({ type: "booking_confirmation", key, listing, transitionName: transitionNameFor(key) });
+
+      if (remaining.length === 0) {
+        const requestId = booking.request?.id ?? conversationRef.current.request?.id;
+        const wrapupId = makeId();
+        // Same request's wrap-up is already showing (an earlier booking in
+        // this batch already fully covered it) — drop that one instead of
+        // stacking a second, so a new booking always ends up followed by
+        // exactly one "Anything else?", not one after every card.
+        const staleId = activeWrapupRef.current?.requestId === requestId ? activeWrapupRef.current.id : null;
+        activeWrapupRef.current = { id: wrapupId, requestId };
+        setMessages((current) => [
+          ...current.filter((m) => m.id !== staleId),
+          {
+            id: wrapupId,
+            type: "bot_text",
+            text: "Request prepared. In a live marketplace, the provider would confirm this time next. Anything else?",
+            actions: [{ action: "skip_remaining", label: "I'm done", requestId }],
+          },
+        ]);
+      } else {
+        appendMessage({
+          type: "bot_text",
+          text: `Still open: ${joinLabels(remaining)}. Here's who can cover it.`,
+        });
+        appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
+      }
     });
+
     setCustomerBookings((prev) => [displayBooking, ...prev]);
     recordCanonicalBooking(displayBooking, customerId);
     showToast("Booked — added to your Bookings", "checkCircle");
-
-    // Only now, once the card is genuinely booked, does the bot speak.
-    const { requestedCodes, coveredCodes } = conversationRef.current;
-    const nowCovered = [...new Set([...coveredCodes, ...listing.service_type])];
-    updateConversation({ coveredCodes: nowCovered });
-
-    const remaining = remainingCodes(requestedCodes, nowCovered);
-    if (remaining.length === 0) {
-      appendMessage({
-        type: "bot_text",
-        text: "Request prepared. In a live marketplace, the provider would confirm this time next. Anything else?",
-        actions: [{
-          action: "skip_remaining",
-          label: "I'm done",
-          requestId: booking.request?.id ?? conversationRef.current.request?.id,
-        }],
-      });
-      return;
-    }
-
-    appendMessage({
-      type: "bot_text",
-      text: `Still open: ${joinLabels(remaining)}. Here's who can cover it.`,
-    });
-    appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
   }
 
   function handleAction(action, requestId = null) {
     if (action === "skip_remaining") {
       const completedId = requestId ?? conversationRef.current.request?.id;
       if (completedId) setCompletedRequestIds((current) => new Set(current).add(completedId));
+      if (activeWrapupRef.current?.requestId === completedId) activeWrapupRef.current = null;
       updateConversation({ requestedCodes: [], coveredCodes: [] });
       setOpenKey(null);
       setBookingKey(null);
@@ -798,6 +831,7 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
   }
 
   function handleClearChat() {
+    activeWrapupRef.current = null;
     // Every store resets together — thread, filters, card state, bookings and
     // the multi-service bookkeeping — so nothing is left half-cleared.
     setMessages([]);
@@ -824,15 +858,6 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seedPrompt]);
 
-  // "See more like this" — hands the parsed request back to Browse. The
-  // conversion (and what it can and cannot carry) is defined in
-  // lib/filterBridge.js.
-  function handleSeeMoreLikeThis() {
-    onSeeMoreLikeThis?.(toBrowseFilters(filtersRef.current));
-  }
-
-  const hasResults = messages.some((m) => m.type === "results");
-
   return (
     <div className="ask-screen">
       <div className="ask-toolbar">
@@ -840,11 +865,6 @@ export default function AskScreen({ seedPrompt, onSeeMoreLikeThis }) {
           <Icon name="sparkles" size={14} /> Describe the job
         </span>
         <div className="ask-toolbar-actions">
-          {hasResults && !confirmingClear && (
-            <button type="button" className="link-button" onClick={handleSeeMoreLikeThis}>
-              See more like this <Icon name="arrowRight" size={11} />
-            </button>
-          )}
           {hasStarted && !confirmingClear && (
             <button
               type="button"

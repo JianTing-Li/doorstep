@@ -13,23 +13,18 @@ import { CATEGORY_MAP, DEFAULT_FILTERS } from "./filters.js";
  *           — N canonical service codes parsed out of a sentence, plus
  *             constraints Browse has no control for
  *
- * Rather than force one onto the other, the canonical hand-off shape is
- * Ask's — it is strictly more expressive (N codes, not one category; carries
- * neighborhood and urgency) — and this module converts in both directions.
+ * Browse -> Ask is the direction this module actually converts:
+ * seedPromptFromBrowse(browseFilters) turns a Browse search into an opening
+ * sentence for Ask ("Can't find it? Describe it instead"). It keeps
+ * everything meaningful — `sortBy` and `minRating` have no Ask equivalent,
+ * but Ask ranks by relevance anyway, so dropping them loses nothing the
+ * customer asked for.
  *
- *   toAskFilters(browseFilters)   Browse -> Ask   ("describe it instead")
- *   toBrowseFilters(askFilters)   Ask -> Browse   ("see more like this")
- *
- * Lossiness is real and deliberate, in one direction only:
- *
- *   - Browse -> Ask keeps everything meaningful. `sortBy` and `minRating`
- *     have no Ask equivalent, but Ask ranks by relevance anyway, so dropping
- *     them loses nothing the customer asked for.
- *   - Ask -> Browse cannot keep `neighborhood` or `urgency` (Browse has no
- *     control for either) and collapses N service codes to the single category
- *     containing the first one. `searchQuery` carries the original sentence so
- *     the text is not silently lost, and Browse's own text search runs over
- *     title/description/provider/bio/location.
+ * The reverse direction ("See more like this," Ask -> Browse) was removed:
+ * collapsing N service codes to Browse's single category is inherently lossy
+ * (no `neighborhood`/`urgency` control there either), and passing the raw
+ * sentence into Browse's keyword search box matched nothing even when Ask
+ * had just found real results for the same text.
  */
 
 const DEFAULT_MAX_PRICE = DEFAULT_FILTERS.maxPrice;
@@ -62,35 +57,6 @@ export function seedPromptFromBrowse(browseFilters) {
   }
   if (browseFilters.maxPrice < DEFAULT_MAX_PRICE) parts.push(`under $${browseFilters.maxPrice}`);
   return parts.join(" ").trim();
-}
-
-/** Ask -> Browse. Used by "See more like this."
- *
- * Deliberately does not carry the raw sentence into Browse's search box:
- * that field does keyword/title matching, not natural-language parsing, so
- * "Looking for someone to come every other week and clean my one bedroom"
- * matches nothing there even though Ask just found 6 providers for it
- * seconds earlier — a full sentence in a keyword box reads as broken, not
- * as "0 results, try different words." The category filter alone (already
- * derived from the same service_types Ask matched on) finds the same
- * providers without that trap. Keyword extraction from the sentence was
- * considered and skipped — not worth the complexity for what it buys here.
- */
-export function toBrowseFilters(askFilters) {
-  const firstCode = (askFilters.service_types ?? [])[0];
-  let category = "All";
-  if (firstCode) {
-    for (const [name, codes] of Object.entries(CATEGORY_MAP)) {
-      if (codes.includes(firstCode)) { category = name; break; }
-    }
-  }
-
-  return {
-    ...DEFAULT_FILTERS,
-    category,
-    searchQuery: "",
-    maxPrice: askFilters.max_price ?? DEFAULT_MAX_PRICE,
-  };
 }
 
 /** True when Browse has enough set that offering the Ask hand-off makes sense. */
