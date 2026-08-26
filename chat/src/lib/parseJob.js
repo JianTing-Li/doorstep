@@ -56,9 +56,53 @@ function keywordsByCode() {
 
 function parseServiceTypes(text) {
   const byCode = keywordsByCode();
-  return Object.entries(byCode)
+  const matches = Object.entries(byCode)
     .filter(([, keywords]) => [...keywords].some((keyword) => includesKeyword(text, keyword)))
     .map(([code]) => code);
+
+  return refineServiceTypes(text, matches);
+}
+
+function refineServiceTypes(text, matches) {
+  const result = new Set(matches);
+
+  // A bare room name is intentionally ambiguous. Present the relevant
+  // categories instead of pretending we know whether "kitchen help" means
+  // cleaning, a fixture repair, plumbing, or electrical work.
+  if (/\bkitchen\b/.test(text) && /\b(help|work|problem|issue)\b/.test(text)) {
+    const hasSpecificSignal = /\b(clean|deep|oven|fridge|faucet|tap|leak|drain|outlet|switch|wiring|install|repair|fix)\b/.test(
+      text,
+    );
+    if (!hasSpecificSignal) {
+      return ["cleaning_standard", "cleaning_deep", "handyman_general", "plumbing", "electrical"];
+    }
+  }
+
+  // "A mess" describes appearance, not a plumbing symptom. Keep plumbing as
+  // a possibility for an ambiguous sink request, while also offering cleaning.
+  if (/\bsink\b/.test(text) && /\b(mess|dirty|gross|filthy)\b/.test(text)) {
+    result.add("cleaning_standard");
+    result.add("plumbing");
+  }
+
+  // "Moving out" is often context for an end-of-tenancy clean. Only retain
+  // moving_help when the request also contains an actual transport signal.
+  const isMoveOutCleaning = /\b(move|moving) out\b/.test(text) && /\b(clean|cleaned|cleaning|deposit|landlord)\b/.test(text);
+  const hasTransportSignal = /\b(load|unload|truck|u-?haul|storage|movers?|carry|transport)\b/.test(text);
+  if (isMoveOutCleaning && !hasTransportSignal) result.delete("moving_help");
+
+  // Flat-pack items are frequently described as being "in boxes"; that alone
+  // is not evidence that the customer wants junk removed.
+  const isAssemblyRequest = /\b(ikea|flat[- ]?pack|assemble|build)\b/.test(text);
+  const hasDiscardSignal = /\b(junk|discard|dispose|donate|throw|curb|remove)\b|\b(take|taken|haul) away\b/.test(text);
+  if (isAssemblyRequest && !hasDiscardSignal) result.delete("junk_removal");
+
+  // Furniture being taken away is junk removal unless the customer also asks
+  // for transport/loading to another destination.
+  const isTakeAwayRequest = /\b(furniture|couch|sofa|mattress|items?)\b.*\b(take|taken|haul) away\b/.test(text);
+  if (isTakeAwayRequest && !hasTransportSignal) result.delete("moving_help");
+
+  return [...result];
 }
 
 function parseMaxPrice(text) {
