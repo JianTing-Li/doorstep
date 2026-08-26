@@ -244,6 +244,32 @@
       .door-primary .door-desc { font-size: var(--text-base); }
       .door-primary .door-enter { font-size: var(--text-base); }
 
+      /* ---------- The restricted door ----------
+         Admin is staff-only, not a second public front door — Provider next
+         to it still is one (providers are marketplace participants). Both
+         already sit in the smaller side-by-side row under Customer, but
+         that only separated them from Customer, not from each other. This
+         drops Admin's accent color from the shared blue to a neutral tone
+         (its own contrast still checked, not just faded) and adds a lock
+         glyph, so it reads as "you can look, but this isn't for you"
+         without needing to shrink the card or dim its copy. */
+      .door-restricted {
+        background: color-mix(in srgb, var(--glass-fill) 92%, var(--color-page-deep));
+      }
+      .door-restricted::before {
+        background: color-mix(in srgb, var(--color-ink-soft) 55%, transparent);
+      }
+      .door-restricted:hover::before { background: var(--color-ink-soft); }
+      .door-restricted .door-num {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--color-ink-soft);
+      }
+      .door-restricted .door-num svg { width: 11px; height: 11px; }
+      .door-restricted .door-enter { color: var(--color-ink-soft); }
+      .door-restricted:hover { border-color: color-mix(in srgb, var(--color-ink-soft) 45%, transparent); }
+
       /* ---------- Layout ---------- */
 
       @media (min-width: 900px) {
@@ -318,8 +344,14 @@
             </span>
           </a>
 
-          <a class="door" href="/admin/">
-            <span class="door-num">03 · STAFF ONLY</span>
+          <a class="door door-restricted" href="/admin/">
+            <span class="door-num">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+                <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+              </svg>
+              03 · STAFF ONLY
+            </span>
             <h2>Admin</h2>
             <p class="door-who">I keep the marketplace safe</p>
             <p class="door-desc">Review reports, prioritize risky cases, and record trust &amp; safety decisions with an audit trail.</p>

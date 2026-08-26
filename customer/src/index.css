@@ -471,7 +471,11 @@ a:focus-visible {
   border-radius: var(--radius-full);
 }
 .dashboard-hello { font-size: var(--text-2xs); color: var(--color-ink-soft); }
-.dashboard-title { font-size: var(--text-xl); font-weight: var(--weight-semibold); margin: 0; line-height: 1.15; }
+/* Same hero-headline token Provider's h1 uses (--text-display) — this used
+   to be --text-xl, a full step down the type scale from the other two
+   products' equivalent "big statement" headline, which is exactly the kind
+   of drift a shared type scale exists to prevent. */
+.dashboard-title { font-size: var(--text-display); font-weight: var(--weight-semibold); margin: 0; line-height: 1.1; letter-spacing: -0.02em; }
 .dashboard-subtitle { font-size: var(--text-xs); color: var(--color-ink-soft); margin: var(--space-1) 0 0; }
 
 .search-bar {
