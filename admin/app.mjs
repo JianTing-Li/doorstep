@@ -26,12 +26,19 @@ const elements = {
   statusFilter: document.querySelector("#status-filter"),
   emptyState: document.querySelector("#empty-state"),
   caseContent: document.querySelector("#case-content"),
+  decisionModal: document.querySelector("#decision-modal"),
+  confirmationAction: document.querySelector("#confirmation-action"),
+  confirmationNote: document.querySelector("#confirmation-note"),
+  confirmationReason: document.querySelector("#confirmation-reason"),
+  confirmationTimestamp: document.querySelector("#confirmation-timestamp"),
   caseId: document.querySelector("#case-id"),
   caseSubtitle: document.querySelector("#case-subtitle"),
   caseBadges: document.querySelector("#case-badges"),
   reportDescription: document.querySelector("#report-description"),
   reportFacts: document.querySelector("#report-facts"),
   evidenceLink: document.querySelector("#evidence-link"),
+  evidenceModal: document.querySelector("#evidence-modal"),
+  evidenceModalBody: document.querySelector("#evidence-modal-body"),
   linkedRecords: document.querySelector("#linked-records"),
   relatedReviews: document.querySelector("#related-reviews"),
   patternCount: document.querySelector("#pattern-count"),
@@ -47,6 +54,17 @@ const state = {
   selectedReportId: null,
   filters: { search: "", risk: "all", status: "unresolved" },
   local: loadLocalState(),
+  // The evidence for whichever case is currently on screen — read by the
+  // evidence-link click handler rather than re-looking the report up, so the
+  // modal always shows what the button that was clicked actually pointed at.
+  activeEvidence: null,
+};
+
+const ACTION_PAST_TENSE = {
+  dismiss: "Dismissed",
+  warn: "Warned",
+  suspend: "Suspended",
+  resolve: "Resolved",
 };
 
 function loadLocalState() {
@@ -168,6 +186,9 @@ function renderQueue() {
     fragment.querySelector(".pattern-mini").textContent = `${reportCount} report${reportCount === 1 ? "" : "s"} on listing`;
     button.addEventListener("click", () => {
       state.selectedReportId = report.report_id;
+      // Picking a case directly is the other way out of the decision modal,
+      // besides its own "Back to queue" button.
+      closeDecisionModal();
       elements.actionReason.value = "";
       elements.decisionStatus.textContent = "";
       renderQueue();
@@ -238,16 +259,19 @@ function renderCase() {
     definition("Reporter", customer?.name ?? report.reporter_id),
   );
 
-  if (report.evidence_url) {
-    elements.evidenceLink.href = report.evidence_url;
+  // evidence (not evidence_url) is what actually renders: evidence_url only
+  // ever pointed at https://evidence.doorstep.example/..., a domain that was
+  // never going to resolve, so "Open evidence" always 404'd. evidence_url is
+  // left in the data for the other consumers that already read it (customer
+  // app reports, mock-data/validate.py) — this dashboard just no longer
+  // treats it as a real link target.
+  state.activeEvidence = report.evidence ?? null;
+  if (state.activeEvidence) {
     elements.evidenceLink.textContent = "Open evidence";
-    elements.evidenceLink.classList.remove("disabled");
-    elements.evidenceLink.removeAttribute("aria-disabled");
+    elements.evidenceLink.disabled = false;
   } else {
-    elements.evidenceLink.removeAttribute("href");
-    elements.evidenceLink.textContent = "No attachment";
-    elements.evidenceLink.classList.add("disabled");
-    elements.evidenceLink.setAttribute("aria-disabled", "true");
+    elements.evidenceLink.textContent = "No evidence attached";
+    elements.evidenceLink.disabled = true;
   }
 
   elements.linkedRecords.replaceChildren(
@@ -310,6 +334,55 @@ function renderTimeline(actions) {
   }
 }
 
+// A modal, not a Step 2 panel state: recording a decision shouldn't read as
+// leaving the page, and Step 2 underneath is free to move on to whatever
+// renderCase() would naturally show next (a different case, or the empty
+// state) while this floats on top confirming what just happened.
+function showDecisionModal({ action, reportId, reason, timestamp, hiddenListingId }) {
+  elements.confirmationAction.textContent = `${ACTION_PAST_TENSE[action] ?? formatLabel(action)} — Case ${reportId}`;
+  elements.confirmationReason.textContent = reason;
+  elements.confirmationTimestamp.textContent = formatDate(timestamp, true);
+
+  if (hiddenListingId) {
+    elements.confirmationNote.textContent = `${hiddenListingId} is now hidden from Products B and C.`;
+    elements.confirmationNote.hidden = false;
+  } else {
+    elements.confirmationNote.hidden = true;
+  }
+  elements.decisionModal.hidden = false;
+}
+
+function closeDecisionModal() {
+  const wasOpen = !elements.decisionModal.hidden;
+  elements.decisionModal.hidden = true;
+  // "Returns focus to Step 1" — the search field is the first interactive
+  // element in the queue panel, a clear landing point after a decision. Only
+  // when actually closing an open modal: this is also called unconditionally
+  // when a queue item is picked directly, and stealing focus there would
+  // fight the click that just happened.
+  if (wasOpen) elements.searchInput.focus();
+}
+
+function openEvidenceModal(evidence) {
+  elements.evidenceModalBody.replaceChildren();
+  if (evidence.type === "image") {
+    const img = document.createElement("img");
+    img.src = evidence.src;
+    img.alt = "Evidence photo";
+    elements.evidenceModalBody.append(img);
+  } else {
+    const pre = document.createElement("pre");
+    pre.textContent = evidence.content ?? "";
+    elements.evidenceModalBody.append(pre);
+  }
+  elements.evidenceModal.hidden = false;
+}
+
+function closeEvidenceModal() {
+  elements.evidenceModal.hidden = true;
+  elements.evidenceModalBody.replaceChildren();
+}
+
 function recordDecision(action) {
   const reason = elements.actionReason.value.trim();
   const report = state.data.reports.find((item) => item.report_id === state.selectedReportId);
@@ -344,9 +417,28 @@ function recordDecision(action) {
 
   elements.actionReason.value = "";
   elements.decisionStatus.classList.remove("error");
-  elements.decisionStatus.textContent = effects.hiddenFromMarketplace
-    ? `Decision recorded. ${listing.listing_id} is hidden from Products B and C.`
-    : "Decision recorded with a new audit entry.";
+  // This message used to live in #decision-status, inside #case-content —
+  // which Step 1's own filter change can immediately hide or replace (see
+  // below), so it wasn't a reliable place to confirm anything. The decision
+  // modal covers the same ground (including the hidden-from-marketplace
+  // note) somewhere that's guaranteed to still be on screen; this is cleared
+  // so it can't reappear stale if this same case is revisited later without
+  // a fresh decision.
+  elements.decisionStatus.textContent = "";
+
+  // Step 1 (renderQueue, via renderAll below) drops this case out of the
+  // "Needs review" filter immediately, same as before. Step 2 is free to
+  // follow along — showing a different case, or the empty state, whatever
+  // renderCase() would naturally do — because the modal confirming this
+  // decision floats on top of it rather than replacing its content, so
+  // there's nothing underneath it to keep frozen in place.
+  showDecisionModal({
+    action,
+    reportId: report.report_id,
+    reason,
+    timestamp: entry.created_at,
+    hiddenListingId: effects.hiddenFromMarketplace ? listing.listing_id : null,
+  });
   renderAll();
 }
 
@@ -375,6 +467,25 @@ function bindEvents() {
   elements.actionButtons.addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");
     if (button) recordDecision(button.dataset.action);
+  });
+  elements.evidenceLink.addEventListener("click", () => {
+    if (!state.activeEvidence) return;
+    openEvidenceModal(state.activeEvidence);
+  });
+  // Both modals close the same way — backdrop click, ✕/"Back to queue"
+  // (both carry data-close-modal), or Escape — so one pair of listeners per
+  // modal container covers every dismissal path without a dedicated
+  // listener per button.
+  elements.evidenceModal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-close-modal]")) closeEvidenceModal();
+  });
+  elements.decisionModal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-close-modal]")) closeDecisionModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (!elements.evidenceModal.hidden) closeEvidenceModal();
+    if (!elements.decisionModal.hidden) closeDecisionModal();
   });
 }
 

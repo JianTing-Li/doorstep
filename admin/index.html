@@ -150,7 +150,7 @@
                 <article class="detail-card evidence-card">
                   <div class="card-title-row">
                     <h3>Reported concern</h3>
-                    <a id="evidence-link" class="evidence-link" target="_blank" rel="noreferrer">Open evidence</a>
+                    <button type="button" id="evidence-link" class="evidence-link">Open evidence</button>
                   </div>
                   <blockquote id="report-description"></blockquote>
                   <dl class="detail-list" id="report-facts"></dl>
@@ -159,7 +159,6 @@
                 <article class="detail-card">
                   <div class="card-title-row">
                     <h3>Connected marketplace records</h3>
-                    <span class="source-chip">GitHub mock data</span>
                   </div>
                   <div class="record-grid" id="linked-records"></div>
                 </article>
@@ -223,6 +222,34 @@
         </span>
       </button>
     </template>
+
+    <div id="evidence-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="evidence-modal-title">
+        <div class="modal-header">
+          <h3 id="evidence-modal-title">Evidence</h3>
+          <button type="button" class="modal-close" data-close-modal aria-label="Close evidence">✕</button>
+        </div>
+        <div class="modal-body" id="evidence-modal-body"></div>
+      </div>
+    </div>
+
+    <!-- Shown after a Step 3 decision, over whatever Step 2 moves on to next
+         (a different case, or the empty state) — a modal, not a panel state,
+         so recording a decision never reads as leaving the page or losing
+         Step 2's own content. See recordDecision() / showDecisionModal(). -->
+    <div id="decision-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-panel confirmation-panel" role="dialog" aria-modal="true" aria-labelledby="decision-modal-title">
+        <div class="empty-icon" aria-hidden="true">✓</div>
+        <h3 id="decision-modal-title">Decision recorded</h3>
+        <p class="confirmation-action" id="confirmation-action"></p>
+        <p class="confirmation-note" id="confirmation-note" hidden></p>
+        <blockquote class="confirmation-reason" id="confirmation-reason"></blockquote>
+        <p class="confirmation-timestamp" id="confirmation-timestamp"></p>
+        <button type="button" class="button-secondary" data-close-modal id="back-to-queue-button">Back to queue</button>
+      </div>
+    </div>
 
     <!-- Absolute for the same reason as styles.css above. -->
     <script type="module" src="/admin/app.mjs"></script>

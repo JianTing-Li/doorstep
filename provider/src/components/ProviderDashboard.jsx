@@ -77,10 +77,6 @@ export default function ProviderDashboard() {
             )}
           </div>
         </div>
-        <div className="hero-service" aria-hidden="true">
-          <span>🏠</span>
-          <span className="hero-tool">✓</span>
-        </div>
         <p className="reference-date">
           <span aria-hidden="true">☀</span> {reference_date}
         </p>
