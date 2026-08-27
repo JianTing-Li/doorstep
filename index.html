@@ -107,7 +107,21 @@
       /* ---------- Page body (hero + cards) ---------- */
 
       .page {
+        /* flex: 1 fills exactly the space left after the header and footer
+           (footer-aware automatically, since that's what flex-grow does) —
+           that part is unchanged and is what keeps small/medium viewports
+           identical to before. What's new is max-height: on a typical
+           laptop screen flex:1 already lands well under 900px, so this
+           never engages there. On a large/tall monitor, flex:1 would
+           otherwise keep growing — that's what let centering split an
+           ever-larger amount evenly above and below the content. Capping
+           the box at 900px stops that: past this point the box (and the
+           gap centered inside it) stops growing, and the leftover space
+           flex:1 isn't allowed to claim collects below instead, where the
+           footer's own margin-top: auto (below) absorbs it and keeps the
+           footer pinned to the true bottom of the page regardless. */
         flex: 1;
+        max-height: 900px;
         display: flex;
         flex-direction: column;
         align-items: center;

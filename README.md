@@ -1,6 +1,34 @@
 # Doorstep
 
-A two-sided local marketplace for home services. It connects independent home-service providers like cleaners, handymen, and movers with customers in the same city. Doorstep does not employ providers. It takes a percentage of each booking made through the platform.
+**A two-sided home-services marketplace concept, built as 4 connected apps by a 4-person team.**
+
+**[🔗 Live demo](https://doorstep-coral.vercel.app/) — no sign-in required.** Click through as a customer, a provider, or the internal trust & safety team.
+
+![Doorstep landing page — Customer, Provider, and Admin entry points](docs/screenshot.png)
+
+Customers describe a job in plain English ("my kitchen sink is leaking") and get matched to real listings
+via an LLM-backed chatbot; providers manage their own listings and bookings; an internal team reviews
+reports and moderates the marketplace. All four surfaces share one synthetic dataset with full referential
+integrity — no live database, fully reproducible.
+
+**Highlights**
+- **LLM-powered matching chat** — Claude Haiku 4.5 (primary, with a Gemini fallback) classifies intent and extracts job details from free-text messages, backed by a deterministic keyword parser so a request never hard-fails even if both APIs are down
+- **4 apps, 1 data model** — Customer, Provider, and Admin are independently deployable, but read and write the same linked dataset (providers, listings, bookings, reviews, reports, moderation actions), so a booking made in Provider shows up instantly in Admin's audit trail
+- **Real trust & safety workflow** — risk-prioritized report queue, human-reviewed moderation decisions with a required reason, and a visibility rule (`listing_status`) enforced consistently across every customer-facing surface
+- **One shared design system** — theming, tokens, and a persona switcher reused pixel-for-pixel across all four surfaces, not four different UI kits bolted together
+
+**Stack:** React + Vite (Customer, Provider) · vanilla JS (Admin) · Anthropic Claude + Google Gemini APIs · Vercel serverless functions · no database — mock data + a shared write-overlay simulate one
+
+**Team**
+
+| App | Owner |
+|---|---|
+| Provider App (Product A) | Kamal Mohamed |
+| Customer App (Product B) | Abheeshu Dhungana |
+| Matching Chatbot (Product C, the Customer app's Ask tab) | Jian Ting Li |
+| Trust & Safety Dashboard (Product D) | Ibtisam Hossain |
+
+---
 
 ## Products
 
@@ -85,13 +113,6 @@ The repo deploys as one Vercel project, configured by `vercel.json` at the root:
 - `/chat/` — compatibility redirect to `/customer/?tab=ask`
 - `/api/*` — serverless functions; each file re-exports the handler from its product folder
 
-`/api/chat` uses `GEMINI_API_KEY` as its primary structured-language interpreter and
-`ANTHROPIC_API_KEY` as the fallback. Both are read server-side only — never expose them
+`/api/chat` uses `ANTHROPIC_API_KEY` (Claude Haiku 4.5) as its primary structured-language interpreter and
+`GEMINI_API_KEY` as the fallback if that call fails. Both are read server-side only — never expose them
 to a client bundle, and never prefix them with `VITE_`.
-
-## Developers
-
-- Kamal Mohamed — Provider App (Product A) — [`/provider`](provider/)
-- Abheeshu Dhungana — Customer App (Product B) — [`/customer`](customer/)
-- Jian Ting Li — Matching Chatbot (Product C) — [`/customer/?tab=ask`](customer/)
-- Ibtisam Hossain — Trust & Safety Dashboard (Product D) — [`/admin`](admin/)
