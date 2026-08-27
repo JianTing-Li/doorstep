@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ChatThread from "./ChatThread.jsx";
 import ChatInput from "./ChatInput.jsx";
 import ExampleChips from "./ExampleChips.jsx";
+import { EXAMPLE_JOBS } from "../data/exampleJobs.js";
 import FilterChips from "./FilterChips.jsx";
 import Icon from "./Icon.jsx";
 import { getFilters } from "../lib/getFilters.js";
@@ -38,6 +39,18 @@ import {
 const RESULTS_DISPLAY_CAP = 5;
 const MAX_INPUT_LENGTH = 500;
 const MAX_UNCLEAR_TURNS = 2;
+
+// Checked only while a clarification is pending (see
+// resolvePendingClarificationCancel) — "cancel" and "never mind" already mean
+// something else in intents.js's LOCAL_INTENT_PATTERNS (cancel_booking), so
+// this can't be folded into that shared list without hijacking a real
+// cancel-a-booking message. Gating this on clarifyCodes.length > 0 and
+// checking it before getFilters is ever called (same pattern as
+// resolvePendingCancellation below) keeps the two from colliding: this only
+// ever fires in the one narrow window where "cancel" so obviously means
+// "drop the clarification" that there's nothing else it could mean.
+const CLARIFICATION_CANCEL_PATTERN =
+  /\b(nvm|never ?mind|cancel|forget it|no thanks?|no thank you|not (?:now|anymore)|don'?t (?:worry|bother))\b/i;
 
 const EMPTY_FILTERS = { service_types: [], max_price: null, neighborhood: null, urgency: null };
 
@@ -191,6 +204,20 @@ function botReplyFor({ totalCount, shownCount, source, filters, completeCount = 
   return `${opening} ${found}${check}`;
 }
 
+// Answers "show me examples"/"what can you help with" once suggestion chips
+// are no longer on screen to tap (see hasUserTypedFreeText). Plain text, not
+// the chip row itself, so it never touches appendMessage's showExamples gate
+// — this is a one-off answer to a specific question, not a return of the
+// standing chip fixture, and asking again later should work identically
+// every time rather than only once per session.
+function exampleShowcaseText() {
+  const quoted = EXAMPLE_JOBS.map(({ text }) => `“${text}”`);
+  const list = quoted.length > 1
+    ? `${quoted.slice(0, -1).join(", ")}, or ${quoted.at(-1)}`
+    : quoted[0];
+  return `Sure — a few examples: ${list}. Try wording your own request the same way.`;
+}
+
 // Typed text wins over an active chip; this explains the change in one line.
 function conflictNote(previous, next) {
   const changes = [];
@@ -223,6 +250,12 @@ const EMPTY_CONVERSATION = {
   request: null,
   clarifyCodes: [],
   pendingCancellationKeys: [],
+  // Chips are a discovery aid for someone who hasn't figured out they can
+  // just type. Once they've done that once, they've demonstrated they don't
+  // need the aid — sticks for the rest of the session (never reset back to
+  // false) even if a later turn would otherwise have shown chips again.
+  // Tapping a chip itself never sets this; see handleExampleChip.
+  hasUserTypedFreeText: false,
 };
 
 // The Ask tab (Phase 6). Was Product C's whole App; now one tab inside the
@@ -339,8 +372,14 @@ export default function AskScreen({ seedPrompt }) {
     }, 3200);
   }
 
+  // Every call site below still passes showExamples: true exactly where it
+  // always did — gating here instead of at each of those ~8 sites means
+  // "no chips once the customer has typed real text" is one invariant
+  // enforced in one place, not a rule that has to be remembered at every
+  // future appendMessage call that wants a chip row.
   function appendMessage(message) {
     const withId = { id: makeId(), ...message };
+    if (withId.showExamples) withId.showExamples = !conversationRef.current.hasUserTypedFreeText;
     setMessages((current) => [...current, withId]);
   }
 
@@ -568,9 +607,18 @@ export default function AskScreen({ seedPrompt }) {
     const text = String(rawText ?? "").trim().slice(0, MAX_INPUT_LENGTH);
     if (!text) return;
 
+    // Only the text input reaches this function — handleExampleChip (chip
+    // taps) is a separate handler that never calls this, so this can't be
+    // set by tapping a chip. Set before the first appendMessage below so
+    // even the bot's reply to this very message stops offering chips.
+    if (!conversationRef.current.hasUserTypedFreeText) {
+      updateConversation({ hasUserTypedFreeText: true });
+    }
+
     appendMessage({ type: "user_text", text });
     updateConversation({ jobText: text });
 
+    if (resolvePendingClarificationCancel(text)) return;
     if (resolvePendingCancellation(text)) return;
 
     setIsTyping(true);
@@ -618,7 +666,16 @@ export default function AskScreen({ seedPrompt }) {
       return;
     }
 
+    if (result.intent === "show_examples") {
+      setIsTyping(false);
+      appendMessage({ type: "bot_text", text: exampleShowcaseText() });
+      return;
+    }
+
     if (result.intent === "unsupported_service") {
+      // A distinct, unrelated request, same as a confident "job" below —
+      // clears any stale clarification the customer never answered.
+      updateConversation({ clarifyCodes: [] });
       setIsTyping(false);
       appendMessage({
         type: "bot_text",
@@ -683,7 +740,9 @@ export default function AskScreen({ seedPrompt }) {
       setIsTyping(false);
 
       if (turns > MAX_UNCLEAR_TURNS) {
-        updateConversation({ unclearTurns: 0 });
+        // Giving up on this clarification thread entirely — nothing left to
+        // resurrect it with, so the stale codes shouldn't linger either.
+        updateConversation({ unclearTurns: 0, clarifyCodes: [] });
         appendMessage({ type: "bot_text", text: pick(EMPTY_NUDGES), showExamples: true });
         return;
       }
@@ -698,7 +757,13 @@ export default function AskScreen({ seedPrompt }) {
       return;
     }
 
-    updateConversation({ unclearTurns: 0 });
+    // A confident "job" landing here always supersedes whatever came before
+    // it, including a clarification the customer never answered — without
+    // this, clarifyCodes from an earlier, unrelated ambiguous message stuck
+    // around indefinitely: sent to the model as stale pending_clarification
+    // context on every later turn, and available to resurrect via a
+    // still-clickable "Show these options" button on that old message.
+    updateConversation({ unclearTurns: 0, clarifyCodes: [] });
     updateConversation({ request: null });
     // change_filters (above) already has its own acknowledgement built from
     // the actual filter diff, so only the plain-search path forwards the
@@ -885,6 +950,21 @@ export default function AskScreen({ seedPrompt }) {
       booking: record,
       listing: record.listing,
     }));
+  }
+
+  // Opting out of a pending clarification ("nvm", "cancel", "forget it")
+  // rather than answering it. Without this, that state just sits in
+  // clarifyCodes: the bot re-asks the same question on the next unrelated
+  // reply (getFilters keeps sending it to the model as pending_clarification
+  // context) and a stale skip_clarify tap can resurrect service types from a
+  // job the customer already dropped.
+  function resolvePendingClarificationCancel(text) {
+    if (conversationRef.current.clarifyCodes.length === 0) return false;
+    if (!CLARIFICATION_CANCEL_PATTERN.test(text)) return false;
+
+    updateConversation({ clarifyCodes: [], unclearTurns: 0 });
+    appendMessage({ type: "bot_text", text: "No problem — let me know if you need anything else." });
+    return true;
   }
 
   function resolvePendingCancellation(text) {

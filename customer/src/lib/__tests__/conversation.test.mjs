@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { parseJob } from "../parseJob.js";
+import { EXAMPLE_JOBS } from "../../data/exampleJobs.js";
 
 const BASE = process.env.UI_BASE ?? "http://localhost:5174";
 const APP = `${BASE.replace(/\/$/, "")}/customer/?tab=ask`;
@@ -204,6 +205,139 @@ console.log("--- conversation quality regressions ---");
   check("both-model failure preserves the active service during a correction", /plumbing/.test(bots.at(-1)) && /under \$100/.test(bots.at(-1)), bots.at(-1));
   check("fallback copy is transparent about unverified wording", /couldn’t verify/.test(bots.at(-1)), bots.at(-1));
   check("state is sent with the correction request", requests.at(-1)?.context?.active_request?.serviceTypes?.includes("plumbing"), JSON.stringify(requests.at(-1)?.context?.active_request));
+  await page.close();
+}
+
+console.log("\n--- suggestion chips ---");
+
+{
+  const { page } = await openPage(() => responses.offTopic);
+  const emptyStateChips = await page.locator(".example-chip").count();
+  check("chips show in the empty state before any message is sent", emptyStateChips > 0, `${emptyStateChips} chips`);
+
+  await send(page, "What is the capital of France?");
+  const chipsAfterFirstTyped = await page.locator(".example-chip").count();
+  check("chips are suppressed starting with the very first typed message", chipsAfterFirstTyped === 0, `${chipsAfterFirstTyped} chips`);
+
+  await send(page, "What is the capital of France?");
+  const chipsAfterSecond = await page.locator(".example-chip").count();
+  check("chips remain suppressed on every later turn too", chipsAfterSecond === 0, `${chipsAfterSecond} chips`);
+  await page.close();
+}
+
+console.log("\n--- clarification state ---");
+
+{
+  const { page } = await openPage(() => responses.unclear);
+  await send(page, "My sink is a mess");
+  const afterAsk = await botTexts(page);
+  check("an ambiguous request is asked about", afterAsk.at(-1) === responses.unclear.clarification_question, afterAsk.at(-1));
+
+  await send(page, "never mind");
+  const afterCancel = await botTexts(page);
+  check(
+    "opting out of a pending clarification clears it instead of re-asking",
+    afterCancel.at(-1) === "No problem — let me know if you need anything else.",
+    afterCancel.at(-1),
+  );
+  await page.close();
+}
+
+{
+  const { page } = await openPage(() => responses.unclear);
+  await send(page, "My sink is a mess");
+  await send(page, "cancel");
+  const afterCancel = await botTexts(page);
+  check(
+    `"cancel" opts out of a clarification rather than hitting the cancel_booking path`,
+    afterCancel.at(-1) === "No problem — let me know if you need anything else.",
+    afterCancel.at(-1),
+  );
+  await page.close();
+}
+
+{
+  // A confident, unrelated job landing while a clarification is still
+  // unanswered must supersede it entirely — the bug this guards against was
+  // a *later* unrelated turn silently seeing pending_clarification context
+  // for a request the customer had already moved on from.
+  const outletResponse = {
+    intent: "job",
+    service_types: ["electrical"],
+    max_price: null,
+    neighborhood: null,
+    urgency: null,
+    clear_filters: [],
+    confidence: "high",
+    referenced_listing_id: null,
+    clarification_question: null,
+    reply: null,
+    route: "claude",
+  };
+  const { page, requests } = await openPage((body) =>
+    /sink/i.test(body.text) ? responses.unclear : outletResponse,
+  );
+  await send(page, "My sink is a mess");
+  await send(page, "actually, I need an outlet installed");
+  await send(page, "what else can you help with");
+
+  const lastContext = requests.at(-1)?.context;
+  check(
+    "a confident unrelated job clears stale pending_clarification for later turns",
+    lastContext?.pending_clarification == null,
+    JSON.stringify(lastContext?.pending_clarification),
+  );
+  await page.close();
+}
+
+console.log("\n--- show me examples ---");
+
+{
+  const { page, requests } = await openPage(() => responses.offTopic);
+  const exampleTexts = EXAMPLE_JOBS.map(({ text }) => text);
+
+  // Suppress chips first, same as any real session that reaches for this —
+  // the whole point of this intent is answering a request chips can no
+  // longer serve because they're gone from the screen.
+  await send(page, "what's the weather");
+  check("chips are suppressed after typing, before asking for examples", (await page.locator(".example-chip").count()) === 0, "");
+
+  const requestsBeforeExamples = requests.length;
+  await send(page, "show me some examples");
+  let bots = await botTexts(page);
+  check(
+    "an explicit example request answers with the real sample job descriptions",
+    exampleTexts.every((text) => bots.at(-1).includes(text)),
+    bots.at(-1),
+  );
+  check(
+    "the request is resolved locally, spending no model call",
+    requests.length === requestsBeforeExamples,
+    `${requests.length - requestsBeforeExamples} new call(s)`,
+  );
+  check(
+    "the answer is plain text, not a returned chip row",
+    (await page.locator(".example-chip").count()) === 0,
+    `${await page.locator(".example-chip").count()} chips`,
+  );
+
+  await send(page, "what can you help with");
+  bots = await botTexts(page);
+  check(
+    "asking again later in the same session answers the same way, not once-only",
+    exampleTexts.every((text) => bots.at(-1).includes(text)),
+    bots.at(-1),
+  );
+
+  // Greeting is one of the intents that normally returns showExamples: true —
+  // the real check that answering "show me examples" never re-enables the
+  // standing chip fixture the prior fix suppressed.
+  await send(page, "hey");
+  check(
+    "the examples answer does not re-enable persistent chip rendering on a later turn",
+    (await page.locator(".example-chip").count()) === 0,
+    `${await page.locator(".example-chip").count()} chips`,
+  );
   await page.close();
 }
 

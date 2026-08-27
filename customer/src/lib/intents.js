@@ -2,7 +2,8 @@ import { getServiceTypes } from "../data/loadData.js";
 import { formatSlot, priceLabel } from "./booking.js";
 
 // Ordered most-specific first; where a message reads as several, the earliest
-// wins. Mirrors INTENTS in api/chat.js.
+// wins. Mirrors INTENTS in api/chat.js — except "show_examples", which is
+// client-only (see below) and never sent to or returned by the model.
 export const INTENT_PRIORITY = [
   "cancel_booking",
   "change_filters",
@@ -11,6 +12,7 @@ export const INTENT_PRIORITY = [
   "list_bookings",
   "greeting",
   "help",
+  "show_examples",
   "unsupported_service",
   "job",
   "unclear",
@@ -25,6 +27,16 @@ const LOCAL_INTENT_PATTERNS = [
   ["list_bookings", /\b(my|all|the)\s+(bookings?|appointments?)\b|\bwhat have i booked\b|\bwhat did i book\b/i],
   ["greeting", /^\s*(hi|hey|hello|yo|howdy|good (morning|afternoon|evening))\s*[!.?]*\s*$/i],
   ["help", /\bwhat can you do\b|\bhow does this (work|thing work)\b|\bnot sure how to use\b|\bhow do i use\b/i],
+  // A meta-question about the assistant, same as "help" above, just asking
+  // for concrete examples instead of an explanation — never a real job
+  // description itself, so this is safe to settle without a request the same
+  // way. "show_examples" only exists here: unlike every other value in
+  // INTENT_PRIORITY, the model is never told about it and never returns it
+  // (chat/api/chat.js's schema doesn't include it) — this is purely a
+  // keyword shortcut for a message the customer sends when suggestion chips
+  // (suppressed after they've typed once — see AskScreen's
+  // hasUserTypedFreeText) are no longer on screen to tap instead.
+  ["show_examples", /\b(show|give) me (?:some )?(?:example|sample)s?\b|\bsample (?:services|jobs?|requests?)\b|\bwhat (?:can you help (?:me )?with|kind(?:s)? of jobs?)\b|\bshow me options\b/i],
   ["unsupported_service", /\b(paint(?:ed|ing)?|roof(?:ing)?|roofer|pest control|exterminator|childcare|babysitt(?:er|ing)|pet care|dog walk(?:er|ing))\b/i],
 ];
 
