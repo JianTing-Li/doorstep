@@ -87,6 +87,16 @@
         color: var(--color-accent-text);
       }
 
+      /* Groups the pill and the theme toggle so the header stays a clean
+         two-way split (logo left, everything else right) instead of a
+         three-way space-between once the toggle is added. */
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-shrink: 0;
+      }
+
       /* Quiet by design: this replaces what used to be a full-width
          disclaimer banner. Same information, a fraction of the weight —
          a small pill, not something that reads as a warning. */
@@ -103,6 +113,43 @@
         font-weight: 650;
         white-space: nowrap;
       }
+
+      /* Same localStorage key, data-theme attribute, and sun/moon glyphs as
+         shared/switcher.js's theme toggle inside the three apps — this page
+         has no persona to switch, so it gets a plain icon button instead of
+         the full switcher, but flipping it here has to look and behave like
+         the same control, not a different one that happens to do the same
+         thing. */
+      .theme-toggle {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius-full);
+        background: var(--glass-fill);
+        color: var(--color-ink-soft);
+        cursor: pointer;
+        transition: border-color var(--duration-hover) var(--ease), color var(--duration-hover) var(--ease);
+      }
+      .theme-toggle:hover {
+        border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+        color: var(--color-ink);
+      }
+      .theme-toggle:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 2px;
+      }
+      .theme-toggle svg { width: 17px; height: 17px; }
+      /* Sun = "click to go light" (shown while dark), moon = "click to go
+         dark" (shown while light) — same convention as switcher.js. The
+         head script above sets data-theme before first paint, so the
+         correct icon is already showing with no JS-driven flash; the body
+         script below only needs to handle the click. */
+      .theme-toggle .icon-moon { display: none; }
+      :root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+      :root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
       /* ---------- Page body (hero + cards) ---------- */
 
@@ -294,7 +341,18 @@
         <span class="wordmark">Doorstep</span>
       </span>
 
-      <span class="demo-pill">Concept demo · mock data</span>
+      <div class="header-actions">
+        <span class="demo-pill">Concept demo · mock data</span>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" />
+            <path d="M12 2.6v2.2M12 19.2v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 13.5A8 8 0 1 1 10.5 4a6.4 6.4 0 0 0 9.5 9.5Z" />
+          </svg>
+        </button>
+      </div>
     </header>
 
     <main class="page">
@@ -363,5 +421,22 @@
     <footer class="site-footer">
       <p>Built by Jian Ting Li, Kamal Mohamed, Abheeshu Dhungana, and Ibtisam Hossain</p>
     </footer>
+
+    <script>
+      // Same key and attribute the head script (above) and shared/switcher.js
+      // (inside the three apps) both use, so a choice made here carries into
+      // whichever product is opened next, and vice versa.
+      (function () {
+        var KEY = "doorstep:theme";
+        var button = document.getElementById("theme-toggle");
+        if (!button) return;
+        button.addEventListener("click", function () {
+          var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+          var next = current === "dark" ? "light" : "dark";
+          try { localStorage.setItem(KEY, next); } catch (e) {}
+          document.documentElement.setAttribute("data-theme", next);
+        });
+      })();
+    </script>
   </body>
 </html>
