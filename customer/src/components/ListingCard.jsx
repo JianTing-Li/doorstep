@@ -1,6 +1,7 @@
 import Icon from "./Icon.jsx";
 import DetailMessage from "./DetailMessage.jsx";
 import SlotPicker from "./SlotPicker.jsx";
+import EscrowAuthorize from "./EscrowAuthorize.jsx";
 import { initial, priceLabel, ratingLabel } from "../lib/format.js";
 import { availabilityLabel } from "../lib/booking.js";
 import { useApp } from "../AppContext.jsx";
@@ -36,11 +37,14 @@ export default function ListingCard({
   // ask-only
   state = "collapsed",
   booking,
+  pendingBooking,
+  isAuthorizing,
   transitionName,
   isRescheduling,
   onToggle,
   onStartBooking,
   onChooseSlot,
+  onAuthorize,
   onCancelBooking,
   onToggleReschedule,
   onChooseReschedule,
@@ -150,7 +154,7 @@ export default function ListingCard({
   }
 
   // ---- ask: same head, plus the in-place booking progression ----
-  const isOpen = state === "expanded" || state === "booking";
+  const isOpen = state === "expanded" || state === "booking" || state === "authorizing";
   return (
     <article
       className={`listing-card listing-card-ask listing-card-tappable ${isOpen ? "is-open" : ""} ${disabled ? "is-disabled" : ""}`}
@@ -196,6 +200,16 @@ export default function ListingCard({
             <div className={`collapse ${state === "booking" ? "is-open" : ""}`}>
               <div className="collapse-inner">
                 <SlotPicker listing={listing} onChoose={onChooseSlot} />
+              </div>
+            </div>
+            <div className={`collapse ${state === "authorizing" ? "is-open" : ""}`}>
+              <div className="collapse-inner">
+                <EscrowAuthorize
+                  listing={listing}
+                  slot={pendingBooking?.slot}
+                  isAuthorizing={isAuthorizing}
+                  onAuthorize={onAuthorize}
+                />
               </div>
             </div>
           </div>

@@ -147,8 +147,13 @@ async function bookFirstAvailable(resultsLocator) {
     const title = (await card.locator(".listing-card-title").innerText()).trim();
     await bookButton.click();
     await page.waitForTimeout(350);
+    // Picking a slot opens the inline escrow-authorize step rather than
+    // booking immediately (see AskScreen.jsx's handleChooseSlot/handleAuthorize
+    // split) — authorize before waiting for the booking to land.
     await card.locator(".slot-button").first().click();
-    await page.waitForTimeout(700);
+    await page.waitForTimeout(300);
+    await card.locator(".escrow-authorize-button").click();
+    await page.waitForTimeout(2300);
     return title;
   }
   return null;

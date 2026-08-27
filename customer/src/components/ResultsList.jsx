@@ -9,9 +9,12 @@ export default function ResultsList({
   bookingKey,
   bookings,
   reschedulingKey,
+  authorizingKey,
+  pendingBookings,
   onToggle,
   onStartBooking,
   onChooseSlot,
+  onAuthorize,
   onCancelBooking,
   onToggleReschedule,
   onChooseReschedule,
@@ -26,6 +29,7 @@ export default function ResultsList({
 
   function stateFor(key) {
     if (bookings[key]) return "booked";
+    if (authorizingKey === key || pendingBookings[key]) return "authorizing";
     if (bookingKey === key) return "booking";
     if (openKey === key) return "expanded";
     return "collapsed";
@@ -49,10 +53,13 @@ export default function ResultsList({
               listing={listing}
               state={stateFor(key)}
               booking={bookings[key]}
+              pendingBooking={pendingBookings[key]}
+              isAuthorizing={authorizingKey === key}
               isRescheduling={reschedulingKey === key}
               onToggle={() => onToggle(key)}
               onStartBooking={() => onStartBooking(key)}
               onChooseSlot={(_, slot) => onChooseSlot(key, listing, slot)}
+              onAuthorize={() => onAuthorize(key)}
               onCancelBooking={() => onCancelBooking(key)}
               onToggleReschedule={() => onToggleReschedule(key)}
               onChooseReschedule={(_, slot) => onChooseReschedule(key, listing, slot)}

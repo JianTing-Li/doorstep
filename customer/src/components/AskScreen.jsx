@@ -285,7 +285,8 @@ const EMPTY_CONVERSATION = {
 // so nothing can go stale by only being saved on some of them).
 //
 // Deliberately NOT persisted: isTyping, bookingNotice, confirmingClear,
-// openKey/bookingKey/reschedulingKey, and conversationRef's own bookkeeping
+// openKey/bookingKey/reschedulingKey/authorizingKey/pendingBookings, and
+// conversationRef's own bookkeeping
 // (requestedCodes, coveredCodes, etc.). Those are either purely transient UI
 // (a typing indicator, a card mid-expand) that should default closed on
 // restore, or — for conversationRef, a ref rather than state — don't have a
@@ -324,6 +325,15 @@ export default function AskScreen({ seedPrompt, onSeedConsumed }) {
   // bookingKey (an unbooked card choosing its first slot) — the card must
   // stay in booked state throughout, never revert to collapsed.
   const [reschedulingKey, setReschedulingKey] = useState(null);
+  // A slot has been picked but not yet authorized — the escrow step between
+  // "booking" and "booked". authorizingKey is the one card mid-authorize
+  // (its spinner is showing); pendingBookings holds every card's picked
+  // slot until authorize fires, same keying as bookings.
+  const [authorizingKey, setAuthorizingKey] = useState(null);
+  const [pendingBookings, setPendingBookings] = useState({});
+  // Synchronous, stale-closure-proof read for handleAuthorize's setTimeout
+  // callback — same reasoning as bookingsRef below.
+  const pendingBookingsRef = useRef(pendingBookings);
   const [bookings, setBookings] = useState(() => readJSON(askStorageKey(customerId, "bookings"), {}));
   const [completedRequestIds, setCompletedRequestIds] = useState(
     () => new Set(readJSON(askStorageKey(customerId, "completed"), [])),
@@ -836,94 +846,127 @@ export default function AskScreen({ seedPrompt, onSeedConsumed }) {
 
   function handleChooseSlot(key, listing, slot, request) {
     // Guard the state machine rather than trusting the UI: a second slot tap on
-    // an already-booked card must not create a second booking or re-run the
-    // multi-service follow-up.
-    const { bookings: nextBookings, booking } = applyBooking(
-      bookingsRef.current,
-      key,
-      listing,
-      slot,
-      request,
-    );
-    if (!booking) return;
+    // an already-booked or already-pending card must not create a second
+    // pending pick.
+    if (bookingsRef.current[key] || pendingBookingsRef.current[key]) return;
+    const nextPending = { ...pendingBookingsRef.current, [key]: { listing, slot, request } };
+    pendingBookingsRef.current = nextPending;
+    setPendingBookings(nextPending);
+    // Revealing the escrow step grows the card again, same as revealing the
+    // slot picker did.
+    setBookingKey(null);
+    revealExpandedCard(key);
+  }
 
-    // Phase 6: one bookings list. A booking made here goes through exactly the
-    // same path as one made from Browse — the customer app's own list plus the
-    // canonical record in shared/demo-store.js — so it shows up under Bookings,
-    // in the provider's dashboard, and in the admin queue identically.
-    const displayBooking = buildDisplayBooking({
-      listing,
-      provider: listing.provider ?? { provider_id: listing.provider_id, name: "Doorstep provider" },
-      timeSlot: slot,
-      address: "1420 NW Lovejoy St, Portland, OR",
-      quantity: listing.price_unit === "hourly" ? (listing.minimum_quantity ?? 1) : 1,
-    });
-    const linkedBookings = {
-      ...nextBookings,
-      [key]: { ...nextBookings[key], displayBookingId: displayBooking.id },
-    };
-    bookingsRef.current = linkedBookings;
+  function handleAuthorize(key) {
+    const pending = pendingBookingsRef.current[key];
+    if (!pending || authorizingKey === key) return;
+    setAuthorizingKey(key);
 
-    // Only now, once the card is genuinely booked, does the bot speak. This
-    // is computed before the view transition below, but every message-array
-    // mutation for this booking happens INSIDE that one transition, in the
-    // order written here — appendMessage/setMessages calls made after
-    // withGridTransition returns are not guaranteed to land after the ones
-    // inside it: the transition's callback is flushSync'd, but
-    // startViewTransition itself does not run that callback fully
-    // synchronously relative to the code that follows it, so anything
-    // appended out here could jump ahead of the confirmation card it was
-    // supposed to follow.
-    const { requestedCodes, coveredCodes } = conversationRef.current;
-    const nowCovered = [...new Set([...coveredCodes, ...listing.service_type])];
-    updateConversation({ coveredCodes: nowCovered });
-    const remaining = remainingCodes(requestedCodes, nowCovered);
+    // Same fake-escrow delay pattern as CheckoutScreen.authorize() — a
+    // ~2s spinner ("Securing Escrow Funds...") before the booking lands.
+    setTimeout(() => {
+      const { listing, slot, request } = pending;
 
-    // The booked card leaves the results grid and its confirmation appears as
-    // a new message at the bottom of the thread instead (see ChatThread.jsx
-    // and ListingCard.jsx) — same transitionName on both, one view transition,
-    // so the browser has a chance to morph the card into its new spot rather
-    // than a hard cut.
-    withGridTransition(() => {
-      setBookings(linkedBookings);
-      setBookingKey(null);
-      setOpenKey(null);
-      const confirmationId = makeId();
-      setMessages((current) => [
-        ...current.filter((message) => !(message.type === "booking_confirmation" && message.key === key)),
-        { id: confirmationId, type: "booking_confirmation", key, listing, transitionName: transitionNameFor(key) },
-      ]);
-
-      if (remaining.length === 0) {
-        const requestId = booking.request?.id ?? conversationRef.current.request?.id;
-        const wrapupId = makeId();
-        // Same request's wrap-up is already showing (an earlier booking in
-        // this batch already fully covered it) — drop that one instead of
-        // stacking a second, so a new booking always ends up followed by
-        // exactly one "Anything else?", not one after every card.
-        const staleId = activeWrapupRef.current?.requestId === requestId ? activeWrapupRef.current.id : null;
-        activeWrapupRef.current = { id: wrapupId, requestId };
-        setMessages((current) => [
-          ...current.filter((m) => m.id !== staleId),
-          {
-            id: wrapupId,
-            type: "bot_text",
-            text: name ? `That covers it, ${name}. Anything else?` : "That covers this request. Do you need help with anything else?",
-            actions: [{ action: "skip_remaining", label: "I'm done", requestId }],
-          },
-        ]);
-      } else {
-        appendMessage({
-          type: "bot_text",
-          text: `Still open: ${joinLabels(remaining)}. Here's who can cover it.`,
-        });
-        appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
+      // Guard the state machine rather than trusting the UI: a second slot tap on
+      // an already-booked card must not create a second booking or re-run the
+      // multi-service follow-up.
+      const { bookings: nextBookings, booking } = applyBooking(
+        bookingsRef.current,
+        key,
+        listing,
+        slot,
+        request,
+      );
+      if (!booking) {
+        setAuthorizingKey(null);
+        return;
       }
-    });
 
-    setCustomerBookings((prev) => [displayBooking, ...prev]);
-    recordCanonicalBooking(displayBooking, customerId);
-    showBookingNotice("Booked — added to your Bookings");
+      // Phase 6: one bookings list. A booking made here goes through exactly the
+      // same path as one made from Browse — the customer app's own list plus the
+      // canonical record in shared/demo-store.js — so it shows up under Bookings,
+      // in the provider's dashboard, and in the admin queue identically.
+      const displayBooking = buildDisplayBooking({
+        listing,
+        provider: listing.provider ?? { provider_id: listing.provider_id, name: "Doorstep provider" },
+        timeSlot: slot,
+        address: "1420 NW Lovejoy St, Portland, OR",
+        quantity: listing.price_unit === "hourly" ? (listing.minimum_quantity ?? 1) : 1,
+      });
+      const linkedBookings = {
+        ...nextBookings,
+        [key]: { ...nextBookings[key], displayBookingId: displayBooking.id },
+      };
+      bookingsRef.current = linkedBookings;
+
+      // Only now, once the card is genuinely booked, does the bot speak. This
+      // is computed before the view transition below, but every message-array
+      // mutation for this booking happens INSIDE that one transition, in the
+      // order written here — appendMessage/setMessages calls made after
+      // withGridTransition returns are not guaranteed to land after the ones
+      // inside it: the transition's callback is flushSync'd, but
+      // startViewTransition itself does not run that callback fully
+      // synchronously relative to the code that follows it, so anything
+      // appended out here could jump ahead of the confirmation card it was
+      // supposed to follow.
+      const { requestedCodes, coveredCodes } = conversationRef.current;
+      const nowCovered = [...new Set([...coveredCodes, ...listing.service_type])];
+      updateConversation({ coveredCodes: nowCovered });
+      const remaining = remainingCodes(requestedCodes, nowCovered);
+
+      // The booked card leaves the results grid and its confirmation appears as
+      // a new message at the bottom of the thread instead (see ChatThread.jsx
+      // and ListingCard.jsx) — same transitionName on both, one view transition,
+      // so the browser has a chance to morph the card into its new spot rather
+      // than a hard cut.
+      withGridTransition(() => {
+        setBookings(linkedBookings);
+        setBookingKey(null);
+        setOpenKey(null);
+        const confirmationId = makeId();
+        setMessages((current) => [
+          ...current.filter((message) => !(message.type === "booking_confirmation" && message.key === key)),
+          { id: confirmationId, type: "booking_confirmation", key, listing, transitionName: transitionNameFor(key) },
+        ]);
+
+        if (remaining.length === 0) {
+          const requestId = booking.request?.id ?? conversationRef.current.request?.id;
+          const wrapupId = makeId();
+          // Same request's wrap-up is already showing (an earlier booking in
+          // this batch already fully covered it) — drop that one instead of
+          // stacking a second, so a new booking always ends up followed by
+          // exactly one "Anything else?", not one after every card.
+          const staleId = activeWrapupRef.current?.requestId === requestId ? activeWrapupRef.current.id : null;
+          activeWrapupRef.current = { id: wrapupId, requestId };
+          setMessages((current) => [
+            ...current.filter((m) => m.id !== staleId),
+            {
+              id: wrapupId,
+              type: "bot_text",
+              text: name ? `That covers it, ${name}. Anything else?` : "That covers this request. Do you need help with anything else?",
+              actions: [{ action: "skip_remaining", label: "I'm done", requestId }],
+            },
+          ]);
+        } else {
+          appendMessage({
+            type: "bot_text",
+            text: `Still open: ${joinLabels(remaining)}. Here's who can cover it.`,
+          });
+          appendResults(rankFor(remaining), { skipLabel: "No thanks, I'm done" });
+        }
+      });
+
+      setCustomerBookings((prev) => [displayBooking, ...prev]);
+      recordCanonicalBooking(displayBooking, customerId);
+      showBookingNotice("Booked — added to your Bookings");
+
+      setAuthorizingKey(null);
+      const nextPending = { ...pendingBookingsRef.current };
+      delete nextPending[key];
+      pendingBookingsRef.current = nextPending;
+      setPendingBookings(nextPending);
+    }, 2000);
   }
 
   function handleAction(action, requestId = null) {
@@ -1172,6 +1215,9 @@ export default function AskScreen({ seedPrompt, onSeedConsumed }) {
     setOpenKey(null);
     setBookingKey(null);
     setReschedulingKey(null);
+    setAuthorizingKey(null);
+    pendingBookingsRef.current = {};
+    setPendingBookings({});
     bookingsRef.current = {};
     setBookings({});
     setCompletedRequestIds(new Set());
@@ -1262,9 +1308,12 @@ export default function AskScreen({ seedPrompt, onSeedConsumed }) {
         bookingKey={bookingKey}
         bookings={bookings}
         reschedulingKey={reschedulingKey}
+        authorizingKey={authorizingKey}
+        pendingBookings={pendingBookings}
         onToggleCard={handleToggleCard}
         onStartBooking={handleStartBooking}
         onChooseSlot={handleChooseSlot}
+        onAuthorize={handleAuthorize}
         onCancelBooking={handleCancelCard}
         onToggleReschedule={handleToggleReschedule}
         onChooseReschedule={handleChooseReschedule}

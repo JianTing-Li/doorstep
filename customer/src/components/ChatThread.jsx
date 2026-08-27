@@ -19,9 +19,12 @@ export default function ChatThread({
   bookingKey,
   bookings,
   reschedulingKey,
+  authorizingKey,
+  pendingBookings,
   onToggleCard,
   onStartBooking,
   onChooseSlot,
+  onAuthorize,
   onCancelBooking,
   onToggleReschedule,
   onChooseReschedule,
@@ -195,9 +198,12 @@ export default function ChatThread({
                 bookingKey={bookingKey}
                 bookings={bookings}
                 reschedulingKey={reschedulingKey}
+                authorizingKey={authorizingKey}
+                pendingBookings={pendingBookings}
                 onToggle={onToggleCard}
                 onStartBooking={onStartBooking}
                 onChooseSlot={(key, listing, slot) => onChooseSlot(key, listing, slot, message.request)}
+                onAuthorize={onAuthorize}
                 onCancelBooking={onCancelBooking}
                 onToggleReschedule={onToggleReschedule}
                 onChooseReschedule={onChooseReschedule}

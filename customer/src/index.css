@@ -790,6 +790,11 @@ a:focus-visible,
 .spin { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* The Ask flow's inline escrow step (EscrowAuthorize.jsx) reuses every class
+   above unchanged; this is only the compact-layout wrapper, in place of
+   .checkout-body's larger full-screen gap. */
+.escrow-authorize { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+
 /* ---------- Confirmation ---------- */
 
 .confirmation-screen {
