@@ -1144,14 +1144,35 @@ input[type="range"] { width: 100%; accent-color: var(--color-accent); }
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  /* Flex items default to min-width: auto, which refuses to shrink below the
+     label's own content width — exactly what let this collide with "Clear
+     this conversation?" and its two buttons at narrow widths in the first
+     place. min-width: 0 here, plus the label's own ellipsis below, is what
+     lets this shrink instead of forcing the row to wrap or overflow. */
+  min-width: 0;
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-ink-soft);
 }
-.ask-toolbar-title svg { color: var(--color-accent-text); }
-.ask-toolbar-actions { display: flex; align-items: center; gap: var(--space-2); }
+.ask-toolbar-title svg {
+  color: var(--color-accent-text);
+  flex-shrink: 0;
+}
+.ask-toolbar-title-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ask-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Never yields space to the shrinking title above — the confirm buttons
+     staying fully readable matters more than the label. */
+  flex-shrink: 0;
+}
 
 /* "Can't find it? Describe it instead" — Browse -> Ask hand-off. */
 .describe-instead {

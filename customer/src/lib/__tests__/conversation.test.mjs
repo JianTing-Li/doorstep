@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { parseJob } from "../parseJob.js";
 
 const BASE = process.env.UI_BASE ?? "http://localhost:5174";
 const APP = `${BASE.replace(/\/$/, "")}/customer/?tab=ask`;
@@ -50,7 +51,34 @@ const responses = {
 
 const browser = await chromium.launch();
 
-async function openPage(responder = () => responses.mixed) {
+// getFilters.js no longer skips the model for a confident single-service
+// message (see the gate-widening comment there) — every plain job
+// description in this suite now reaches this mock instead of resolving
+// entirely client-side. Rather than hand-write a fixed response per message,
+// this mirrors what the removed keyword shortcut used to return (the same
+// parseJob reading, "job", high confidence, no reply) so every existing test
+// that seeds a scenario with a plain description still gets the same
+// service_types/max_price/etc. out the other side. Tests that need a
+// specific shape (unclear, mixed, off-topic, a hard failure) still pass
+// their own responder and bypass this entirely.
+function defaultResponse(body) {
+  const parsed = parseJob(body?.text ?? "");
+  return {
+    intent: "job",
+    service_types: parsed.service_types,
+    max_price: parsed.max_price,
+    neighborhood: parsed.neighborhood,
+    urgency: parsed.urgency,
+    clear_filters: [],
+    confidence: "high",
+    referenced_listing_id: null,
+    clarification_question: null,
+    reply: null,
+    route: "claude",
+  };
+}
+
+async function openPage(responder = defaultResponse) {
   const page = await browser.newPage({ viewport: { width: 390, height: 820 } });
   const requests = [];
   await page.route("**/api/chat", async (route) => {
@@ -85,7 +113,11 @@ console.log("--- conversation quality regressions ---");
   await send(page, "I need a plumber for a leaking sink");
   const bots = await botTexts(page);
   check("a straightforward request gets one concise explanatory bubble", bots.length === 1 && /plumbing/.test(bots[0]) && /4 options/.test(bots[0]), bots.join(" | "));
-  check("a confident single-service request stays off the model API", requests.length === 0, `${requests.length} API call(s)`);
+  // Was "stays off the model API" — deliberately inverted when the keyword
+  // shortcut was removed (see the gate-widening comment in getFilters.js):
+  // every plain job description now reaches the model, in exchange for
+  // better accuracy and a natural reply instead of a template.
+  check("a confident single-service request now reaches the model for a natural reply", requests.length === 1, `${requests.length} API call(s)`);
   await page.close();
 }
 
@@ -94,7 +126,7 @@ console.log("--- conversation quality regressions ---");
   await send(page, "My sink is a mess");
   const bots = await botTexts(page);
   check("an ambiguous sink request asks one specific question", bots.at(-1) === responses.unclear.clarification_question, bots.at(-1));
-  check("the ambiguous single-code shortcut now escalates", requests.length === 1, `${requests.length} API call(s)`);
+  check("the ambiguous request reaches the model", requests.length === 1, `${requests.length} API call(s)`);
   await page.close();
 }
 

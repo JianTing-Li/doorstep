@@ -1082,16 +1082,20 @@ export default function AskScreen({ seedPrompt }) {
   return (
     <div className="ask-screen">
       <div className="ask-toolbar">
-        {/* Hidden rather than just shrunk while confirming: at narrow widths
-            "Describe the job," "Clear this conversation?," and two buttons
-            all fighting for one row wrapped every label to two lines and
-            collided. Nothing is lost by hiding it — the confirm text itself
-            says what screen this still is. */}
-        {!confirmingClear && (
-          <span className="ask-toolbar-title">
-            <Icon name="sparkles" size={14} /> Describe the job
-          </span>
-        )}
+        {/* Always mounted, even while confirming: .ask-toolbar uses
+            justify-content: space-between across these two children, so
+            removing this one entirely (as a prior version did, to dodge a
+            narrow-width collision with "Clear this conversation?" and its
+            two buttons) leaves only one child — and space-between pins a
+            lone child to the start of the row instead of the end, which
+            reads as the whole toolbar going blank and the confirm jumping
+            to the left. Shrinking with an ellipsis (index.css
+            .ask-toolbar-title) instead of unmounting keeps the row stable
+            in both states without reintroducing that collision. */}
+        <span className="ask-toolbar-title">
+          <Icon name="sparkles" size={14} />
+          <span className="ask-toolbar-title-label">Describe the job</span>
+        </span>
         <div className="ask-toolbar-actions">
           {hasStarted && !confirmingClear && (
             <button
