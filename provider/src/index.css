@@ -23,25 +23,6 @@
   --surface-soft: color-mix(in srgb, var(--surface-overlay) 82%, var(--color-page));
   --forest: var(--color-accent);
   --forest-light: var(--color-accent-strong);
-  /* Dashboard hero banner only — a single fixed blue hue, not themed off
-     --forest/--color-accent, so it reads consistently with the stat cards
-     and badges' blue scale (--sky/--badge-blue) rather than shifting with
-     dark/light mode the way the rest of this file's brand color does. */
-  --hero-blue-start: #85b7eb;
-  --hero-blue-end: #378add;
-  /* Fixed alongside the two above, for the same reason: --color-on-accent
-     flips between dark text (light theme) and white text (dark theme) to
-     match --color-accent's own light/dark swing, but this banner's
-     background no longer swings with it. White text (the dark-theme value)
-     against --hero-blue-start would be nearly unreadable, so this banner
-     uses its own fixed dark ink instead — coincidentally the same value
-     --color-on-accent already uses in light theme, not a new color. */
-  --hero-ink: #0b1b30;
-  /* #330f08, not a lighter coral: checked against both ends of the gradient
-     (8.22:1 / 4.82:1) — a lighter, more visibly "coral" value read fine
-     against the lighter end but dropped below WCAG AA's 4.5:1 for normal
-     text against the darker end. */
-  --hero-eyebrow: #330f08;
   --sage: #7fa68f;
   --sage-soft: color-mix(in srgb, var(--sage) 20%, var(--surface));
   --coral: #e56f5b;
@@ -266,9 +247,18 @@ summary {
   padding: 38px 42px;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  color: var(--hero-ink);
-  background: linear-gradient(135deg, var(--hero-blue-start), var(--hero-blue-end));
-  box-shadow: 0 18px 44px color-mix(in srgb, var(--hero-blue-end) 28%, transparent);
+  /* Same dark-navy-page + sky-blue-glow treatment as the Customer app's own
+     hero and the landing page's background — this app is the one place that
+     treatment had drifted to a plain light-blue panel, breaking continuity
+     with the rest of the (fully dark) unified site. --color-ink/-soft and
+     --color-accent-sky/-text below are the same reason: theme-aware tokens,
+     not fixed hex, so this flips with the shared light/dark toggle exactly
+     like Landing, Customer, and Admin already do. */
+  color: var(--color-ink);
+  background:
+    radial-gradient(120% 90% at 85% -10%, color-mix(in srgb, var(--color-accent-sky) 30%, transparent), transparent 62%),
+    linear-gradient(168deg, var(--color-page) 0%, var(--color-page-deep) 100%);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--color-page-deep) 45%, transparent);
 }
 
 .dashboard-header::before,
@@ -279,16 +269,15 @@ summary {
   border-radius: 50%;
 }
 
-/* With the 🏠✓ emoji removed from this corner, this ring and the filled
-   circle below are the only decorative shapes left there — bumped from 5.5%
-   to a still-subtle 14% so they read as an intentional detail against the
-   lighter background instead of nearly disappearing into it. */
+/* The only decorative shapes in this corner since the 🏠✓ emoji was removed
+   — a plain white-tinted ring reads as a highlight against the dark
+   background, same idea as the sky-blue glow above. */
 .dashboard-header::before {
   width: 270px;
   height: 270px;
   top: -145px;
   right: 70px;
-  border: 45px solid color-mix(in srgb, var(--provider-white) 14%, transparent);
+  border: 45px solid color-mix(in srgb, var(--provider-white) 8%, transparent);
 }
 
 .dashboard-header::after {
@@ -313,11 +302,9 @@ summary {
 }
 
 .dashboard-header .eyebrow {
-  /* Not var(--coral)/--coral-dark: both are tuned to sit as a light,
-     white-mixed tint on a dark background, and --coral-dark specifically
-     flips lighter in dark theme — the opposite of what a fixed light
-     background needs. --hero-eyebrow is fixed dark regardless of theme. */
-  color: var(--hero-eyebrow);
+  /* Blue, not this app's usual coral eyebrow color — matching the Customer
+     hero's own eyebrow-pill, which uses the same accent-text token. */
+  color: var(--color-accent-text);
 }
 
 .dashboard-header h1 {
@@ -335,7 +322,7 @@ summary {
 }
 
 .dashboard-header .subtitle {
-  color: color-mix(in srgb, var(--hero-ink) 80%, transparent);
+  color: var(--color-ink-soft);
 }
 
 .trust-row {
@@ -356,13 +343,11 @@ summary {
 }
 
 .dashboard-header .trust-row span {
-  /* Same pill treatment, inverted: white is lighter than this background
-     now, not darker, so a soft white fill reads as a highlight instead of
-     the dark-ink text and border needing to fight the base --trust-row span
-     rule's light-on-dark assumption. */
-  border-color: color-mix(in srgb, var(--hero-ink) 18%, transparent);
-  color: var(--hero-ink);
-  background: color-mix(in srgb, var(--provider-white) 55%, transparent);
+  /* Sky-blue accent chips, not plain white-tinted pills — this is the one
+     piece of hero content the task calls out by name. */
+  border-color: color-mix(in srgb, var(--color-accent-sky) 35%, transparent);
+  color: var(--color-accent-text);
+  background: color-mix(in srgb, var(--color-accent-sky) 16%, transparent);
 }
 
 .hero-heart {
@@ -391,12 +376,6 @@ summary {
   color: color-mix(in srgb, var(--provider-white) 80%, transparent);
   font-size: var(--text-2xs);
   background: color-mix(in srgb, var(--provider-white) 8%, transparent);
-}
-
-.dashboard-header .reference-date {
-  border-color: color-mix(in srgb, var(--hero-ink) 18%, transparent);
-  color: color-mix(in srgb, var(--hero-ink) 85%, transparent);
-  background: color-mix(in srgb, var(--provider-white) 55%, transparent);
 }
 
 /* ---------- Stats ---------- */
@@ -1376,15 +1355,21 @@ summary {
 }
 
 .incoming-section {
+  /* Was color-mix(..., var(--provider-white) 94%, ...) — --provider-white is
+     a literal #ffffff, not a theme token, so this rendered near-white
+     regardless of theme. var(--surface) is the same theme-aware base
+     .form-panel/.listings-panel already use; the amber wash on top is
+     unchanged, same idea as their own sage/lavender tints. */
   background:
     linear-gradient(130deg, color-mix(in srgb, var(--provider-amber-wash) 48%, transparent), transparent 34%),
-    color-mix(in srgb, var(--provider-white) 94%, transparent);
+    var(--surface);
 }
 
 .past-section {
+  /* Same fix as .incoming-section above. */
   background:
     linear-gradient(130deg, color-mix(in srgb, var(--sage-soft) 48%, transparent), transparent 34%),
-    color-mix(in srgb, var(--provider-white) 94%, transparent);
+    var(--surface);
 }
 
 .bookings-grid {
