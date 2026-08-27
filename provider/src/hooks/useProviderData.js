@@ -36,16 +36,14 @@ import {
   toProviderSummary,
 } from "../data/selectors";
 
-/** Product A has no auth; this constant stands in for the logged-in provider. */
-const ACTIVE_PROVIDER_ID = "prv_001";
-
-export default function useProviderData() {
+/** Product A has no auth; this argument stands in for the logged-in provider. */
+export default function useProviderData(providerId = "prv_001") {
   const [listings, setListings] = useState(() => getListings());
   const [bookings, setBookings] = useState(() => getBookings());
 
   const provider = useMemo(
-    () => getProviders().find((p) => p.provider_id === ACTIVE_PROVIDER_ID) ?? null,
-    []
+    () => getProviders().find((p) => p.provider_id === providerId) ?? null,
+    [providerId]
   );
 
   const serviceTypeLabelByCode = useMemo(
@@ -54,8 +52,8 @@ export default function useProviderData() {
   );
 
   const providerListings = useMemo(
-    () => listings.filter((l) => l.provider_id === ACTIVE_PROVIDER_ID),
-    [listings]
+    () => listings.filter((l) => l.provider_id === providerId),
+    [listings, providerId]
   );
 
   const listingViews = useMemo(
@@ -75,8 +73,8 @@ export default function useProviderData() {
   );
 
   const providerBookings = useMemo(
-    () => bookings.filter((b) => b.provider_id === ACTIVE_PROVIDER_ID),
-    [bookings]
+    () => bookings.filter((b) => b.provider_id === providerId),
+    [bookings, providerId]
   );
 
   const bookingViews = useMemo(
@@ -123,7 +121,7 @@ export default function useProviderData() {
   function createListing(formListing) {
     const newListing = {
       listing_id: nextId("lst"),
-      provider_id: ACTIVE_PROVIDER_ID,
+      provider_id: providerId,
       title: formListing.listing_title.trim(),
       listing_description: formListing.listing_description.trim(),
       service_type: [formListing.service_type],
@@ -156,6 +154,7 @@ export default function useProviderData() {
 
   return {
     provider,
+    providerId,
     reference_date: getMeta().reference_date,
     provider_listings: listingViews,
     provider_listings_summary: listingsSummary,

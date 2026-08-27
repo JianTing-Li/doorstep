@@ -11,10 +11,15 @@
  * read-only mock-data files. The same hook can be shared with Products B,
  * C, and D — everything it returns is snake_case and schema-aligned.
  */
+import { useState } from "react";
 import useProviderData from "../hooks/useProviderData";
+import { getProviders } from "../data/loadData";
 import { formatMoney } from "../utils/format";
 import BookingCard from "./BookingCard";
 import ListingForm from "./ListingForm";
+import PersonaModal from "./PersonaModal";
+
+const ACTIVE_PROVIDER_KEY = "doorstep_active_provider";
 
 const LISTING_STATUS_LABELS = {
   draft: "draft",
@@ -25,6 +30,11 @@ const LISTING_STATUS_LABELS = {
 };
 
 export default function ProviderDashboard() {
+  const [providerId, setProviderId] = useState(
+    () => localStorage.getItem(ACTIVE_PROVIDER_KEY) || "prv_001"
+  );
+  const [personaModalOpen, setPersonaModalOpen] = useState(false);
+
   const {
     provider,
     reference_date,
@@ -35,11 +45,17 @@ export default function ProviderDashboard() {
     bookings_counts,
     createListing,
     updateBookingStatus,
-  } = useProviderData();
+  } = useProviderData(providerId);
 
   const activeCount = provider_listings.filter(
     (l) => l.listing_status === "active"
   ).length;
+
+  function switchProvider(id) {
+    setProviderId(id);
+    localStorage.setItem(ACTIVE_PROVIDER_KEY, id);
+    setPersonaModalOpen(false);
+  }
 
   return (
     <div className="dashboard">
@@ -50,7 +66,7 @@ export default function ProviderDashboard() {
           <a href="#my-listings">My listings</a>
           <a href="#incoming-bookings">Bookings</a>
         </div>
-        <div className="provider-chip">
+        <button type="button" className="provider-chip" onClick={() => setPersonaModalOpen(true)}>
           <span className="provider-avatar" aria-hidden="true">
             {(provider?.name ?? "P").charAt(0)}
           </span>
@@ -58,8 +74,17 @@ export default function ProviderDashboard() {
             <strong>{provider?.name ?? "Provider"}</strong>
             <small>Trusted provider</small>
           </span>
-        </div>
+        </button>
       </nav>
+
+      {personaModalOpen && (
+        <PersonaModal
+          providers={getProviders()}
+          activeProviderId={providerId}
+          onSelect={switchProvider}
+          onClose={() => setPersonaModalOpen(false)}
+        />
+      )}
 
       <header className="dashboard-header" id="dashboard">
         <div className="welcome-copy">
