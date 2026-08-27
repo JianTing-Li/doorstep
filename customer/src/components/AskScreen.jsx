@@ -485,7 +485,11 @@ export default function AskScreen({ seedPrompt }) {
         if (alternatives.length > 0) {
           appendMessage({
             type: "bot_text",
-            text: `${acknowledgement ? `${acknowledgement} ` : ""}I kept ${searchUnderstanding(nextFilters)}. No matching provider has that timing, so here are the same services with later availability.`,
+            text: `${acknowledgement ? `${acknowledgement} ` : ""}${pick([
+              `I kept ${searchUnderstanding(nextFilters)}. No matching provider has that timing, so here are the same services with later availability.`,
+              `Nobody matching ${searchUnderstanding(nextFilters)} is free at that time, so here's the same search with a later opening instead.`,
+              `I kept ${searchUnderstanding(nextFilters)}, just without that timing — nothing's open then, so here's what's available later.`,
+            ])}`,
           });
           appendResults(enrichResults(alternatives, relaxed, requestText));
           return;
@@ -497,7 +501,11 @@ export default function AskScreen({ seedPrompt }) {
         if (alternatives.length > 0) {
           appendMessage({
             type: "bot_text",
-            text: `${acknowledgement ? `${acknowledgement} ` : ""}I kept ${joinLabels(requested).toLowerCase()} in the search, but nothing is available under $${nextFilters.max_price}. These are the closest relevant options over budget.`,
+            text: `${acknowledgement ? `${acknowledgement} ` : ""}${pick([
+              `I kept ${joinLabels(requested).toLowerCase()} in the search, but nothing is available under $${nextFilters.max_price}. These are the closest relevant options over budget.`,
+              `Nothing in ${joinLabels(requested).toLowerCase()} is available under $${nextFilters.max_price}, so here are the closest options over budget.`,
+              `I kept ${joinLabels(requested).toLowerCase()} in the search, but nothing comes in under $${nextFilters.max_price} — these are the closest options over budget.`,
+            ])}`,
           });
           appendResults(enrichResults(alternatives, relaxed, requestText));
           return;
@@ -506,8 +514,16 @@ export default function AskScreen({ seedPrompt }) {
       appendMessage({
         type: "bot_text",
         text: `${acknowledgement ? `${acknowledgement} ` : ""}${nextFilters.neighborhood
-          ? `No matching provider currently serves ${nextFilters.neighborhood}. Try another job area or remove that filter.`
-          : "Doorstep doesn't currently have a provider for that request. Try adding a little more detail or changing a filter."}`,
+          ? pick([
+              `No matching provider currently serves ${nextFilters.neighborhood}. Try another job area or remove that filter.`,
+              `Nobody covers ${nextFilters.neighborhood} for this yet. Try a different area, or drop that filter to see everyone.`,
+              `${nextFilters.neighborhood} isn't covered for this right now. Try another neighborhood or clear that filter.`,
+            ])
+          : pick([
+              "Doorstep doesn't currently have a provider for that request. Try adding a little more detail or changing a filter.",
+              "Nothing matches that request right now. A bit more detail, or a different filter, might turn something up.",
+              "I couldn't find a provider for that one. Try describing it a little differently or adjusting a filter.",
+            ])}`,
       });
       return;
     }
