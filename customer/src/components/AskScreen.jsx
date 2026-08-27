@@ -569,9 +569,14 @@ export default function AskScreen({ seedPrompt }) {
       const { offTopicIndex } = conversationRef.current;
       updateConversation({ offTopicIndex: offTopicIndex + 1 });
       setIsTyping(false);
+      // off_topic reaches the model (it's not one of the LOCAL_INTENT_PATTERNS
+      // shortcuts in intents.js — there's no reliable keyword signature for
+      // "not a job"), so it's worth a model-authored redirect the same way
+      // job/change_filters get one. OFF_TOPIC_REPLIES stays as the fallback
+      // for the keyword/parser paths, which never get a reply.
       appendMessage({
         type: "bot_text",
-        text: OFF_TOPIC_REPLIES[offTopicIndex % OFF_TOPIC_REPLIES.length],
+        text: result.reply || OFF_TOPIC_REPLIES[offTopicIndex % OFF_TOPIC_REPLIES.length],
         showExamples: true,
       });
       return;
