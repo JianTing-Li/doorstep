@@ -188,7 +188,11 @@ function Shell() {
       <main className="app-main">
         {tab === "browse" && renderBrowse()}
         {tab === "ask" && (
-          <AskScreen seedPrompt={askSeed} />
+          // onSeedConsumed clears askSeed the instant Ask reads it, so
+          // leaving and re-entering this tab doesn't find the same leftover
+          // value and re-send it — askSeed used to stay set indefinitely
+          // after a Browse hand-off, which is what caused that duplicate.
+          <AskScreen seedPrompt={askSeed} onSeedConsumed={() => setAskSeed(null)} />
         )}
         {tab === "bookings" && <BookingsScreen />}
         {tab === "profile" && (

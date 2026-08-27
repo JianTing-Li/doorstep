@@ -40,6 +40,16 @@ const RESULTS_DISPLAY_CAP = 5;
 const MAX_INPUT_LENGTH = 500;
 const MAX_UNCLEAR_TURNS = 2;
 
+// Module scope, not a ref: AskScreen unmounts completely on tab switch (App.jsx
+// only renders it while tab === "ask"), so a ref guarding against re-sending
+// the Browse -> Ask seed prompt (see the effect near the bottom of the
+// component) is recreated fresh — and defaults back to "not yet sent" — on
+// every single remount. This is a second, defensive line behind
+// onSeedConsumed actually clearing the seed at its source (App.jsx's askSeed
+// state): even if a remount raced ahead of that clear propagating, this still
+// remembers the exact value already sent for the life of the page.
+let lastSentSeedPrompt = null;
+
 // Checked only while a clarification is pending (see
 // resolvePendingClarificationCancel) — "cancel" and "never mind" already mean
 // something else in intents.js's LOCAL_INTENT_PATTERNS (cancel_booking), so
@@ -288,7 +298,7 @@ function askStorageKey(customerId, name) {
   return `doorstep_ask_${name}_${customerId}`;
 }
 
-export default function AskScreen({ seedPrompt }) {
+export default function AskScreen({ seedPrompt, onSeedConsumed }) {
   const { customerId, customer, bookings: customerBookings, setBookings: setCustomerBookings } = useApp();
   // usePersonaState.js falls back to a customer object literally named
   // "Guest" when a persona has no record — using that in a greeting would
@@ -1172,10 +1182,25 @@ export default function AskScreen({ seedPrompt }) {
 
   // Arriving from Browse with filters set: open the conversation already
   // holding what the customer had narrowed to, rather than a blank prompt.
+  //
+  // Bug this guards against: seedPrompt is App.jsx's askSeed state, set once
+  // by Browse's hand-off and previously never cleared. seededRef alone only
+  // stopped a duplicate send while this exact component instance stayed
+  // mounted — it says nothing about the next mount. Since AskScreen unmounts
+  // completely on tab switch, leaving and re-entering Ask created a brand
+  // new seededRef (starting at false again) while seedPrompt was still the
+  // same leftover value, so it re-sent every time. onSeedConsumed clears
+  // askSeed at the source the moment it's read here — before handleUserText
+  // even resolves, not after — so a later remount sees seedPrompt as null
+  // and skips the `!seedPrompt` check below on its own. lastSentSeedPrompt
+  // (module scope, see above) is the second, defensive check for the narrow
+  // window before that clear has propagated.
   const seededRef = useRef(false);
   useEffect(() => {
-    if (seededRef.current || !seedPrompt) return;
+    if (seededRef.current || !seedPrompt || seedPrompt === lastSentSeedPrompt) return;
     seededRef.current = true;
+    lastSentSeedPrompt = seedPrompt;
+    onSeedConsumed?.();
     handleUserText(seedPrompt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seedPrompt]);
