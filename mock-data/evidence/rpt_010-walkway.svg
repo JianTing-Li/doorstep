@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320">
+  <rect width="480" height="320" fill="#e9ebee"/>
+  <rect x="16" y="16" width="448" height="288" rx="10" fill="#f6f7f9" stroke="#d3d7dd" stroke-width="1.5"/>
+  <g transform="translate(200,110)" fill="none" stroke="#9aa2ad" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="0" y="10" width="80" height="56" rx="8"/>
+    <path d="M24 10 L32 -6 H48 L56 10"/>
+    <circle cx="40" cy="38" r="16"/>
+  </g>
+  <text x="240" y="220" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#4b5158" text-anchor="middle">Photo evidence (placeholder)</text>
+  <text x="240" y="246" font-family="Inter, sans-serif" font-size="13" fill="#767d86" text-anchor="middle">Toilet left on the front walkway overnight</text>
+</svg>
