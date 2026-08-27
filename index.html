@@ -79,14 +79,18 @@
       .lockup-mark {
         display: grid;
         place-items: center;
-        width: 46px;
-        height: 46px;
+        /* Was 46px/26px — read as undersized against the wordmark and the
+           whitespace around it. Bumped proportionally (same ~0.56 glyph-to-
+           container ratio), not redesigned: same rounded-square container,
+           same glyph, same fill. */
+        width: 54px;
+        height: 54px;
         border-radius: var(--radius-md);
         background: var(--color-accent);
         color: var(--color-on-accent);
         flex-shrink: 0;
       }
-      .lockup-mark svg { width: 26px; height: 26px; }
+      .lockup-mark svg { width: 30px; height: 30px; }
 
       /* Same face, weight and colour as shared/header.js renders in all three
          apps — the wordmark is one thing everywhere. */
@@ -277,6 +281,14 @@
           grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
           align-items: start;
         }
+        /* .entrances stays pinned to the top of the row (align-items: start
+           above) — the card stack is taller than the masthead, and that's
+           the intended hierarchy. The masthead was top-aligned along with
+           it, which is what left the dead space below the disclaimer pill:
+           centering just this column within that same row height reads as
+           vertically centered on the page, since the row spans nearly the
+           full viewport (body already centers .page as a whole). */
+        .masthead { align-self: center; }
         .side-by-side { grid-template-columns: 1fr 1fr; }
       }
 
