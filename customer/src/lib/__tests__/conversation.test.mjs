@@ -1,0 +1,347 @@
+import { chromium } from "playwright";
+import { parseJob } from "../parseJob.js";
+import { EXAMPLE_JOBS } from "../../data/exampleJobs.js";
+
+const BASE = process.env.UI_BASE ?? "http://localhost:5174";
+const APP = `${BASE.replace(/\/$/, "")}/customer/?tab=ask`;
+const results = [];
+
+function check(label, pass, detail = "") {
+  results.push({ label, pass: Boolean(pass), detail });
+  console.log(`  ${pass ? "PASS" : "FAIL"}  ${label}${detail ? `\n          ${detail}` : ""}`);
+}
+
+const responses = {
+  mixed: {
+    intent: "job",
+    service_types: ["handyman_general", "electrical"],
+    max_price: null,
+    neighborhood: null,
+    urgency: null,
+    clear_filters: [],
+    confidence: "high",
+    referenced_listing_id: null,
+    clarification_question: null,
+    route: "gemini",
+  },
+  unclear: {
+    intent: "unclear",
+    service_types: ["cleaning_standard", "plumbing"],
+    max_price: null,
+    neighborhood: null,
+    urgency: null,
+    clear_filters: [],
+    confidence: "low",
+    referenced_listing_id: null,
+    clarification_question: "Does the sink need cleaning or a plumbing repair?",
+    route: "gemini",
+  },
+  offTopic: {
+    intent: "off_topic",
+    service_types: [],
+    max_price: null,
+    neighborhood: null,
+    urgency: null,
+    clear_filters: [],
+    confidence: "high",
+    referenced_listing_id: null,
+    clarification_question: null,
+    route: "gemini",
+  },
+};
+
+const browser = await chromium.launch();
+
+// getFilters.js no longer skips the model for a confident single-service
+// message (see the gate-widening comment there) — every plain job
+// description in this suite now reaches this mock instead of resolving
+// entirely client-side. Rather than hand-write a fixed response per message,
+// this mirrors what the removed keyword shortcut used to return (the same
+// parseJob reading, "job", high confidence, no reply) so every existing test
+// that seeds a scenario with a plain description still gets the same
+// service_types/max_price/etc. out the other side. Tests that need a
+// specific shape (unclear, mixed, off-topic, a hard failure) still pass
+// their own responder and bypass this entirely.
+function defaultResponse(body) {
+  const parsed = parseJob(body?.text ?? "");
+  return {
+    intent: "job",
+    service_types: parsed.service_types,
+    max_price: parsed.max_price,
+    neighborhood: parsed.neighborhood,
+    urgency: parsed.urgency,
+    clear_filters: [],
+    confidence: "high",
+    referenced_listing_id: null,
+    clarification_question: null,
+    reply: null,
+    route: "claude",
+  };
+}
+
+async function openPage(responder = defaultResponse) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 820 } });
+  const requests = [];
+  await page.route("**/api/chat", async (route) => {
+    const body = JSON.parse(route.request().postData() || "{}");
+    requests.push(body);
+    const response = responder(body);
+    if (response === "fail") {
+      await route.fulfill({ status: 502, contentType: "application/json", body: '{"error":"Extraction failed"}' });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
+  });
+  await page.goto(APP);
+  await page.waitForSelector(".example-chip", { timeout: 15000 });
+  return { page, requests };
+}
+
+async function send(page, text) {
+  await page.locator(".chat-input-bar input").fill(text);
+  await page.locator(".chat-input-bar button").click();
+  await page.waitForTimeout(700);
+}
+
+async function botTexts(page) {
+  return page.locator(".message-bubble.bot").allTextContents();
+}
+
+console.log("--- conversation quality regressions ---");
+
+{
+  const { page, requests } = await openPage();
+  await send(page, "I need a plumber for a leaking sink");
+  const bots = await botTexts(page);
+  check("a straightforward request gets one concise explanatory bubble", bots.length === 1 && /plumbing/.test(bots[0]) && /4 options/.test(bots[0]), bots.join(" | "));
+  // Was "stays off the model API" — deliberately inverted when the keyword
+  // shortcut was removed (see the gate-widening comment in getFilters.js):
+  // every plain job description now reaches the model, in exchange for
+  // better accuracy and a natural reply instead of a template.
+  check("a confident single-service request now reaches the model for a natural reply", requests.length === 1, `${requests.length} API call(s)`);
+  await page.close();
+}
+
+{
+  const { page, requests } = await openPage(() => responses.unclear);
+  await send(page, "My sink is a mess");
+  const bots = await botTexts(page);
+  check("an ambiguous sink request asks one specific question", bots.at(-1) === responses.unclear.clarification_question, bots.at(-1));
+  check("the ambiguous request reaches the model", requests.length === 1, `${requests.length} API call(s)`);
+  await page.close();
+}
+
+{
+  const { page } = await openPage(() => responses.mixed);
+  await send(page, "Install a ceiling fan where the old light was");
+  const bots = await botTexts(page);
+  check("mixed-service results distinguish complete from partial matches", /complete match/.test(bots.at(-1)) && /partial option/.test(bots.at(-1)), bots.at(-1));
+  check("mixed-service acknowledgement and result count share one bubble", bots.length === 1, `${bots.length} bot bubble(s)`);
+  await page.close();
+}
+
+{
+  const { page } = await openPage(() => responses.offTopic);
+  await send(page, "What is the capital of France?");
+  const bots = await botTexts(page);
+  check("off-topic copy redirects without claiming a human capability", /jobs around the home/.test(bots.at(-1)), bots.at(-1));
+  await page.close();
+}
+
+{
+  const { page } = await openPage();
+  await send(page, "I need a plumber for a leaking sink");
+  const before = (await botTexts(page)).length;
+  await send(page, "Actually make it under $100");
+  const correction = (await botTexts(page)).slice(before);
+  check("a no-result budget correction remains applied and explains the conflict", correction.length === 1 && /under \$100/.test(correction[0]) && /over budget/.test(correction[0]), correction.join(" | "));
+  check("the correction does not emit a second request-summary message", (await page.locator(".request-summary").count()) === 0, `${await page.locator(".request-summary").count()} summaries`);
+  await page.close();
+}
+
+{
+  const { page } = await openPage();
+  await send(page, "I need help with a leaking sink under $150");
+  await send(page, "Remove the budget");
+  const bots = await botTexts(page);
+  check("a customer can explicitly clear a filter", /without a budget limit/.test(bots.at(-1)), bots.at(-1));
+  await page.close();
+}
+
+{
+  const { page } = await openPage();
+  await send(page, "I need a plumber for a leaking sink");
+  await send(page, "Which one is cheaper?");
+  const bots = await botTexts(page);
+  check("comparison answers the question before listing supporting prices", /lowest-priced option/.test(bots.at(-1)), bots.at(-1));
+  await page.close();
+}
+
+{
+  const { page } = await openPage();
+  await send(page, "I need a plumber for a leaking sink");
+  await send(page, "What's included in that price?");
+  const bots = await botTexts(page);
+  check("a listing follow-up resolves against visible state", /flat price for the job/.test(bots.at(-1)), bots.at(-1));
+  await page.close();
+}
+
+{
+  const { page } = await openPage();
+  await send(page, "show me all bookings");
+  const bots = await botTexts(page);
+  check("an empty booking list gives a direct session-aware answer", bots.at(-1) === "You haven't booked anything yet this session.", bots.at(-1));
+  await send(page, "cancel the ceiling fan one");
+  const afterCancel = await botTexts(page);
+  check("cancelling with no bookings does not invent state", afterCancel.at(-1) === "There's nothing booked to cancel yet.", afterCancel.at(-1));
+  await page.close();
+}
+
+{
+  const { page, requests } = await openPage(() => "fail");
+  await send(page, "I need a plumber for a leaking sink");
+  await send(page, "Please keep it below $100");
+  const bots = await botTexts(page);
+  check("both-model failure preserves the active service during a correction", /plumbing/.test(bots.at(-1)) && /under \$100/.test(bots.at(-1)), bots.at(-1));
+  check("fallback copy is transparent about unverified wording", /couldn’t verify/.test(bots.at(-1)), bots.at(-1));
+  check("state is sent with the correction request", requests.at(-1)?.context?.active_request?.serviceTypes?.includes("plumbing"), JSON.stringify(requests.at(-1)?.context?.active_request));
+  await page.close();
+}
+
+console.log("\n--- suggestion chips ---");
+
+{
+  const { page } = await openPage(() => responses.offTopic);
+  const emptyStateChips = await page.locator(".example-chip").count();
+  check("chips show in the empty state before any message is sent", emptyStateChips > 0, `${emptyStateChips} chips`);
+
+  await send(page, "What is the capital of France?");
+  const chipsAfterFirstTyped = await page.locator(".example-chip").count();
+  check("chips are suppressed starting with the very first typed message", chipsAfterFirstTyped === 0, `${chipsAfterFirstTyped} chips`);
+
+  await send(page, "What is the capital of France?");
+  const chipsAfterSecond = await page.locator(".example-chip").count();
+  check("chips remain suppressed on every later turn too", chipsAfterSecond === 0, `${chipsAfterSecond} chips`);
+  await page.close();
+}
+
+console.log("\n--- clarification state ---");
+
+{
+  const { page } = await openPage(() => responses.unclear);
+  await send(page, "My sink is a mess");
+  const afterAsk = await botTexts(page);
+  check("an ambiguous request is asked about", afterAsk.at(-1) === responses.unclear.clarification_question, afterAsk.at(-1));
+
+  await send(page, "never mind");
+  const afterCancel = await botTexts(page);
+  check(
+    "opting out of a pending clarification clears it instead of re-asking",
+    afterCancel.at(-1) === "No problem — let me know if you need anything else.",
+    afterCancel.at(-1),
+  );
+  await page.close();
+}
+
+{
+  const { page } = await openPage(() => responses.unclear);
+  await send(page, "My sink is a mess");
+  await send(page, "cancel");
+  const afterCancel = await botTexts(page);
+  check(
+    `"cancel" opts out of a clarification rather than hitting the cancel_booking path`,
+    afterCancel.at(-1) === "No problem — let me know if you need anything else.",
+    afterCancel.at(-1),
+  );
+  await page.close();
+}
+
+{
+  // A confident, unrelated job landing while a clarification is still
+  // unanswered must supersede it entirely — the bug this guards against was
+  // a *later* unrelated turn silently seeing pending_clarification context
+  // for a request the customer had already moved on from.
+  const outletResponse = {
+    intent: "job",
+    service_types: ["electrical"],
+    max_price: null,
+    neighborhood: null,
+    urgency: null,
+    clear_filters: [],
+    confidence: "high",
+    referenced_listing_id: null,
+    clarification_question: null,
+    reply: null,
+    route: "claude",
+  };
+  const { page, requests } = await openPage((body) =>
+    /sink/i.test(body.text) ? responses.unclear : outletResponse,
+  );
+  await send(page, "My sink is a mess");
+  await send(page, "actually, I need an outlet installed");
+  await send(page, "what else can you help with");
+
+  const lastContext = requests.at(-1)?.context;
+  check(
+    "a confident unrelated job clears stale pending_clarification for later turns",
+    lastContext?.pending_clarification == null,
+    JSON.stringify(lastContext?.pending_clarification),
+  );
+  await page.close();
+}
+
+console.log("\n--- show me examples ---");
+
+{
+  const { page, requests } = await openPage(() => responses.offTopic);
+  const exampleTexts = EXAMPLE_JOBS.map(({ text }) => text);
+
+  // Suppress chips first, same as any real session that reaches for this —
+  // the whole point of this intent is answering a request chips can no
+  // longer serve because they're gone from the screen.
+  await send(page, "what's the weather");
+  check("chips are suppressed after typing, before asking for examples", (await page.locator(".example-chip").count()) === 0, "");
+
+  const requestsBeforeExamples = requests.length;
+  await send(page, "show me some examples");
+  let bots = await botTexts(page);
+  check(
+    "an explicit example request answers with the real sample job descriptions",
+    exampleTexts.every((text) => bots.at(-1).includes(text)),
+    bots.at(-1),
+  );
+  check(
+    "the request is resolved locally, spending no model call",
+    requests.length === requestsBeforeExamples,
+    `${requests.length - requestsBeforeExamples} new call(s)`,
+  );
+  check(
+    "the answer is plain text, not a returned chip row",
+    (await page.locator(".example-chip").count()) === 0,
+    `${await page.locator(".example-chip").count()} chips`,
+  );
+
+  await send(page, "what can you help with");
+  bots = await botTexts(page);
+  check(
+    "asking again later in the same session answers the same way, not once-only",
+    exampleTexts.every((text) => bots.at(-1).includes(text)),
+    bots.at(-1),
+  );
+
+  // Greeting is one of the intents that normally returns showExamples: true —
+  // the real check that answering "show me examples" never re-enables the
+  // standing chip fixture the prior fix suppressed.
+  await send(page, "hey");
+  check(
+    "the examples answer does not re-enable persistent chip rendering on a later turn",
+    (await page.locator(".example-chip").count()) === 0,
+    `${await page.locator(".example-chip").count()} chips`,
+  );
+  await page.close();
+}
+
+await browser.close();
+const passed = results.filter((result) => result.pass).length;
+console.log(`\nconversation: ${passed}/${results.length}`);
+if (passed !== results.length) process.exitCode = 1;

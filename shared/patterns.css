@@ -1,0 +1,150 @@
+/* Doorstep shared interaction patterns — Phase 2.
+ *
+ * Loading, empty, and error states; toast/inline feedback; form validation
+ * display; destructive-action confirmation. Defined once here so a later
+ * phase reaches for one of these classes instead of re-inventing the
+ * pattern per product. Consumes shared/tokens.css; defines no color, size,
+ * or spacing value of its own.
+ *
+ * Imported by Customer, Provider, and Admin. Products combine these shared
+ * structural classes with composition-specific classes where needed.
+ */
+
+/* ---- Loading: a skeleton block, not a spinner ---- */
+.ds-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-fill);
+  border-radius: var(--radius-sm);
+}
+.ds-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--glass-fill-strong), transparent);
+  animation: ds-skeleton-sweep 1.4s ease-in-out infinite;
+}
+@keyframes ds-skeleton-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ---- Empty state: icon, one line, optional action ---- */
+.ds-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-9) var(--space-4);
+  text-align: center;
+  color: var(--color-ink-soft);
+}
+.ds-empty-state svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.6;
+}
+.ds-empty-state strong {
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+.ds-empty-state p {
+  margin: 0;
+  font-size: var(--text-sm);
+  max-width: 40ch;
+}
+
+/* ---- Error state: same shell as empty, danger-toned icon ---- */
+.ds-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+}
+.ds-error-state svg {
+  width: 28px;
+  height: 28px;
+  color: var(--color-danger);
+}
+.ds-error-state strong {
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+.ds-error-state p {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* ---- Toast: bottom-anchored, auto-dismiss, one at a time ---- */
+.ds-toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-6);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: var(--glass-fill-strong);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  box-shadow: var(--elevation-shadow-lift);
+  -webkit-backdrop-filter: var(--elevation-blur);
+  backdrop-filter: var(--elevation-blur);
+  z-index: 2000;
+}
+.ds-toast svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-accent-text);
+}
+
+/* ---- Inline field validation ---- */
+.ds-field-error {
+  margin-top: var(--space-1);
+  color: var(--color-danger);
+  font-size: var(--text-xs);
+}
+.ds-field-invalid {
+  border-color: var(--color-danger) !important;
+}
+
+/* ---- Destructive-action confirmation ----
+ * The pattern is an inline two-button swap, not a native confirm() dialog —
+ * this is Product C's existing "Clear chat?" treatment (HeaderActions.jsx),
+ * now the standard rather than something each product reinvents. */
+.ds-confirm-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-confirm-inline-label {
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+.ds-confirm-inline button {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.ds-confirm-inline-danger {
+  background: var(--color-danger);
+  color: var(--color-on-danger);
+}
+.ds-confirm-inline-cancel {
+  background: transparent;
+  border: 1px solid var(--hairline) !important;
+  color: var(--color-ink);
+}

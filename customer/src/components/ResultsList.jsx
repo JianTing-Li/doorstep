@@ -1,0 +1,85 @@
+import ListingCard from "./ListingCard.jsx";
+import FilterChips from "./FilterChips.jsx";
+import { transitionNameFor } from "../lib/viewTransition.js";
+
+export default function ResultsList({
+  messageId,
+  listings,
+  openKey,
+  bookingKey,
+  bookings,
+  reschedulingKey,
+  authorizingKey,
+  pendingBookings,
+  onToggle,
+  onStartBooking,
+  onChooseSlot,
+  onAuthorize,
+  onCancelBooking,
+  onToggleReschedule,
+  onChooseReschedule,
+  skipLabel,
+  onSkip,
+  requestCompleted,
+  onReopen,
+  filters,
+  onRemoveFilter,
+}) {
+  if (listings.length === 0) return null;
+
+  function stateFor(key) {
+    if (bookings[key]) return "booked";
+    if (authorizingKey === key || pendingBookings[key]) return "authorizing";
+    if (bookingKey === key) return "booking";
+    if (openKey === key) return "expanded";
+    return "collapsed";
+  }
+
+  return (
+    <div className="message-row from-bot message-enter">
+      <div className="results-block">
+        {/* Was a floating chip pinned to the composer, unattached to anything
+            and partially covering whichever card happened to sit under it —
+            inline here instead, next to the results it actually describes. */}
+        {filters && <FilterChips filters={filters} onRemove={onRemoveFilter} />}
+        <div className="results-list">
+        {listings.map((listing) => {
+          const key = `${messageId}:${listing.listing_id}`;
+          return (
+            <ListingCard
+              key={listing.listing_id}
+              variant="ask"
+              transitionName={transitionNameFor(key)}
+              listing={listing}
+              state={stateFor(key)}
+              booking={bookings[key]}
+              pendingBooking={pendingBookings[key]}
+              isAuthorizing={authorizingKey === key}
+              isRescheduling={reschedulingKey === key}
+              onToggle={() => onToggle(key)}
+              onStartBooking={() => onStartBooking(key)}
+              onChooseSlot={(_, slot) => onChooseSlot(key, listing, slot)}
+              onAuthorize={() => onAuthorize(key)}
+              onCancelBooking={() => onCancelBooking(key)}
+              onToggleReschedule={() => onToggleReschedule(key)}
+              onChooseReschedule={(_, slot) => onChooseReschedule(key, listing, slot)}
+              disabled={requestCompleted && !bookings[key]}
+            />
+          );
+        })}
+        {skipLabel && !requestCompleted && (
+          <button type="button" className="skip-button" onClick={onSkip}>
+            {skipLabel}
+          </button>
+        )}
+        {skipLabel && requestCompleted && (
+          <div className="request-complete-state">
+            <span>Request complete</span>
+            <button type="button" onClick={onReopen}>Reopen options</button>
+          </div>
+        )}
+        </div>
+      </div>
+    </div>
+  );
+}

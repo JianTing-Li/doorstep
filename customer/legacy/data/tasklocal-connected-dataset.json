@@ -1,0 +1,1238 @@
+{
+  "metadata": {
+    "name": "TaskLocal / Doorstep connected synthetic dataset",
+    "generated_at": "2026-08-19",
+    "fictional": true,
+    "source_sheet": "https://docs.google.com/spreadsheets/d/1CRYa-m6E0FnbR1py-Wu9XeLZ5H1WX0zQgkwOswCXHRY/edit",
+    "visibility_rule": "Only listings with status=active are customer-visible."
+  },
+  "customers": [
+    {
+      "customer_id": "cust_00001",
+      "signup_date": "2026-01-02",
+      "email": "amina.rahman1@example.invalid",
+      "phone_number": "9175551000",
+      "address": "120 Maple Ave, Astoria, NY"
+    },
+    {
+      "customer_id": "cust_00002",
+      "signup_date": "2026-02-03",
+      "email": "luis.rivera2@example.invalid",
+      "phone_number": "9175551001",
+      "address": "127 Oak Ave, Jackson Heights, NY"
+    },
+    {
+      "customer_id": "cust_00003",
+      "signup_date": "2026-03-04",
+      "email": "priya.shah3@example.invalid",
+      "phone_number": "9175551002",
+      "address": "134 Pine Ave, Bed-Stuy, NY"
+    },
+    {
+      "customer_id": "cust_00004",
+      "signup_date": "2026-04-05",
+      "email": "omar.haddad4@example.invalid",
+      "phone_number": "9175551003",
+      "address": "141 Cedar Ave, Harlem, NY"
+    },
+    {
+      "customer_id": "cust_00005",
+      "signup_date": "2026-05-06",
+      "email": "mei.chen5@example.invalid",
+      "phone_number": "9175551004",
+      "address": "148 Maple Ave, Crown Heights, NY"
+    },
+    {
+      "customer_id": "cust_00006",
+      "signup_date": "2026-06-07",
+      "email": "jordan.lee6@example.invalid",
+      "phone_number": "9175551005",
+      "address": "155 Oak Ave, Sunnyside, NY"
+    },
+    {
+      "customer_id": "cust_00007",
+      "signup_date": "2026-07-08",
+      "email": "fatima.khan7@example.invalid",
+      "phone_number": "9175551006",
+      "address": "162 Pine Ave, Flushing, NY"
+    },
+    {
+      "customer_id": "cust_00008",
+      "signup_date": "2026-01-09",
+      "email": "diego.santos8@example.invalid",
+      "phone_number": "9175551007",
+      "address": "169 Cedar Ave, Bushwick, NY"
+    },
+    {
+      "customer_id": "cust_00009",
+      "signup_date": "2026-02-10",
+      "email": "nia.brooks9@example.invalid",
+      "phone_number": "9175551008",
+      "address": "176 Maple Ave, Astoria, NY"
+    },
+    {
+      "customer_id": "cust_00010",
+      "signup_date": "2026-03-11",
+      "email": "evan.nguyen10@example.invalid",
+      "phone_number": "9175551009",
+      "address": "183 Oak Ave, Jackson Heights, NY"
+    },
+    {
+      "customer_id": "cust_00011",
+      "signup_date": "2026-04-12",
+      "email": "leila.ali11@example.invalid",
+      "phone_number": "9175551010",
+      "address": "190 Pine Ave, Bed-Stuy, NY"
+    },
+    {
+      "customer_id": "cust_00012",
+      "signup_date": "2026-05-13",
+      "email": "marcus.williams12@example.invalid",
+      "phone_number": "9175551011",
+      "address": "197 Cedar Ave, Harlem, NY"
+    },
+    {
+      "customer_id": "cust_00013",
+      "signup_date": "2026-06-14",
+      "email": "sofia.rahman13@example.invalid",
+      "phone_number": "9175551012",
+      "address": "204 Maple Ave, Crown Heights, NY"
+    },
+    {
+      "customer_id": "cust_00014",
+      "signup_date": "2026-07-15",
+      "email": "noah.rivera14@example.invalid",
+      "phone_number": "9175551013",
+      "address": "211 Oak Ave, Sunnyside, NY"
+    },
+    {
+      "customer_id": "cust_00015",
+      "signup_date": "2026-01-16",
+      "email": "zara.shah15@example.invalid",
+      "phone_number": "9175551014",
+      "address": "218 Pine Ave, Flushing, NY"
+    },
+    {
+      "customer_id": "cust_00016",
+      "signup_date": "2026-02-17",
+      "email": "ravi.haddad16@example.invalid",
+      "phone_number": "9175551015",
+      "address": "225 Cedar Ave, Bushwick, NY"
+    },
+    {
+      "customer_id": "cust_00017",
+      "signup_date": "2026-03-18",
+      "email": "tiana.chen17@example.invalid",
+      "phone_number": "9175551016",
+      "address": "232 Maple Ave, Astoria, NY"
+    },
+    {
+      "customer_id": "cust_00018",
+      "signup_date": "2026-04-19",
+      "email": "mateo.lee18@example.invalid",
+      "phone_number": "9175551017",
+      "address": "239 Oak Ave, Jackson Heights, NY"
+    },
+    {
+      "customer_id": "cust_00019",
+      "signup_date": "2026-05-20",
+      "email": "hana.khan19@example.invalid",
+      "phone_number": "9175551018",
+      "address": "246 Pine Ave, Bed-Stuy, NY"
+    },
+    {
+      "customer_id": "cust_00020",
+      "signup_date": "2026-06-21",
+      "email": "andre.santos20@example.invalid",
+      "phone_number": "9175551019",
+      "address": "253 Cedar Ave, Harlem, NY"
+    },
+    {
+      "customer_id": "cust_00021",
+      "signup_date": "2026-07-22",
+      "email": "lina.brooks21@example.invalid",
+      "phone_number": "9175551020",
+      "address": "260 Maple Ave, Crown Heights, NY"
+    },
+    {
+      "customer_id": "cust_00022",
+      "signup_date": "2026-01-23",
+      "email": "samir.nguyen22@example.invalid",
+      "phone_number": "9175551021",
+      "address": "267 Oak Ave, Sunnyside, NY"
+    },
+    {
+      "customer_id": "cust_00023",
+      "signup_date": "2026-02-24",
+      "email": "maya.ali23@example.invalid",
+      "phone_number": "9175551022",
+      "address": "274 Pine Ave, Flushing, NY"
+    },
+    {
+      "customer_id": "cust_00024",
+      "signup_date": "2026-03-25",
+      "email": "daniel.williams24@example.invalid",
+      "phone_number": "9175551023",
+      "address": "281 Cedar Ave, Bushwick, NY"
+    }
+  ],
+  "providers": [
+    {
+      "provider_id": "prov_00001",
+      "signup_date": "2026-01-03",
+      "email": "contact1@brightfix-plumbing.example.invalid",
+      "phone_number": "6465552000",
+      "business_name": "BrightFix Plumbing",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00002",
+      "signup_date": "2026-02-04",
+      "email": "contact2@safespark-electric.example.invalid",
+      "phone_number": "6465552001",
+      "business_name": "SafeSpark Electric",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00003",
+      "signup_date": "2026-03-05",
+      "email": "contact3@green-broom-cleaning.example.invalid",
+      "phone_number": "6465552002",
+      "business_name": "Green Broom Cleaning",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00004",
+      "signup_date": "2026-04-06",
+      "email": "contact4@neighborhood-handyman.example.invalid",
+      "phone_number": "6465552003",
+      "business_name": "Neighborhood Handyman",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00005",
+      "signup_date": "2026-05-07",
+      "email": "contact5@urban-leaf-landscaping.example.invalid",
+      "phone_number": "6465552004",
+      "business_name": "Urban Leaf Landscaping",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00006",
+      "signup_date": "2026-06-08",
+      "email": "contact6@truecoat-painting.example.invalid",
+      "phone_number": "6465552005",
+      "business_name": "TrueCoat Painting",
+      "is_verified": false
+    },
+    {
+      "provider_id": "prov_00007",
+      "signup_date": "2026-01-09",
+      "email": "contact7@quickpipe-services.example.invalid",
+      "phone_number": "6465552006",
+      "business_name": "QuickPipe Services",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00008",
+      "signup_date": "2026-02-10",
+      "email": "contact8@north-star-electric.example.invalid",
+      "phone_number": "6465552007",
+      "business_name": "North Star Electric",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00009",
+      "signup_date": "2026-03-11",
+      "email": "contact9@fresh-start-cleaning.example.invalid",
+      "phone_number": "6465552008",
+      "business_name": "Fresh Start Cleaning",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00010",
+      "signup_date": "2026-04-12",
+      "email": "contact10@cornerstone-repairs.example.invalid",
+      "phone_number": "6465552009",
+      "business_name": "Cornerstone Repairs",
+      "is_verified": false
+    },
+    {
+      "provider_id": "prov_00011",
+      "signup_date": "2026-05-13",
+      "email": "contact11@city-garden-works.example.invalid",
+      "phone_number": "6465552010",
+      "business_name": "City Garden Works",
+      "is_verified": true
+    },
+    {
+      "provider_id": "prov_00012",
+      "signup_date": "2026-06-14",
+      "email": "contact12@prime-finish-painting.example.invalid",
+      "phone_number": "6465552011",
+      "business_name": "Prime Finish Painting",
+      "is_verified": true
+    }
+  ],
+  "listings": [
+    {
+      "listing_id": "list_00001",
+      "provider_id": "prov_00001",
+      "service_category": "plumbing",
+      "service_description": "Plumbing service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 6500,
+      "rate_unit": "hour",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-20T13:00:00.000Z",
+      "updated_at": "2026-07-20T14:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00002",
+      "provider_id": "prov_00002",
+      "service_category": "electrical",
+      "service_description": "Electrical service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 8250,
+      "rate_unit": "flat",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-21T14:00:00.000Z",
+      "updated_at": "2026-07-21T16:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00003",
+      "provider_id": "prov_00003",
+      "service_category": "cleaning",
+      "service_description": "Cleaning service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 10000,
+      "rate_unit": "callout",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-22T15:00:00.000Z",
+      "updated_at": "2026-07-22T18:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00004",
+      "provider_id": "prov_00004",
+      "service_category": "handyman",
+      "service_description": "Handyman service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 11750,
+      "rate_unit": "hour",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-23T16:00:00.000Z",
+      "updated_at": "2026-07-23T20:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00005",
+      "provider_id": "prov_00005",
+      "service_category": "landscaping",
+      "service_description": "Landscaping service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 13500,
+      "rate_unit": "flat",
+      "status": "paused",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-24T17:00:00.000Z",
+      "updated_at": "2026-07-24T22:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00006",
+      "provider_id": "prov_00006",
+      "service_category": "painting",
+      "service_description": "Painting service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 15250,
+      "rate_unit": "callout",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-25T18:00:00.000Z",
+      "updated_at": "2026-07-26T00:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00007",
+      "provider_id": "prov_00007",
+      "service_category": "plumbing",
+      "service_description": "Plumbing service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 17000,
+      "rate_unit": "hour",
+      "status": "flagged",
+      "safety_flag_type": "Multiple reports: off-platform payment request",
+      "is_available_now": false,
+      "created_at": "2026-07-26T13:00:00.000Z",
+      "updated_at": "2026-07-26T20:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00008",
+      "provider_id": "prov_00008",
+      "service_category": "electrical",
+      "service_description": "Electrical service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 18750,
+      "rate_unit": "flat",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-27T14:00:00.000Z",
+      "updated_at": "2026-07-27T22:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00009",
+      "provider_id": "prov_00009",
+      "service_category": "cleaning",
+      "service_description": "Cleaning service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 6500,
+      "rate_unit": "callout",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-28T15:00:00.000Z",
+      "updated_at": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00010",
+      "provider_id": "prov_00010",
+      "service_category": "handyman",
+      "service_description": "Handyman service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 8250,
+      "rate_unit": "hour",
+      "status": "suspended",
+      "safety_flag_type": "Identity verification concern",
+      "is_available_now": false,
+      "created_at": "2026-07-29T16:00:00.000Z",
+      "updated_at": "2026-07-30T02:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00011",
+      "provider_id": "prov_00011",
+      "service_category": "landscaping",
+      "service_description": "Landscaping service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 10000,
+      "rate_unit": "flat",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-20T17:00:00.000Z",
+      "updated_at": "2026-07-21T00:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00012",
+      "provider_id": "prov_00012",
+      "service_category": "painting",
+      "service_description": "Painting service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 11750,
+      "rate_unit": "callout",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-21T18:00:00.000Z",
+      "updated_at": "2026-07-22T06:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00013",
+      "provider_id": "prov_00001",
+      "service_category": "plumbing",
+      "service_description": "Plumbing service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 13500,
+      "rate_unit": "hour",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-22T13:00:00.000Z",
+      "updated_at": "2026-07-23T02:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00014",
+      "provider_id": "prov_00002",
+      "service_category": "electrical",
+      "service_description": "Electrical service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 15250,
+      "rate_unit": "flat",
+      "status": "flagged",
+      "safety_flag_type": "Repeated no-show complaints",
+      "is_available_now": false,
+      "created_at": "2026-07-23T14:00:00.000Z",
+      "updated_at": "2026-07-24T00:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00015",
+      "provider_id": "prov_00003",
+      "service_category": "cleaning",
+      "service_description": "Cleaning service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 17000,
+      "rate_unit": "callout",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-24T15:00:00.000Z",
+      "updated_at": "2026-07-25T06:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00016",
+      "provider_id": "prov_00004",
+      "service_category": "handyman",
+      "service_description": "Handyman service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 18750,
+      "rate_unit": "hour",
+      "status": "paused",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-25T16:00:00.000Z",
+      "updated_at": "2026-07-26T08:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00017",
+      "provider_id": "prov_00005",
+      "service_category": "landscaping",
+      "service_description": "Landscaping service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 6500,
+      "rate_unit": "flat",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-26T17:00:00.000Z",
+      "updated_at": "2026-07-27T10:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00018",
+      "provider_id": "prov_00006",
+      "service_category": "painting",
+      "service_description": "Painting service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 8250,
+      "rate_unit": "callout",
+      "status": "suspended",
+      "safety_flag_type": "Severe unsafe-behavior report",
+      "is_available_now": false,
+      "created_at": "2026-07-27T18:00:00.000Z",
+      "updated_at": "2026-07-28T12:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00019",
+      "provider_id": "prov_00007",
+      "service_category": "plumbing",
+      "service_description": "Plumbing service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 10000,
+      "rate_unit": "hour",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-28T13:00:00.000Z",
+      "updated_at": "2026-07-29T08:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00020",
+      "provider_id": "prov_00008",
+      "service_category": "electrical",
+      "service_description": "Electrical service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 11750,
+      "rate_unit": "flat",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-29T14:00:00.000Z",
+      "updated_at": "2026-07-30T10:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00021",
+      "provider_id": "prov_00009",
+      "service_category": "cleaning",
+      "service_description": "Cleaning service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 13500,
+      "rate_unit": "callout",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-20T15:00:00.000Z",
+      "updated_at": "2026-07-21T12:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00022",
+      "provider_id": "prov_00010",
+      "service_category": "handyman",
+      "service_description": "Handyman service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 15250,
+      "rate_unit": "hour",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": false,
+      "created_at": "2026-07-21T16:00:00.000Z",
+      "updated_at": "2026-07-22T14:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00023",
+      "provider_id": "prov_00011",
+      "service_category": "landscaping",
+      "service_description": "Landscaping service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 17000,
+      "rate_unit": "flat",
+      "status": "active",
+      "safety_flag_type": "",
+      "is_available_now": true,
+      "created_at": "2026-07-22T17:00:00.000Z",
+      "updated_at": "2026-07-23T16:00:00.000Z"
+    },
+    {
+      "listing_id": "list_00024",
+      "provider_id": "prov_00012",
+      "service_category": "painting",
+      "service_description": "Painting service for common residential jobs; clear scope confirmed before booking.",
+      "rate_amount": 18750,
+      "rate_unit": "callout",
+      "status": "flagged",
+      "safety_flag_type": "Property-damage report under review",
+      "is_available_now": false,
+      "created_at": "2026-07-23T18:00:00.000Z",
+      "updated_at": "2026-07-24T18:00:00.000Z"
+    }
+  ],
+  "bookings": [
+    {
+      "booking_id": "book_00001",
+      "customer_id": "cust_00001",
+      "listing_id": "list_00001",
+      "address": "120 Maple Ave, Astoria, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-01T14:30:00.000Z",
+      "updated_at": "2026-08-01T16:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00002",
+      "customer_id": "cust_00002",
+      "listing_id": "list_00002",
+      "address": "127 Oak Ave, Jackson Heights, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-02T15:30:00.000Z",
+      "updated_at": "2026-08-02T17:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00003",
+      "customer_id": "cust_00003",
+      "listing_id": "list_00003",
+      "address": "134 Pine Ave, Bed-Stuy, NY",
+      "booking_status": "confirmed",
+      "created_at": "2026-08-03T16:30:00.000Z",
+      "updated_at": "2026-08-03T18:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00004",
+      "customer_id": "cust_00004",
+      "listing_id": "list_00004",
+      "address": "141 Cedar Ave, Harlem, NY",
+      "booking_status": "cancelled",
+      "created_at": "2026-08-04T17:30:00.000Z",
+      "updated_at": "2026-08-04T19:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00005",
+      "customer_id": "cust_00005",
+      "listing_id": "list_00005",
+      "address": "148 Maple Ave, Crown Heights, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-05T18:30:00.000Z",
+      "updated_at": "2026-08-05T20:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00006",
+      "customer_id": "cust_00006",
+      "listing_id": "list_00006",
+      "address": "155 Oak Ave, Sunnyside, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-06T14:30:00.000Z",
+      "updated_at": "2026-08-06T16:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00007",
+      "customer_id": "cust_00007",
+      "listing_id": "list_00007",
+      "address": "162 Pine Ave, Flushing, NY",
+      "booking_status": "confirmed",
+      "created_at": "2026-08-07T15:30:00.000Z",
+      "updated_at": "2026-08-07T17:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00008",
+      "customer_id": "cust_00008",
+      "listing_id": "list_00008",
+      "address": "169 Cedar Ave, Bushwick, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-08T16:30:00.000Z",
+      "updated_at": "2026-08-08T18:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00009",
+      "customer_id": "cust_00009",
+      "listing_id": "list_00009",
+      "address": "176 Maple Ave, Astoria, NY",
+      "booking_status": "no_show",
+      "created_at": "2026-08-09T17:30:00.000Z",
+      "updated_at": "2026-08-09T19:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00010",
+      "customer_id": "cust_00010",
+      "listing_id": "list_00010",
+      "address": "183 Oak Ave, Jackson Heights, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-10T18:30:00.000Z",
+      "updated_at": "2026-08-10T20:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00011",
+      "customer_id": "cust_00011",
+      "listing_id": "list_00011",
+      "address": "190 Pine Ave, Bed-Stuy, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-11T14:30:00.000Z",
+      "updated_at": "2026-08-11T16:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00012",
+      "customer_id": "cust_00012",
+      "listing_id": "list_00012",
+      "address": "197 Cedar Ave, Harlem, NY",
+      "booking_status": "cancelled",
+      "created_at": "2026-08-12T15:30:00.000Z",
+      "updated_at": "2026-08-12T17:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00013",
+      "customer_id": "cust_00013",
+      "listing_id": "list_00013",
+      "address": "204 Maple Ave, Crown Heights, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-13T16:30:00.000Z",
+      "updated_at": "2026-08-13T18:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00014",
+      "customer_id": "cust_00014",
+      "listing_id": "list_00014",
+      "address": "211 Oak Ave, Sunnyside, NY",
+      "booking_status": "confirmed",
+      "created_at": "2026-08-14T17:30:00.000Z",
+      "updated_at": "2026-08-14T19:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00015",
+      "customer_id": "cust_00015",
+      "listing_id": "list_00015",
+      "address": "218 Pine Ave, Flushing, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-15T18:30:00.000Z",
+      "updated_at": "2026-08-15T20:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00016",
+      "customer_id": "cust_00016",
+      "listing_id": "list_00016",
+      "address": "225 Cedar Ave, Bushwick, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-16T14:30:00.000Z",
+      "updated_at": "2026-08-16T16:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00017",
+      "customer_id": "cust_00017",
+      "listing_id": "list_00017",
+      "address": "232 Maple Ave, Astoria, NY",
+      "booking_status": "no_show",
+      "created_at": "2026-08-17T15:30:00.000Z",
+      "updated_at": "2026-08-17T17:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00018",
+      "customer_id": "cust_00018",
+      "listing_id": "list_00018",
+      "address": "239 Oak Ave, Jackson Heights, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-18T16:30:00.000Z",
+      "updated_at": "2026-08-18T18:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00019",
+      "customer_id": "cust_00019",
+      "listing_id": "list_00019",
+      "address": "246 Pine Ave, Bed-Stuy, NY",
+      "booking_status": "confirmed",
+      "created_at": "2026-08-19T17:30:00.000Z",
+      "updated_at": "2026-08-19T19:30:00.000Z"
+    },
+    {
+      "booking_id": "book_00020",
+      "customer_id": "cust_00020",
+      "listing_id": "list_00020",
+      "address": "253 Cedar Ave, Harlem, NY",
+      "booking_status": "completed",
+      "created_at": "2026-08-20T18:30:00.000Z",
+      "updated_at": "2026-08-20T20:30:00.000Z"
+    }
+  ],
+  "reviews": [
+    {
+      "review_id": "review_00001",
+      "booking_id": "book_00001",
+      "customer_id": "cust_00001",
+      "provider_id": "prov_00001",
+      "listing_id": "list_00001",
+      "rating": 5,
+      "review_text": "Arrived on time and explained the repair.",
+      "created_at": "2026-08-02T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00002",
+      "booking_id": "book_00002",
+      "customer_id": "cust_00002",
+      "provider_id": "prov_00002",
+      "listing_id": "list_00002",
+      "rating": 4,
+      "review_text": "Good work; final price matched the estimate.",
+      "created_at": "2026-08-03T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00003",
+      "booking_id": "book_00003",
+      "customer_id": "cust_00003",
+      "provider_id": "prov_00003",
+      "listing_id": "list_00003",
+      "rating": 5,
+      "review_text": "Clean, professional, and quick.",
+      "created_at": "2026-08-04T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00004",
+      "booking_id": "book_00004",
+      "customer_id": "cust_00004",
+      "provider_id": "prov_00004",
+      "listing_id": "list_00004",
+      "rating": 2,
+      "review_text": "Asked to move payment off platform after arrival.",
+      "created_at": "2026-08-05T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00005",
+      "booking_id": "book_00005",
+      "customer_id": "cust_00005",
+      "provider_id": "prov_00005",
+      "listing_id": "list_00005",
+      "rating": 4,
+      "review_text": "Solid service and clear communication.",
+      "created_at": "2026-08-06T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00006",
+      "booking_id": "book_00006",
+      "customer_id": "cust_00006",
+      "provider_id": "prov_00006",
+      "listing_id": "list_00006",
+      "rating": 1,
+      "review_text": "Provider did not match the profile photo.",
+      "created_at": "2026-08-07T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00007",
+      "booking_id": "book_00007",
+      "customer_id": "cust_00007",
+      "provider_id": "prov_00007",
+      "listing_id": "list_00007",
+      "rating": 5,
+      "review_text": "Excellent experience.",
+      "created_at": "2026-08-08T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00008",
+      "booking_id": "book_00008",
+      "customer_id": "cust_00008",
+      "provider_id": "prov_00008",
+      "listing_id": "list_00008",
+      "rating": 3,
+      "review_text": "Work was acceptable but late.",
+      "created_at": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00009",
+      "booking_id": "book_00009",
+      "customer_id": "cust_00009",
+      "provider_id": "prov_00009",
+      "listing_id": "list_00009",
+      "rating": 1,
+      "review_text": "Provider never arrived and stopped responding.",
+      "created_at": "2026-08-10T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00010",
+      "booking_id": "book_00010",
+      "customer_id": "cust_00010",
+      "provider_id": "prov_00010",
+      "listing_id": "list_00010",
+      "rating": 4,
+      "review_text": "Resolved the issue in one visit.",
+      "created_at": "2026-08-11T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00011",
+      "booking_id": "book_00011",
+      "customer_id": "cust_00011",
+      "provider_id": "prov_00011",
+      "listing_id": "list_00011",
+      "rating": 5,
+      "review_text": "Would book again.",
+      "created_at": "2026-08-12T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00012",
+      "booking_id": "book_00012",
+      "customer_id": "cust_00012",
+      "provider_id": "prov_00012",
+      "listing_id": "list_00012",
+      "rating": 2,
+      "review_text": "Damage was left near the work area.",
+      "created_at": "2026-08-13T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00013",
+      "booking_id": "book_00013",
+      "customer_id": "cust_00013",
+      "provider_id": "prov_00001",
+      "listing_id": "list_00013",
+      "rating": 4,
+      "review_text": "Responsive and professional.",
+      "created_at": "2026-08-14T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00014",
+      "booking_id": "book_00014",
+      "customer_id": "cust_00014",
+      "provider_id": "prov_00002",
+      "listing_id": "list_00014",
+      "rating": 5,
+      "review_text": "Fast and careful.",
+      "created_at": "2026-08-15T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00015",
+      "booking_id": "book_00015",
+      "customer_id": "cust_00015",
+      "provider_id": "prov_00003",
+      "listing_id": "list_00015",
+      "rating": 3,
+      "review_text": "Job finished but follow-up was slow.",
+      "created_at": "2026-08-16T18:00:00.000Z"
+    },
+    {
+      "review_id": "review_00016",
+      "booking_id": "book_00016",
+      "customer_id": "cust_00016",
+      "provider_id": "prov_00004",
+      "listing_id": "list_00016",
+      "rating": 1,
+      "review_text": "Behavior felt unsafe; I ended the visit early.",
+      "created_at": "2026-08-17T18:00:00.000Z"
+    }
+  ],
+  "reports": [
+    {
+      "report_id": "report_00001",
+      "reporter_customer_id": "cust_00004",
+      "listing_id": "list_00004",
+      "booking_id": "book_00004",
+      "safety_flag_type": "payment_request_off_platform",
+      "report_details": "Provider asked for cash outside TaskLocal after accepting the booking.",
+      "evidence_url": "",
+      "created_at": "2026-08-04T15:00:00.000Z"
+    },
+    {
+      "report_id": "report_00002",
+      "reporter_customer_id": "cust_00006",
+      "listing_id": "list_00006",
+      "booking_id": "book_00006",
+      "safety_flag_type": "identity_concern",
+      "report_details": "Person who arrived did not match the provider profile.",
+      "evidence_url": "https://example.invalid/evidence/report-00002",
+      "created_at": "2026-08-05T15:03:00.000Z"
+    },
+    {
+      "report_id": "report_00003",
+      "reporter_customer_id": "cust_00009",
+      "listing_id": "list_00009",
+      "booking_id": "book_00009",
+      "safety_flag_type": "no_show",
+      "report_details": "Provider did not arrive and stopped responding.",
+      "evidence_url": "",
+      "created_at": "2026-08-06T15:06:00.000Z"
+    },
+    {
+      "report_id": "report_00004",
+      "reporter_customer_id": "cust_00016",
+      "listing_id": "list_00016",
+      "booking_id": "book_00016",
+      "safety_flag_type": "unsafe_behavior",
+      "report_details": "Customer ended the visit after threatening behavior.",
+      "evidence_url": "https://example.invalid/evidence/report-00004",
+      "created_at": "2026-08-07T15:09:00.000Z"
+    },
+    {
+      "report_id": "report_00005",
+      "reporter_customer_id": "cust_00012",
+      "listing_id": "list_00012",
+      "booking_id": "book_00012",
+      "safety_flag_type": "property_damage",
+      "report_details": "Customer reports damage near the completed work area.",
+      "evidence_url": "https://example.invalid/evidence/report-00005",
+      "created_at": "2026-08-08T15:12:00.000Z"
+    },
+    {
+      "report_id": "report_00006",
+      "reporter_customer_id": "cust_00007",
+      "listing_id": "list_00007",
+      "booking_id": "book_00007",
+      "safety_flag_type": "payment_request_off_platform",
+      "report_details": "Second report tied to the same listing pattern.",
+      "evidence_url": "https://example.invalid/evidence/report-00006",
+      "created_at": "2026-08-09T15:15:00.000Z"
+    },
+    {
+      "report_id": "report_00007",
+      "reporter_customer_id": "cust_00017",
+      "listing_id": "list_00017",
+      "booking_id": "book_00017",
+      "safety_flag_type": "no_show",
+      "report_details": "Repeated no-show complaint for this provider.",
+      "evidence_url": "",
+      "created_at": "2026-08-10T15:17:59.999Z"
+    },
+    {
+      "report_id": "report_00008",
+      "reporter_customer_id": "cust_00018",
+      "listing_id": "list_00018",
+      "booking_id": "book_00018",
+      "safety_flag_type": "identity_concern",
+      "report_details": "Provider account details conflict with visit information.",
+      "evidence_url": "",
+      "created_at": "2026-08-11T15:20:59.999Z"
+    },
+    {
+      "report_id": "report_00009",
+      "reporter_customer_id": "cust_00014",
+      "listing_id": "list_00014",
+      "booking_id": "book_00014",
+      "safety_flag_type": "harassment",
+      "report_details": "Customer reports repeated unwanted messages.",
+      "evidence_url": "https://example.invalid/evidence/report-00009",
+      "created_at": "2026-08-12T15:24:00.000Z"
+    },
+    {
+      "report_id": "report_00010",
+      "reporter_customer_id": "cust_00010",
+      "listing_id": "list_00010",
+      "booking_id": "book_00010",
+      "safety_flag_type": "unsafe_behavior",
+      "report_details": "Potentially unsafe electrical work observed.",
+      "evidence_url": "https://example.invalid/evidence/report-00010",
+      "created_at": "2026-08-13T15:27:00.000Z"
+    }
+  ],
+  "moderation_cases": [
+    {
+      "case_id": "case_00001",
+      "report_id": "report_00001",
+      "listing_id": "list_00004",
+      "provider_id": "prov_00004",
+      "risk_level": "medium",
+      "case_status": "in_review",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "First verified off-platform payment request; warn and monitor.",
+      "moderation_action": "warn",
+      "updated_at": "2026-08-05T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00002",
+      "report_id": "report_00002",
+      "listing_id": "list_00006",
+      "provider_id": "prov_00006",
+      "risk_level": "high",
+      "case_status": "resolved",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Identity mismatch confirmed; suspend listing pending provider verification.",
+      "moderation_action": "suspend",
+      "updated_at": "2026-08-06T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00003",
+      "report_id": "report_00003",
+      "listing_id": "list_00009",
+      "provider_id": "prov_00009",
+      "risk_level": "medium",
+      "case_status": "open",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "No-show report conflicts with booking messages; dismiss after review.",
+      "moderation_action": "dismiss",
+      "updated_at": "2026-08-07T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00004",
+      "report_id": "report_00004",
+      "listing_id": "list_00016",
+      "provider_id": "prov_00004",
+      "risk_level": "critical",
+      "case_status": "resolved",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Severe unsafe-behavior evidence confirmed; suspend listing immediately.",
+      "moderation_action": "suspend",
+      "updated_at": "2026-08-08T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00005",
+      "report_id": "report_00005",
+      "listing_id": "list_00012",
+      "provider_id": "prov_00012",
+      "risk_level": "high",
+      "case_status": "in_review",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Property damage evidence is credible; warn provider and request remediation.",
+      "moderation_action": "warn",
+      "updated_at": "2026-08-09T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00006",
+      "report_id": "report_00006",
+      "listing_id": "list_00007",
+      "provider_id": "prov_00007",
+      "risk_level": "high",
+      "case_status": "open",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Pattern review remains open; no action yet.",
+      "moderation_action": "none",
+      "updated_at": "2026-08-10T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00007",
+      "report_id": "report_00007",
+      "listing_id": "list_00017",
+      "provider_id": "prov_00005",
+      "risk_level": "medium",
+      "case_status": "resolved",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Repeated no-show pattern confirmed; warn provider.",
+      "moderation_action": "warn",
+      "updated_at": "2026-08-11T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00008",
+      "report_id": "report_00008",
+      "listing_id": "list_00018",
+      "provider_id": "prov_00006",
+      "risk_level": "high",
+      "case_status": "open",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Additional identity evidence requested.",
+      "moderation_action": "none",
+      "updated_at": "2026-08-12T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00009",
+      "report_id": "report_00009",
+      "listing_id": "list_00014",
+      "provider_id": "prov_00002",
+      "risk_level": "high",
+      "case_status": "in_review",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Harassment report under human review.",
+      "moderation_action": "none",
+      "updated_at": "2026-08-13T16:00:00.000Z"
+    },
+    {
+      "case_id": "case_00010",
+      "report_id": "report_00010",
+      "listing_id": "list_00010",
+      "provider_id": "prov_00010",
+      "risk_level": "critical",
+      "case_status": "resolved",
+      "assigned_admin_id": "admin_00001",
+      "action_reason": "Unsafe-work evidence confirmed; suspend listing.",
+      "moderation_action": "suspend",
+      "updated_at": "2026-08-14T16:00:00.000Z"
+    }
+  ],
+  "audit_log": [
+    {
+      "audit_id": "audit_00001",
+      "case_id": "case_00001",
+      "listing_id": "list_00004",
+      "previous_status": "active",
+      "new_status": "active",
+      "moderation_action": "warn",
+      "action_reason": "First verified off-platform payment request; warn and monitor.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-05T16:00:00.000Z"
+    },
+    {
+      "audit_id": "audit_00002",
+      "case_id": "case_00002",
+      "listing_id": "list_00006",
+      "previous_status": "active",
+      "new_status": "suspended",
+      "moderation_action": "suspend",
+      "action_reason": "Identity mismatch confirmed; suspend listing pending provider verification.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-06T16:00:00.000Z"
+    },
+    {
+      "audit_id": "audit_00003",
+      "case_id": "case_00003",
+      "listing_id": "list_00009",
+      "previous_status": "active",
+      "new_status": "active",
+      "moderation_action": "dismiss",
+      "action_reason": "No-show report conflicts with booking messages; dismiss after review.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-07T16:00:00.000Z"
+    },
+    {
+      "audit_id": "audit_00004",
+      "case_id": "case_00004",
+      "listing_id": "list_00016",
+      "previous_status": "paused",
+      "new_status": "suspended",
+      "moderation_action": "suspend",
+      "action_reason": "Severe unsafe-behavior evidence confirmed; suspend listing immediately.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-08T16:00:00.000Z"
+    },
+    {
+      "audit_id": "audit_00005",
+      "case_id": "case_00005",
+      "listing_id": "list_00012",
+      "previous_status": "active",
+      "new_status": "active",
+      "moderation_action": "warn",
+      "action_reason": "Property damage evidence is credible; warn provider and request remediation.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-09T16:00:00.000Z"
+    },
+    {
+      "audit_id": "audit_00006",
+      "case_id": "case_00007",
+      "listing_id": "list_00017",
+      "previous_status": "active",
+      "new_status": "active",
+      "moderation_action": "warn",
+      "action_reason": "Repeated no-show pattern confirmed; warn provider.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-11T16:00:00.000Z"
+    },
+    {
+      "audit_id": "audit_00007",
+      "case_id": "case_00010",
+      "listing_id": "list_00010",
+      "previous_status": "suspended",
+      "new_status": "suspended",
+      "moderation_action": "suspend",
+      "action_reason": "Unsafe-work evidence confirmed; suspend listing.",
+      "actor_id": "admin_00001",
+      "updated_at": "2026-08-14T16:00:00.000Z"
+    }
+  ]
+}
